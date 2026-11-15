@@ -68,6 +68,7 @@ describe("database schema (0001_identity)", () => {
     expect(applied.rows.map((row) => row.name)).toEqual([
       "0001_identity",
       "0002_stock",
+      "0003_value_and_count",
     ]);
   });
 

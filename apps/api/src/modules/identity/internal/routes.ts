@@ -19,6 +19,7 @@ import {
   type IdentityDeps,
   type SessionGrant,
 } from "./service.js";
+import { createStaff, listStaff, setStaffActive } from "./staff.js";
 import type { Caller } from "./types.js";
 
 export interface IdentityRouterDeps extends IdentityDeps {
@@ -30,6 +31,8 @@ export interface IdentityRouters {
   publicRouter: Router;
   /** Mounted after authentication and the CSRF check: signout, me. */
   protectedRouter: Router;
+  /** Mounted at /users after authentication: staff, Owner only. */
+  staffRouter: Router;
 }
 
 /** The session cookie (NFR1.5): HttpOnly, SameSite=Lax, Path=/, no Max-Age. */
@@ -124,5 +127,38 @@ export function createIdentityRouters(
     res.status(200).json(sessionBody(session.caller, session.csrfToken));
   });
 
-  return { publicRouter, protectedRouter };
+  const staffRouter = Router();
+
+  staffRouter.get("/", async (req, res) => {
+    res.json(await listStaff(deps, req.caller));
+  });
+
+  staffRouter.post("/", async (req, res) => {
+    const member = await createStaff(deps, req.caller, req.body);
+    req.log.info(
+      { event: "identity.staff_created", userId: member.id, role: member.role },
+      "staff member added",
+    );
+    res.status(201).json(member);
+  });
+
+  staffRouter.patch("/:id", async (req, res) => {
+    const member = await setStaffActive(
+      deps,
+      req.caller,
+      req.params.id,
+      req.body,
+    );
+    req.log.info(
+      {
+        event: "identity.staff_active_changed",
+        userId: member.id,
+        active: member.active,
+      },
+      "staff member updated",
+    );
+    res.json(member);
+  });
+
+  return { publicRouter, protectedRouter, staffRouter };
 }

@@ -45,6 +45,8 @@ export function stubFetch(
 export const EMPTY_DASHBOARD = {
   productCount: 0,
   totalUnits: 0,
+  stockValue: 0,
+  lossValue30d: 0,
   lowStockCount: 0,
   outOfStockCount: 0,
   lowStock: [],

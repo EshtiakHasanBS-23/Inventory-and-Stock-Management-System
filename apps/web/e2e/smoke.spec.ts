@@ -135,6 +135,7 @@ test("adds a product, moves stock in and out, refuses going below zero and shows
   await page.getByTestId("product-name-input").fill("Miniket rice");
   await page.getByTestId("product-unit-input").fill("bag");
   await page.getByTestId("product-min-input").fill("5");
+  await page.getByTestId("product-cost-input").fill("100");
   await page.getByTestId("product-save-button").click();
   const row = page.getByTestId("product-row-RICE-25");
   await expect(row).toContainText("0 bag");
@@ -162,6 +163,8 @@ test("adds a product, moves stock in and out, refuses going below zero and shows
 
   await page.getByTestId("side-nav-dashboard-link").click();
   await expect(page.getByTestId("stat-low")).toHaveText("1");
+  await expect(page.getByTestId("stat-value")).toHaveText("৳400");
+  await expect(page.getByTestId("stat-losses")).toHaveText("৳600");
   await expect(page.getByTestId("attention-list")).toContainText(
     "Miniket rice",
   );
@@ -171,6 +174,49 @@ test("adds a product, moves stock in and out, refuses going below zero and shows
   await expect(history.getByRole("row")).toHaveCount(3);
   await expect(history.getByRole("row").nth(1)).toContainText("Damaged");
   await expect(history.getByRole("row").nth(1)).toContainText("Smoke Owner");
+
+  await page.getByTestId("side-nav-count-link").click();
+  await expectHeading(page, "Stock count");
+  await page
+    .getByTestId("count-product-select")
+    .selectOption({ label: "Miniket rice (RICE-25)" });
+  await page.getByTestId("count-quantity-input").fill("3");
+  await page.getByTestId("count-save-button").click();
+  await expect(page.getByTestId("count-saved")).toContainText(
+    "1 bag missing (৳100)",
+  );
+});
+
+test("lets the owner add a worker, who signs in without the Staff page", async ({
+  page,
+}) => {
+  const workerPhone = `01${String(Date.now() + 7).slice(-9)}`;
+  await page.goto("/signin");
+  await page.getByTestId("signin-phone-input").fill(phone);
+  await page.getByTestId("signin-password-input").fill(password);
+  await page.getByTestId("signin-submit-button").click();
+  await expectHeading(page, "Dashboard");
+
+  await page.getByTestId("side-nav-staff-link").click();
+  await expectHeading(page, "Staff");
+  await page.getByTestId("staff-name-input").fill("Smoke Worker");
+  await page.getByTestId("staff-phone-input").fill(workerPhone);
+  await page.getByTestId("staff-password-input").fill("worker-password");
+  await page.getByTestId("staff-save-button").click();
+  await expect(page.getByTestId(`staff-row-${workerPhone}`)).toContainText(
+    "Warehouse worker",
+  );
+
+  await page.getByTestId("app-bar-sign-out-button").click();
+  await expectHeading(page, "Sign in");
+  await page.getByTestId("signin-phone-input").fill(workerPhone);
+  await page.getByTestId("signin-password-input").fill("worker-password");
+  await page.getByTestId("signin-submit-button").click();
+  await expectHeading(page, "Dashboard");
+  await expect(page.getByTestId("app-bar-user-role")).toHaveText(
+    "Warehouse worker",
+  );
+  await expect(page.getByTestId("side-nav-staff-link")).toHaveCount(0);
 });
 
 test("signs in with the keyboard only, using the skip link, with visible focus", async ({

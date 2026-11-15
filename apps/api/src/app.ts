@@ -125,6 +125,7 @@ export function createApp(deps: AppDeps): AppBundle {
   app.use(extendSession());
 
   mount(`${API_PREFIX}/auth`, identity.protectedRouter, "protected");
+  mount(`${API_PREFIX}/users`, identity.staffRouter, "protected");
   mount(API_PREFIX, createStockRouter({ db }), "protected");
 
   app.use((_req, _res, next) => {

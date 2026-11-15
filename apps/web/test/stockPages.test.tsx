@@ -28,6 +28,8 @@ function aProduct(overrides: Partial<Product> = {}): Product {
     unit: "bag",
     minStock: 5,
     onHand: 12,
+    unitCost: 1250.5,
+    stockValue: 15006,
     status: "ok",
     ...overrides,
   };
@@ -53,6 +55,7 @@ function aMovement(overrides: Partial<Movement> = {}): Movement {
     reason: "purchase",
     quantity: 10,
     balanceAfter: 12,
+    value: 12505,
     note: null,
     userName: "Abdul Haque",
     createdAt: "2026-11-16T08:30:00.000Z",
@@ -202,6 +205,7 @@ describe("Products (S1, S3)", () => {
       name: "Miniket rice",
       unit: "bag",
       minStock: 5,
+      unitCost: 0,
     });
     expect(screen.getByTestId("product-sku-input")).toHaveValue("");
   });
@@ -281,6 +285,7 @@ describe("Products (S1, S3)", () => {
       name: "Miniket rice",
       unit: "bag",
       minStock: 20,
+      unitCost: 1250.5,
     });
   });
 

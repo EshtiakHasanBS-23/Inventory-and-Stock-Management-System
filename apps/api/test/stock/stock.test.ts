@@ -10,12 +10,15 @@ import {
   TEST_ORIGIN,
   type SignedInAgent,
 } from "../helpers/app.js";
+import { uniquePhone } from "../helpers/factories.js";
 import { closeTestDb, truncateIdentity, useTestDb } from "../helpers/db.js";
 import { twoBusinesses } from "../helpers/twoBusinesses.js";
 
 const PRODUCTS = "/api/v1/products";
 const MOVEMENTS = "/api/v1/stock/movements";
 const DASHBOARD = "/api/v1/dashboard";
+const COUNTS = "/api/v1/stock/counts";
+const USERS = "/api/v1/users";
 
 function patchWithCsrf(signedIn: SignedInAgent, path: string) {
   return signedIn.agent
@@ -39,6 +42,7 @@ describe("stock module", () => {
       name: "Miniket rice 25kg",
       unit: "bag",
       minStock: 5,
+      unitCost: 1250.5,
       ...overrides,
     });
     expect(res.status).toBe(201);
@@ -117,6 +121,7 @@ describe("stock module", () => {
         name: "Other",
         unit: "bag",
         minStock: 0,
+        unitCost: 0,
       });
       expect(dup.status).toBe(409);
       expect(dup.body).toMatchObject({ code: "DUPLICATE", field: "sku" });
@@ -387,6 +392,255 @@ describe("stock module", () => {
 
       const empty = await b.agent.get(DASHBOARD);
       expect(empty.body).toMatchObject({ productCount: 0, totalUnits: 0 });
+    });
+  });
+  describe("stock value in taka", () => {
+    it("keeps unit cost exact and values stock and each movement", async () => {
+      const product = await createProduct(a, { unitCost: 1250.5 });
+      expect(product).toMatchObject({ unitCost: 1250.5, stockValue: 0 });
+
+      const moved = await move(a, product.id, "in", 3);
+      expect(moved.body.value).toBe(3751.5);
+      const list = await a.agent.get(PRODUCTS);
+      expect(list.body[0]).toMatchObject({ onHand: 3, stockValue: 3751.5 });
+    });
+
+    it("refuses a negative cost or one with more than 2 decimals", async () => {
+      for (const unitCost of [-1, 10.555]) {
+        const res = await postWithCsrf(a, PRODUCTS).send({
+          sku: "X",
+          name: "X",
+          unit: "pcs",
+          minStock: 0,
+          unitCost,
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.field).toBe("unitCost");
+      }
+    });
+
+    it("totals stock value and 30-day losses, keeping the cost at the time of each loss", async () => {
+      const rice = await createProduct(a, { unitCost: 100 });
+      const oil = await createProduct(a, {
+        sku: "OIL",
+        name: "Oil",
+        unitCost: 50.25,
+      });
+      await move(a, rice.id, "in", 10);
+      await move(a, oil.id, "in", 4);
+      await move(a, rice.id, "out", 2, "damage");
+      await move(a, rice.id, "out", 1, "sale");
+      await postWithCsrf(a, COUNTS).send({
+        productId: oil.id,
+        countedQuantity: 3,
+      });
+
+      // A later price change does not change the value of past losses.
+      await patchWithCsrf(a, `${PRODUCTS}/${rice.id}`).send({ unitCost: 999 });
+
+      const res = await a.agent.get(DASHBOARD);
+      expect(res.body).toMatchObject({
+        stockValue: 7 * 999 + 3 * 50.25,
+        lossValue30d: 2 * 100 + 50.25,
+      });
+    });
+  });
+
+  describe("stock counts", () => {
+    it("records a shortfall as a count movement out", async () => {
+      const product = await createProduct(a);
+      await move(a, product.id, "in", 10);
+
+      const res = await postWithCsrf(a, COUNTS).send({
+        productId: product.id,
+        countedQuantity: 8,
+        note: "aisle 3",
+      });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({
+        previous: 10,
+        counted: 8,
+        difference: -2,
+        movement: {
+          direction: "out",
+          reason: "count",
+          quantity: 2,
+          balanceAfter: 8,
+          note: "Counted 8, system had 10. aisle 3",
+        },
+      });
+    });
+
+    it("records extra stock as a count movement in", async () => {
+      const product = await createProduct(a);
+      const res = await postWithCsrf(a, COUNTS).send({
+        productId: product.id,
+        countedQuantity: 4,
+      });
+      expect(res.body).toMatchObject({
+        difference: 4,
+        movement: { direction: "in", quantity: 4, balanceAfter: 4 },
+      });
+    });
+
+    it("records nothing when the count matches", async () => {
+      const product = await createProduct(a);
+      await move(a, product.id, "in", 5);
+
+      const res = await postWithCsrf(a, COUNTS).send({
+        productId: product.id,
+        countedQuantity: 5,
+      });
+      expect(res.body).toEqual({
+        previous: 5,
+        counted: 5,
+        difference: 0,
+        movement: null,
+      });
+      expect((await a.agent.get(MOVEMENTS)).body).toHaveLength(1);
+    });
+
+    it("refuses a negative count and another business's product", async () => {
+      const product = await createProduct(a);
+      const negative = await postWithCsrf(a, COUNTS).send({
+        productId: product.id,
+        countedQuantity: -1,
+      });
+      expect(negative.status).toBe(400);
+      expect(negative.body.field).toBe("countedQuantity");
+
+      const other = await postWithCsrf(b, COUNTS).send({
+        productId: product.id,
+        countedQuantity: 0,
+      });
+      expect(other.status).toBe(400);
+      expect(other.body.field).toBe("productId");
+    });
+
+    it("does not let a count be chosen by hand as a stock movement reason", async () => {
+      const product = await createProduct(a);
+      const res = await move(a, product.id, "in", 1, "count");
+      expect(res.status).toBe(400);
+      expect(res.body.field).toBe("reason");
+    });
+  });
+
+  describe("staff users", () => {
+    function addStaff(
+      who: SignedInAgent,
+      overrides: Record<string, unknown> = {},
+    ) {
+      return postWithCsrf(who, USERS).send({
+        name: "Karim",
+        phone: uniquePhone(),
+        password: "warehouse pass",
+        role: "warehouse_worker",
+        ...overrides,
+      });
+    }
+
+    async function signInAs(phone: string, password: string) {
+      const agent = request.agent(bundle.app);
+      const res = await agent
+        .post("/api/v1/auth/signin")
+        .set("Origin", TEST_ORIGIN)
+        .send({ phone, password });
+      return { agent, res };
+    }
+
+    it("lets the owner add a staff member who can then sign in and record stock", async () => {
+      const phone = uniquePhone();
+      const added = await addStaff(a, { phone });
+      expect(added.status).toBe(201);
+      expect(added.body).toMatchObject({
+        name: "Karim",
+        phone,
+        role: "warehouse_worker",
+        active: true,
+      });
+      expect(added.body).not.toHaveProperty("password");
+
+      const list = await a.agent.get(USERS);
+      expect(list.body.map((u: { role: string }) => u.role)).toEqual([
+        "owner",
+        "warehouse_worker",
+      ]);
+      expect((await b.agent.get(USERS)).body).toHaveLength(1);
+
+      const { agent, res } = await signInAs(phone, "warehouse pass");
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        role: "warehouse_worker",
+        businessId: a.session.businessId,
+      });
+      const product = await createProduct(a);
+      const moved = await agent
+        .post(MOVEMENTS)
+        .set("Origin", TEST_ORIGIN)
+        .set(CSRF_HEADER, res.body.csrfToken)
+        .send({
+          productId: product.id,
+          direction: "in",
+          reason: "purchase",
+          quantity: 2,
+        });
+      expect(moved.body.userName).toBe("Karim");
+    });
+
+    it("refuses a phone already used and an unknown role", async () => {
+      const phone = uniquePhone();
+      await addStaff(a, { phone });
+      const dup = await addStaff(b, { phone });
+      expect(dup.status).toBe(409);
+      expect(dup.body).toMatchObject({ code: "DUPLICATE", field: "phone" });
+
+      const owner = await addStaff(a, { role: "owner" });
+      expect(owner.status).toBe(400);
+      expect(owner.body.field).toBe("role");
+    });
+
+    it("lets only the owner manage staff", async () => {
+      await setRole(a, "manager");
+      expect((await a.agent.get(USERS)).status).toBe(403);
+      expect((await addStaff(a)).status).toBe(403);
+    });
+
+    it("deactivates a staff member, ending their session and sign-in, then reactivates them", async () => {
+      const phone = uniquePhone();
+      const added = await addStaff(a, { phone });
+      const { agent } = await signInAs(phone, "warehouse pass");
+
+      const off = await patchWithCsrf(a, `${USERS}/${added.body.id}`).send({
+        active: false,
+      });
+      expect(off.body.active).toBe(false);
+      const ended = await agent.get(PRODUCTS);
+      expect(ended.status).toBe(401);
+      expect(ended.body.code).toBe("SESSION_ENDED");
+      const refused = await signInAs(phone, "warehouse pass");
+      expect(refused.res.body.code).toBe("ACCOUNT_DEACTIVATED");
+
+      await patchWithCsrf(a, `${USERS}/${added.body.id}`).send({
+        active: true,
+      });
+      expect((await signInAs(phone, "warehouse pass")).res.status).toBe(200);
+    });
+
+    it("never deactivates the owner, and hides other businesses' staff", async () => {
+      const self = await patchWithCsrf(a, `${USERS}/${a.session.userId}`).send({
+        active: false,
+      });
+      expect(self.status).toBe(403);
+
+      const added = await addStaff(a);
+      const other = await patchWithCsrf(b, `${USERS}/${added.body.id}`).send({
+        active: false,
+      });
+      expect(other.status).toBe(404);
+      expect(
+        (await patchWithCsrf(b, `${USERS}/nope`).send({ active: false }))
+          .status,
+      ).toBe(404);
     });
   });
 });

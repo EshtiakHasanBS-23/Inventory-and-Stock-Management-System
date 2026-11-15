@@ -9,8 +9,26 @@ export const NOTE_MAX_LENGTH = 200;
 /** Upper bound on one movement or a minimum stock level (input size cap). */
 export const QUANTITY_MAX = 1_000_000;
 
+/** Upper bound on one unit's cost, in taka. */
+export const UNIT_COST_MAX = 10_000_000;
+
 const quantity = z.number().int().min(1).max(QUANTITY_MAX);
 const minStock = z.number().int().min(0).max(QUANTITY_MAX);
+/** Taka with at most two decimals (whole poisha). */
+const unitCost = z
+  .number()
+  .min(0)
+  .max(UNIT_COST_MAX)
+  .refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-6);
+
+/** Money is stored in poisha (1 taka = 100 poisha) so sums stay exact. */
+export function toPoisha(taka: number): number {
+  return Math.round(taka * 100);
+}
+
+export function fromPoisha(poisha: number): number {
+  return poisha / 100;
+}
 
 /** `POST /api/v1/products` body. */
 export const CreateProductSchema = z.strictObject({
@@ -18,6 +36,7 @@ export const CreateProductSchema = z.strictObject({
   name: z.string().trim().min(1).max(PRODUCT_NAME_MAX_LENGTH),
   unit: z.string().trim().min(1).max(UNIT_MAX_LENGTH),
   minStock,
+  unitCost,
 });
 
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;
@@ -34,6 +53,7 @@ export const PRODUCT_FIELD_MESSAGES = {
   name: "Enter a product name.",
   unit: "Enter a unit, such as pcs or ctn.",
   minStock: "Enter a whole number, 0 or more.",
+  unitCost: "Enter a cost in taka, 0 or more, with up to 2 decimals.",
 } as const;
 
 export type StockStatus = "ok" | "low" | "out";
@@ -45,6 +65,10 @@ export interface Product {
   unit: string;
   minStock: number;
   onHand: number;
+  /** Cost of one unit, in taka. */
+  unitCost: number;
+  /** onHand × unitCost, in taka. */
+  stockValue: number;
   status: StockStatus;
 }
 
@@ -64,13 +88,18 @@ export const REASONS = {
   out: ["sale", "damage", "adjustment"],
 } as const satisfies Record<Direction, readonly string[]>;
 
+/** `count` is only written by a stock count, never chosen by hand. */
 export const ALL_REASONS = [
   "purchase",
   "return",
   "sale",
   "damage",
   "adjustment",
+  "count",
 ] as const;
+
+/** Stock leaving for these reasons is a loss, shown in taka. */
+export const LOSS_REASONS: readonly Reason[] = ["damage", "count"];
 export type Reason = (typeof ALL_REASONS)[number];
 
 /** `POST /api/v1/stock/movements` body. */
@@ -108,14 +137,45 @@ export interface Movement {
   reason: Reason;
   quantity: number;
   balanceAfter: number;
+  /** quantity × the unit cost at the time, in taka. */
+  value: number;
   note: string | null;
   userName: string;
   createdAt: string;
 }
 
+/** `POST /api/v1/stock/counts` body: the quantity physically counted. */
+export const RecordCountSchema = z.strictObject({
+  productId: z.uuid(),
+  countedQuantity: z.number().int().min(0).max(QUANTITY_MAX),
+  note: z.string().trim().max(NOTE_MAX_LENGTH).optional(),
+});
+
+export type RecordCountInput = z.infer<typeof RecordCountSchema>;
+
+export const COUNT_FIELD_MESSAGES = {
+  productId: "Choose a product.",
+  countedQuantity: "Enter the counted quantity, 0 or more.",
+  note: "Keep the note under 200 characters.",
+} as const;
+
+export interface CountResult {
+  /** The quantity the system had before the count. */
+  previous: number;
+  counted: number;
+  /** counted − previous: below zero means stock is missing. */
+  difference: number;
+  /** The count adjustment, or null when the count matched. */
+  movement: Movement | null;
+}
+
 export interface Dashboard {
   productCount: number;
   totalUnits: number;
+  /** Sum of every product's stock value, in taka. */
+  stockValue: number;
+  /** Damage and count shortfalls in the last 30 days, in taka. */
+  lossValue30d: number;
   lowStockCount: number;
   outOfStockCount: number;
   lowStock: Product[];

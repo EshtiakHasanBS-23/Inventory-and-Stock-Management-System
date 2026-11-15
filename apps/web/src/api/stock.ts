@@ -3,7 +3,11 @@
  * successful change refreshes all three, so each page shows current stock.
  */
 import type {
+  CountResult,
   CreateProductInput,
+  CreateStaffInput,
+  RecordCountInput,
+  StaffMember,
   Dashboard,
   Movement,
   Product,
@@ -78,6 +82,46 @@ export function useRecordMovement() {
     mutationFn: (body: RecordMovementInput) =>
       client.post<Movement>("/stock/movements", body),
     onSuccess: invalidate,
+  });
+}
+
+export function useRecordCount() {
+  const { client } = useSession();
+  const invalidate = useInvalidateStock();
+  return useMutation({
+    mutationFn: (body: RecordCountInput) =>
+      client.post<CountResult>("/stock/counts", body),
+    onSuccess: invalidate,
+  });
+}
+
+const STAFF_KEY = ["staff"] as const;
+
+export function useStaff() {
+  const { client } = useSession();
+  return useQuery({
+    queryKey: STAFF_KEY,
+    queryFn: () => client.get<StaffMember[]>("/users"),
+  });
+}
+
+export function useAddStaff() {
+  const { client } = useSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateStaffInput) =>
+      client.post<StaffMember>("/users", body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: STAFF_KEY }),
+  });
+}
+
+export function useSetStaffActive() {
+  const { client } = useSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; active: boolean }) =>
+      client.patch<StaffMember>(`/users/${input.id}`, { active: input.active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: STAFF_KEY }),
   });
 }
 

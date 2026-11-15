@@ -2,6 +2,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useDashboard } from "../../api/stock";
+import { formatTaka } from "../../format";
 import { usePageTitle } from "../usePageTitle";
 import { MovementTable } from "./MovementTable";
 import { StockBadge } from "./StockBadge";
@@ -19,6 +20,14 @@ export function DashboardPage() {
       {data ? (
         <>
           <dl className="stat-grid">
+            <div className="stat">
+              <dt>{t("dashboard.value")}</dt>
+              <dd data-testid="stat-value">{formatTaka(data.stockValue)}</dd>
+            </div>
+            <div className="stat stat--out">
+              <dt>{t("dashboard.losses")}</dt>
+              <dd data-testid="stat-losses">{formatTaka(data.lossValue30d)}</dd>
+            </div>
             <div className="stat">
               <dt>{t("dashboard.products")}</dt>
               <dd data-testid="stat-products">{data.productCount}</dd>

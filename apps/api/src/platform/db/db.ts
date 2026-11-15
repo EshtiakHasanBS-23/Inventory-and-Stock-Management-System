@@ -38,6 +38,8 @@ export interface ProductsTable {
   unit: string;
   min_stock: number;
   on_hand: Generated<number>;
+  /** Poisha. */
+  unit_cost: Generated<number>;
   created_at: Generated<Date>;
 }
 
@@ -46,9 +48,11 @@ export interface StockMovementsTable {
   business_id: string;
   product_id: string;
   direction: "in" | "out";
-  reason: "purchase" | "return" | "sale" | "damage" | "adjustment";
+  reason: "purchase" | "return" | "sale" | "damage" | "adjustment" | "count";
   quantity: number;
   balance_after: number;
+  /** Poisha, the product's unit cost when the movement happened. */
+  unit_cost: Generated<number>;
   note: string | null;
   user_id: string;
   created_at: Generated<Date>;

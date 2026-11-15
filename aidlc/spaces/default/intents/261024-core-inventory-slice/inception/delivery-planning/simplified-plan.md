@@ -38,3 +38,11 @@ The remaining per-unit design stages (functional design, NFR requirements, NFR
 design, infrastructure design) are skipped: the skeleton already fixed the
 stack, structure and conventions. Each slice is built and checked with
 `npm test`; `npm run verify` stays the final check.
+
+## Round 2 additions (2026-11-16)
+
+| Item | Delivers |
+|---|---|
+| Stock value | Unit cost per product (stored in poisha), stock value per product and in total, the value of each movement, and losses (damage and count shortfalls) for the last 30 days on the dashboard. Each movement keeps the unit cost at its time, so a later price change does not alter past losses. |
+| Stock count | Enter the physically counted quantity; the product row is locked and the difference is saved as a `count` movement (in or out). A matching count saves nothing. `count` cannot be chosen by hand. |
+| Staff users | The Owner adds staff (manager, warehouse worker, sales rep, supervisor, accountant) with a phone and password, and deactivates or reactivates them. A deactivated person cannot sign in and their open session ends. The Owner cannot be deactivated. |

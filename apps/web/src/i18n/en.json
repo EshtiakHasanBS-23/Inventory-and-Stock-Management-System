@@ -27,7 +27,9 @@
     "dashboard": "Dashboard",
     "products": "Products",
     "stock": "Stock in / out",
-    "history": "History"
+    "history": "History",
+    "count": "Stock count",
+    "staff": "Staff"
   },
   "password": {
     "show": "Show",
@@ -85,7 +87,9 @@
     "allGood": "Every product is above its minimum stock.",
     "onHand": "{{count}} {{unit}} (min {{min}})",
     "restock": "Stock in",
-    "recent": "Recent movements"
+    "recent": "Recent movements",
+    "value": "Stock value",
+    "losses": "Losses, last 30 days"
   },
   "products": {
     "title": "Products",
@@ -107,7 +111,10 @@
     "history": "History",
     "edit": "Edit",
     "empty": "No products yet.",
-    "noMatch": "No products match this search."
+    "noMatch": "No products match this search.",
+    "unitCost": "Unit cost (৳)",
+    "unitCostHint": "What you pay for one unit.",
+    "stockValue": "Stock value"
   },
   "stock": {
     "title": "Stock in / out",
@@ -125,7 +132,8 @@
       "return": "Customer return",
       "sale": "Sale",
       "damage": "Damaged",
-      "adjustment": "Count adjustment"
+      "adjustment": "Count adjustment",
+      "count": "Stock count"
     },
     "quantity": "Quantity",
     "note": "Note (optional)",
@@ -149,6 +157,33 @@
     "reason": "Reason",
     "balance": "Balance after",
     "by": "By",
-    "empty": "No stock movements yet."
+    "empty": "No stock movements yet.",
+    "value": "Value"
+  },
+  "count": {
+    "title": "Stock count",
+    "intro": "Count what is on the shelf. Any difference from the record is saved as a stock count, with your name.",
+    "recorded": "Recorded now: {{count}} {{unit}}",
+    "counted": "Counted quantity",
+    "save": "Save count",
+    "matched": "Count matches: {{counted}} {{unit}}. Nothing changed.",
+    "missing": "Counted {{counted}}, record had {{previous}}: {{amount}} {{unit}} missing ({{value}}). Stock adjusted.",
+    "extra": "Counted {{counted}}, record had {{previous}}: {{amount}} {{unit}} extra. Stock adjusted."
+  },
+  "staff": {
+    "title": "Staff",
+    "addHeading": "Add a staff member",
+    "name": "Name",
+    "phone": "Phone number",
+    "phoneHint": "They sign in with this number.",
+    "password": "Password",
+    "role": "Role",
+    "add": "Add staff member",
+    "added": "{{name}} can now sign in.",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Deactivated",
+    "deactivate": "Deactivate {{name}}",
+    "reactivate": "Reactivate {{name}}"
   }
 }

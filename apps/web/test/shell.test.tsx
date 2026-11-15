@@ -18,7 +18,13 @@ const signedInAs = (role: Role) => ({
   [ME]: { status: 200, body: aSession(role) },
 });
 
-const NAV = ["Dashboard", "Products", "Stock in / out", "History"];
+const NAV = [
+  "Dashboard",
+  "Products",
+  "Stock in / out",
+  "Stock count",
+  "History",
+];
 
 describe("app shell and role landing (BR4.1)", () => {
   it.each([
@@ -38,7 +44,7 @@ describe("app shell and role landing (BR4.1)", () => {
   });
 
   it.each([
-    ["owner", NAV],
+    ["owner", [...NAV, "Staff"]],
     ["sales_rep", NAV],
     ["warehouse_worker", NAV],
     ["accountant", NAV],

@@ -9,6 +9,7 @@ import {
   getDashboard,
   listMovements,
   listProducts,
+  recordCount,
   recordMovement,
   updateProduct,
   type StockDeps,
@@ -70,6 +71,19 @@ export function createStockRouter(deps: StockDeps): Router {
       "stock movement recorded",
     );
     res.status(201).json(movement);
+  });
+
+  router.post("/stock/counts", async (req, res) => {
+    const result = await recordCount(deps, req.caller, req.body);
+    req.log.info(
+      {
+        event: "stock.count_recorded",
+        productId: result.movement?.productId,
+        difference: result.difference,
+      },
+      "stock count recorded",
+    );
+    res.status(201).json(result);
   });
 
   router.get("/dashboard", async (req, res) => {

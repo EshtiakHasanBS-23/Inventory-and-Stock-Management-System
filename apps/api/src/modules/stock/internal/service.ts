@@ -7,20 +7,32 @@
  * - The quantity update is conditional (`on_hand + delta >= 0`), so two
  *   requests racing for the last unit can never take stock below zero.
  * - Movements are append-only; the database refuses updates and deletes.
+ * - A stock count locks the product row, then records the difference as a
+ *   `count` movement through the same path.
+ * Money is stored in poisha and sent to the web app in taka.
  */
 import {
+  COUNT_FIELD_MESSAGES,
   CreateProductSchema,
+  fromPoisha,
+  LOSS_REASONS,
   MOVEMENT_FIELD_MESSAGES,
   PRODUCT_FIELD_MESSAGES,
+  RecordCountSchema,
   RecordMovementSchema,
   stockStatus,
+  toPoisha,
   UpdateProductSchema,
+  type CountResult,
   type Dashboard,
+  type Direction,
   type Movement,
   type Product,
+  type Reason,
 } from "@mojud/contracts";
+import { sql, type Transaction } from "kysely";
 import { z } from "zod";
-import type { Db } from "../../../platform/db/db.js";
+import type { Database, Db } from "../../../platform/db/db.js";
 import {
   AppError,
   uniqueViolationConstraint,
@@ -71,6 +83,7 @@ interface ProductRow {
   unit: string;
   min_stock: number;
   on_hand: number;
+  unit_cost: number;
 }
 
 function toProduct(row: ProductRow): Product {
@@ -81,6 +94,8 @@ function toProduct(row: ProductRow): Product {
     unit: row.unit,
     minStock: row.min_stock,
     onHand: row.on_hand,
+    unitCost: fromPoisha(row.unit_cost),
+    stockValue: fromPoisha(row.on_hand * row.unit_cost),
     status: stockStatus(row.on_hand, row.min_stock),
   };
 }
@@ -92,6 +107,7 @@ const PRODUCT_COLUMNS = [
   "unit",
   "min_stock",
   "on_hand",
+  "unit_cost",
 ] as const;
 
 /** Escapes LIKE wildcards so a search for "50%" matches the text "50%". */
@@ -136,6 +152,7 @@ export async function createProduct(
         name: input.name,
         unit: input.unit,
         min_stock: input.minStock,
+        unit_cost: toPoisha(input.unitCost),
       })
       .returning(PRODUCT_COLUMNS)
       .executeTakeFirstOrThrow();
@@ -167,6 +184,9 @@ export async function updateProduct(
       ...(input.name === undefined ? {} : { name: input.name }),
       ...(input.unit === undefined ? {} : { unit: input.unit }),
       ...(input.minStock === undefined ? {} : { min_stock: input.minStock }),
+      ...(input.unitCost === undefined
+        ? {}
+        : { unit_cost: toPoisha(input.unitCost) }),
     })
     .where("id", "=", productId)
     .where("business_id", "=", businessId)
@@ -176,6 +196,89 @@ export async function updateProduct(
   return toProduct(row);
 }
 
+interface MovementRequest {
+  productId: string;
+  direction: Direction;
+  reason: Reason;
+  quantity: number;
+  note: string | null;
+}
+
+/**
+ * Applies one movement inside the caller's transaction: the conditional
+ * quantity update, then the append-only movement row with the unit cost at
+ * this moment. Refuses stock that would go below zero.
+ */
+async function applyMovement(
+  trx: Transaction<Database>,
+  caller: Caller,
+  request: MovementRequest,
+): Promise<Movement> {
+  const delta =
+    request.direction === "in" ? request.quantity : -request.quantity;
+  const product = await trx
+    .updateTable("products")
+    .set((eb) => ({ on_hand: eb("on_hand", "+", delta) }))
+    .where("id", "=", request.productId)
+    .where("business_id", "=", caller.businessId)
+    .where((eb) => eb(eb("on_hand", "+", delta), ">=", 0))
+    .returning(["id", "sku", "name", "unit", "on_hand", "unit_cost"])
+    .executeTakeFirst();
+
+  if (!product) {
+    const existing = await trx
+      .selectFrom("products")
+      .select(["on_hand", "unit"])
+      .where("id", "=", request.productId)
+      .where("business_id", "=", caller.businessId)
+      .executeTakeFirst();
+    if (!existing) {
+      throw new AppError(
+        "VALIDATION_FAILED",
+        "productId",
+        MOVEMENT_FIELD_MESSAGES.productId,
+      );
+    }
+    throw new AppError(
+      "INSUFFICIENT_STOCK",
+      "quantity",
+      `Only ${existing.on_hand} ${existing.unit} in stock.`,
+    );
+  }
+
+  const movement = await trx
+    .insertInto("stock_movements")
+    .values({
+      business_id: caller.businessId,
+      product_id: product.id,
+      direction: request.direction,
+      reason: request.reason,
+      quantity: request.quantity,
+      balance_after: product.on_hand,
+      unit_cost: product.unit_cost,
+      note: request.note,
+      user_id: caller.userId,
+    })
+    .returning(["id", "created_at"])
+    .executeTakeFirstOrThrow();
+
+  return {
+    id: movement.id,
+    productId: product.id,
+    productName: product.name,
+    sku: product.sku,
+    unit: product.unit,
+    direction: request.direction,
+    reason: request.reason,
+    quantity: request.quantity,
+    balanceAfter: product.on_hand,
+    value: fromPoisha(request.quantity * product.unit_cost),
+    note: request.note,
+    userName: caller.name,
+    createdAt: movement.created_at.toISOString(),
+  };
+}
+
 export async function recordMovement(
   deps: StockDeps,
   caller: Caller | undefined,
@@ -183,68 +286,61 @@ export async function recordMovement(
 ): Promise<Movement> {
   const checked = requireCaller(caller, "stock.movements.record");
   const input = validate(RecordMovementSchema, body, MOVEMENT_FIELD_MESSAGES);
-  const delta = input.direction === "in" ? input.quantity : -input.quantity;
-  const note = input.note ? input.note : null;
-
-  return deps.db.transaction().execute(async (trx) => {
-    const product = await trx
-      .updateTable("products")
-      .set((eb) => ({ on_hand: eb("on_hand", "+", delta) }))
-      .where("id", "=", input.productId)
-      .where("business_id", "=", checked.businessId)
-      .where((eb) => eb(eb("on_hand", "+", delta), ">=", 0))
-      .returning(["id", "sku", "name", "unit", "on_hand"])
-      .executeTakeFirst();
-
-    if (!product) {
-      const existing = await trx
-        .selectFrom("products")
-        .select(["on_hand", "unit"])
-        .where("id", "=", input.productId)
-        .where("business_id", "=", checked.businessId)
-        .executeTakeFirst();
-      if (!existing) {
-        throw new AppError(
-          "VALIDATION_FAILED",
-          "productId",
-          MOVEMENT_FIELD_MESSAGES.productId,
-        );
-      }
-      throw new AppError(
-        "INSUFFICIENT_STOCK",
-        "quantity",
-        `Only ${existing.on_hand} ${existing.unit} in stock.`,
-      );
-    }
-
-    const movement = await trx
-      .insertInto("stock_movements")
-      .values({
-        business_id: checked.businessId,
-        product_id: product.id,
-        direction: input.direction,
-        reason: input.reason,
-        quantity: input.quantity,
-        balance_after: product.on_hand,
-        note,
-        user_id: checked.userId,
-      })
-      .returning(["id", "created_at"])
-      .executeTakeFirstOrThrow();
-
-    return {
-      id: movement.id,
-      productId: product.id,
-      productName: product.name,
-      sku: product.sku,
-      unit: product.unit,
+  return deps.db.transaction().execute((trx) =>
+    applyMovement(trx, checked, {
+      productId: input.productId,
       direction: input.direction,
       reason: input.reason,
       quantity: input.quantity,
-      balanceAfter: product.on_hand,
-      note,
-      userName: checked.name,
-      createdAt: movement.created_at.toISOString(),
+      note: input.note ? input.note : null,
+    }),
+  );
+}
+
+/**
+ * Records a physical count. The product row is locked first, so a movement
+ * saved at the same moment cannot slip between reading the quantity and
+ * writing the difference.
+ */
+export async function recordCount(
+  deps: StockDeps,
+  caller: Caller | undefined,
+  body: unknown,
+): Promise<CountResult> {
+  const checked = requireCaller(caller, "stock.counts.record");
+  const input = validate(RecordCountSchema, body, COUNT_FIELD_MESSAGES);
+  return deps.db.transaction().execute(async (trx) => {
+    const product = await trx
+      .selectFrom("products")
+      .select(["on_hand"])
+      .where("id", "=", input.productId)
+      .where("business_id", "=", checked.businessId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!product) {
+      throw new AppError(
+        "VALIDATION_FAILED",
+        "productId",
+        COUNT_FIELD_MESSAGES.productId,
+      );
+    }
+    const difference = input.countedQuantity - product.on_hand;
+    const counted = `Counted ${input.countedQuantity}, system had ${product.on_hand}.`;
+    const movement =
+      difference === 0
+        ? null
+        : await applyMovement(trx, checked, {
+            productId: input.productId,
+            direction: difference > 0 ? "in" : "out",
+            reason: "count",
+            quantity: Math.abs(difference),
+            note: input.note ? `${counted} ${input.note}` : counted,
+          });
+    return {
+      previous: product.on_hand,
+      counted: input.countedQuantity,
+      difference,
+      movement,
     };
   });
 }
@@ -268,6 +364,7 @@ async function queryMovements(
       "m.reason",
       "m.quantity",
       "m.balance_after",
+      "m.unit_cost",
       "m.note",
       "u.name as user_name",
       "m.created_at",
@@ -290,6 +387,7 @@ async function queryMovements(
     reason: row.reason,
     quantity: row.quantity,
     balanceAfter: row.balance_after,
+    value: fromPoisha(row.quantity * row.unit_cost),
     note: row.note,
     userName: row.user_name,
     createdAt: row.created_at.toISOString(),
@@ -326,12 +424,26 @@ export async function getDashboard(
     .orderBy("name")
     .execute();
   const products = rows.map(toProduct);
+  const losses = await deps.db
+    .selectFrom("stock_movements")
+    .select(["quantity", "unit_cost"])
+    .where("business_id", "=", businessId)
+    .where("direction", "=", "out")
+    .where("reason", "in", LOSS_REASONS)
+    .where("created_at", ">=", sql<Date>`now() - interval '30 days'`)
+    .execute();
   const needsAttention = products
     .filter((product) => product.status !== "ok")
     .sort((a, b) => a.onHand - b.onHand);
   return {
     productCount: products.length,
     totalUnits: products.reduce((sum, product) => sum + product.onHand, 0),
+    stockValue: fromPoisha(
+      rows.reduce((sum, row) => sum + row.on_hand * row.unit_cost, 0),
+    ),
+    lossValue30d: fromPoisha(
+      losses.reduce((sum, row) => sum + row.quantity * row.unit_cost, 0),
+    ),
     lowStockCount: products.filter((product) => product.status === "low")
       .length,
     outOfStockCount: products.filter((product) => product.status === "out")

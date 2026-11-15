@@ -15,6 +15,7 @@ import {
 import { ButtonPrimary, ButtonSecondary } from "../../components/Buttons";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
 import { InputField } from "../../components/InputField";
+import { formatTaka } from "../../format";
 import { canManageProducts } from "../../session/roles";
 import { useSession } from "../../session/SessionProvider";
 import { usePageTitle } from "../usePageTitle";
@@ -25,9 +26,21 @@ interface Draft {
   name: string;
   unit: string;
   minStock: string;
+  unitCost: string;
 }
 
-const EMPTY: Draft = { sku: "", name: "", unit: "pcs", minStock: "0" };
+const EMPTY: Draft = {
+  sku: "",
+  name: "",
+  unit: "pcs",
+  minStock: "0",
+  unitCost: "0",
+};
+
+/** A typed number, or NaN for an empty box so the server names the field. */
+function toNumber(text: string): number {
+  return text.trim() === "" ? Number.NaN : Number(text);
+}
 
 function ProductForm({
   editing,
@@ -45,6 +58,7 @@ function ProductForm({
           name: editing.name,
           unit: editing.unit,
           minStock: String(editing.minStock),
+          unitCost: String(editing.unitCost),
         }
       : EMPTY,
   );
@@ -59,9 +73,12 @@ function ProductForm({
     event.preventDefault();
     if (save.isPending) return;
     setFailure(null);
-    const minStock =
-      draft.minStock.trim() === "" ? Number.NaN : Number(draft.minStock);
-    const common = { name: draft.name, unit: draft.unit, minStock };
+    const common = {
+      name: draft.name,
+      unit: draft.unit,
+      minStock: toNumber(draft.minStock),
+      unitCost: toNumber(draft.unitCost),
+    };
     try {
       await save.mutateAsync(
         editing
@@ -132,6 +149,16 @@ function ProductForm({
           onChange={set("minStock")}
           testId="product-min-input"
         />
+        <InputField
+          id="product-cost"
+          label={t("products.unitCost")}
+          hint={t("products.unitCostHint")}
+          value={draft.unitCost}
+          inputMode="decimal"
+          error={fieldError("unitCost")}
+          onChange={set("unitCost")}
+          testId="product-cost-input"
+        />
       </div>
       <div className="form-actions">
         <ButtonPrimary testId="product-save-button" busy={save.isPending}>
@@ -199,6 +226,12 @@ export function ProductsPage() {
                 <th scope="col" className="num">
                   {t("products.minStock")}
                 </th>
+                <th scope="col" className="num">
+                  {t("products.unitCost")}
+                </th>
+                <th scope="col" className="num">
+                  {t("products.stockValue")}
+                </th>
                 <th scope="col">{t("products.status")}</th>
                 <th scope="col">
                   <span className="visually-hidden">
@@ -216,6 +249,8 @@ export function ProductsPage() {
                     {product.onHand} {product.unit}
                   </td>
                   <td className="num">{product.minStock}</td>
+                  <td className="num">{formatTaka(product.unitCost)}</td>
+                  <td className="num">{formatTaka(product.stockValue)}</td>
                   <td>
                     <StockBadge status={product.status} />
                   </td>

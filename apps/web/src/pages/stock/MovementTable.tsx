@@ -1,5 +1,6 @@
 import type { Movement } from "@mojud/contracts";
 import { useTranslation } from "react-i18next";
+import { formatTaka } from "../../format";
 
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("en-GB", {
@@ -32,6 +33,9 @@ export function MovementTable({
             <th scope="col" className="num">
               {t("history.change")}
             </th>
+            <th scope="col" className="num">
+              {t("history.value")}
+            </th>
             <th scope="col">{t("history.reason")}</th>
             <th scope="col" className="num">
               {t("history.balance")}
@@ -50,6 +54,7 @@ export function MovementTable({
                 {m.direction === "in" ? "+" : "−"}
                 {m.quantity} {m.unit}
               </td>
+              <td className="num">{formatTaka(m.value)}</td>
               <td>
                 {t(`stock.reasons.${m.reason}`)}
                 {m.note ? <span className="muted"> · {m.note}</span> : null}
