@@ -24,6 +24,7 @@ const NAV = [
   "Stock in / out",
   "Stock count",
   "History",
+  "Report",
   "My password",
 ];
 

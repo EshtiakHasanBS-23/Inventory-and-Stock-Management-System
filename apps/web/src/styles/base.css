@@ -694,3 +694,40 @@ h2 {
     max-width: none;
   }
 }
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.page-actions .button {
+  text-decoration: none;
+}
+
+.steps {
+  margin: 0 0 var(--spacing-4);
+  padding-left: var(--spacing-5);
+}
+
+.steps li {
+  margin-bottom: var(--spacing-1);
+}
+
+.field input[type="file"] {
+  min-height: auto;
+  padding: var(--spacing-2) 0;
+  border: none;
+}
+
+.data-table tfoot th,
+.data-table tfoot td {
+  font-weight: var(--typography-body-strong-weight);
+  border-top: 2px solid var(--colors-border);
+}
+
+.data-table tbody th {
+  font-weight: normal;
+  text-align: left;
+}

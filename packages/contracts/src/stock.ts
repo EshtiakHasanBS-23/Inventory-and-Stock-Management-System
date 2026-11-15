@@ -88,7 +88,10 @@ export const REASONS = {
   out: ["sale", "damage", "adjustment"],
 } as const satisfies Record<Direction, readonly string[]>;
 
-/** `count` is only written by a stock count, never chosen by hand. */
+/**
+ * `count` is only written by a stock count and `opening` only by a product
+ * import; neither can be chosen by hand.
+ */
 export const ALL_REASONS = [
   "purchase",
   "return",
@@ -96,6 +99,7 @@ export const ALL_REASONS = [
   "damage",
   "adjustment",
   "count",
+  "opening",
 ] as const;
 
 /** Stock leaving for these reasons is a loss, shown in taka. */

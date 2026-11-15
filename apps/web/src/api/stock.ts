@@ -6,6 +6,9 @@ import {
   HISTORY_PAGE_SIZE,
   type ChangePasswordInput,
   type CountResult,
+  type ImportResult,
+  type ImportRow,
+  type StockReport,
   type CreateProductInput,
   type CreateStaffInput,
   type RecordCountInput,
@@ -24,9 +27,14 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useSession } from "../session/SessionProvider";
-import { ApiError } from "./client";
+import { API_BASE, ApiError } from "./client";
 
-const STOCK_KEYS = [["products"], ["movements"], ["dashboard"]] as const;
+const STOCK_KEYS = [
+  ["products"],
+  ["movements"],
+  ["dashboard"],
+  ["report"],
+] as const;
 
 function useInvalidateStock() {
   const queryClient = useQueryClient();
@@ -67,6 +75,44 @@ export function movementsPath(filters: HistoryFilters, offset = 0): string {
   params.set("limit", String(HISTORY_PAGE_SIZE));
   if (offset > 0) params.set("offset", String(offset));
   return `/stock/movements?${params.toString()}`;
+}
+
+/** The history CSV for the same filters (the server ignores paging). */
+export function movementsExportHref(filters: HistoryFilters): string {
+  const query = movementsPath(filters).split("?")[1] ?? "";
+  const params = new URLSearchParams(query);
+  params.delete("limit");
+  const rest = params.toString();
+  return `${API_BASE}/stock/movements/export.csv${rest ? `?${rest}` : ""}`;
+}
+
+export const PRODUCTS_EXPORT_HREF = `${API_BASE}/products/export.csv`;
+
+export function reportPath(from: string, to: string): string {
+  return `/reports/stock?${new URLSearchParams({ from, to }).toString()}`;
+}
+
+export function reportExportHref(from: string, to: string): string {
+  return `${API_BASE}${reportPath(from, to).replace("/reports/stock?", "/reports/stock.csv?")}`;
+}
+
+export function useStockReport(from: string, to: string) {
+  const { client } = useSession();
+  return useQuery({
+    queryKey: ["report", from, to],
+    queryFn: () => client.get<StockReport>(reportPath(from, to)),
+    enabled: from !== "" && to !== "",
+  });
+}
+
+export function useImportProducts() {
+  const { client } = useSession();
+  const invalidate = useInvalidateStock();
+  return useMutation({
+    mutationFn: (rows: ImportRow[]) =>
+      client.post<ImportResult>("/products/import", { rows }),
+    onSuccess: invalidate,
+  });
 }
 
 /** Movement history, one page of HISTORY_PAGE_SIZE at a time ("Load more"). */

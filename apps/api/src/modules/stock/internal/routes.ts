@@ -3,9 +3,15 @@
  * sit behind authentication and the CSRF check (mounted as protected).
  */
 import { Router } from "express";
+import { sendCsv } from "../../../platform/csv.js";
 import "../../../platform/http.js";
 import {
   createProduct,
+  exportMovementsCsv,
+  exportProductsCsv,
+  exportReportCsv,
+  getStockReport,
+  importProducts,
   getDashboard,
   listMovements,
   listProducts,
@@ -24,6 +30,39 @@ export function createStockRouter(deps: StockDeps): Router {
 
   router.get("/products", async (req, res) => {
     res.json(await listProducts(deps, req.caller, queryText(req.query.q)));
+  });
+
+  router.get("/products/export.csv", async (req, res) => {
+    sendCsv(res, "products.csv", await exportProductsCsv(deps, req.caller));
+  });
+
+  router.post("/products/import", async (req, res) => {
+    const result = await importProducts(deps, req.caller, req.body);
+    req.log.info(
+      { event: "stock.products_imported", ...result },
+      "products imported",
+    );
+    res.status(201).json(result);
+  });
+
+  router.get("/stock/movements/export.csv", async (req, res) => {
+    sendCsv(
+      res,
+      "stock-history.csv",
+      await exportMovementsCsv(deps, req.caller, req.query),
+    );
+  });
+
+  router.get("/reports/stock", async (req, res) => {
+    res.json(await getStockReport(deps, req.caller, req.query));
+  });
+
+  router.get("/reports/stock.csv", async (req, res) => {
+    sendCsv(
+      res,
+      "stock-report.csv",
+      await exportReportCsv(deps, req.caller, req.query),
+    );
   });
 
   router.post("/products", async (req, res) => {

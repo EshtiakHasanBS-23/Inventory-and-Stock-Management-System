@@ -54,3 +54,11 @@ stack, structure and conventions. Each slice is built and checked with
 | Phone layout | Below 1024px the side menu becomes a bottom tab bar that scrolls sideways, the app bar drops the business name and status, and forms use the full width. Every page fits at 360px and 320px with no sideways page scroll (checked in the browser smoke test). The "works best on a wider screen" notice is removed. |
 | Passwords | Everyone changes their own password on "My password" with their current one; their other sessions end. The Owner sets a new password for a staff member on the Staff page; all of that person's sessions end. The Owner's own password is changed only on "My password". |
 | History | Filters by product, reason, person and date range (start day inclusive, end day inclusive), kept in the URL; pages of 50 with "Load more". Every role can see the list of people's names for the filter. |
+
+## Round 4 additions (2026-11-16)
+
+| Item | Delivers |
+|---|---|
+| Import from Excel | Owner or Manager uploads a CSV (template provided; loose headers, comma or semicolon, Excel-style numbers). Every row is checked in the browser first and problems are listed by spreadsheet row; the server checks again and creates all products or none. Opening quantities are saved as `opening` movements. At most 1000 rows per import. |
+| Export to Excel | CSV downloads of the product list (stock and value), the filtered history (same filters, up to 10,000 rows, dates in Dhaka time) and the report. Files carry a UTF-8 byte order mark for Bangla names, and text cells starting with = + - @ are prefixed with an apostrophe against formula injection. |
+| Report | For a date range (this month by default): per product, quantity at the start, received, sold, damaged, count difference, adjusted, and quantity at the end, with taka values at the cost of the time and a total line. Start and end quantities are worked back from the ledger. |

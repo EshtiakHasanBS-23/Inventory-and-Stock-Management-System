@@ -7,12 +7,14 @@ import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
+  PRODUCTS_EXPORT_HREF,
   toFailure,
   useProducts,
   useSaveProduct,
   type FormFailure,
 } from "../../api/stock";
 import { ButtonPrimary, ButtonSecondary } from "../../components/Buttons";
+import { DownloadLink } from "../../components/DownloadLink";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
 import { InputField } from "../../components/InputField";
 import { formatTaka } from "../../format";
@@ -186,6 +188,22 @@ export function ProductsPage() {
   return (
     <section data-testid="products-page">
       <h1>{t("products.title")}</h1>
+      <div className="page-actions">
+        {canManage ? (
+          <Link
+            className="button button--secondary"
+            to="/products/import"
+            data-testid="products-import-link"
+          >
+            {t("import.title")}
+          </Link>
+        ) : null}
+        <DownloadLink
+          href={PRODUCTS_EXPORT_HREF}
+          label={t("products.download")}
+          testId="products-download"
+        />
+      </div>
       {canManage ? (
         <ProductForm
           key={editing?.id ?? "new"}

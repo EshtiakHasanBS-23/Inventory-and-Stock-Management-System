@@ -30,6 +30,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { to: "/stock", labelKey: "nav.stock", testId: "side-nav-stock-link" },
   { to: "/count", labelKey: "nav.count", testId: "side-nav-count-link" },
   { to: "/history", labelKey: "nav.history", testId: "side-nav-history-link" },
+  { to: "/reports", labelKey: "nav.report", testId: "side-nav-report-link" },
 ];
 
 const ACCOUNT_ITEM: NavItem = {
@@ -62,6 +63,8 @@ export const ROUTE_ROLES: Readonly<Record<string, readonly Role[]>> = {
   "/history": ROLES,
   "/count": ROLES,
   "/staff": ["owner"],
+  "/reports": ROLES,
+  "/products/import": ["owner", "manager"],
   "/account": ROLES,
 };
 

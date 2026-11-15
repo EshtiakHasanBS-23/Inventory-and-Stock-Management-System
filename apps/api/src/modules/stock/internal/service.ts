@@ -13,6 +13,14 @@
  */
 import {
   COUNT_FIELD_MESSAGES,
+  IMPORT_FIELD_MESSAGES,
+  ImportProductsSchema,
+  REPORT_QUERY_FIELD_MESSAGES,
+  ReportQuerySchema,
+  type ImportColumn,
+  type ImportResult,
+  type ReportLine,
+  type StockReport,
   CreateProductSchema,
   fromPoisha,
   LOSS_REASONS,
@@ -35,6 +43,7 @@ import {
 } from "@mojud/contracts";
 import { sql, type Transaction } from "kysely";
 import { z } from "zod";
+import { dhakaDateTime, toCsv } from "../../../platform/csv.js";
 import type { Database, Db } from "../../../platform/db/db.js";
 import {
   AppError,
@@ -465,4 +474,421 @@ export async function getDashboard(
     lowStock: needsAttention.slice(0, 10),
     recentMovements: await queryMovements(deps.db, businessId, { limit: 10 }),
   };
+}
+
+/**
+ * Imports new products with their opening stock, all or nothing. Rows are
+ * numbered as in the spreadsheet (row 1 is the header), so a refusal says
+ * "Row 4: ..." for the person to fix. Opening stock is written as an
+ * `opening` movement in the same transaction as the product.
+ */
+export async function importProducts(
+  deps: StockDeps,
+  caller: Caller | undefined,
+  body: unknown,
+): Promise<ImportResult> {
+  const checked = requireManager(caller, "stock.products.import");
+  const parsed = ImportProductsSchema.safeParse(body);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const [, index, field] = issue?.path ?? [];
+    if (typeof index === "number" && typeof field === "string") {
+      const message =
+        IMPORT_FIELD_MESSAGES[field as ImportColumn] ?? "Check this row.";
+      throw new AppError(
+        "VALIDATION_FAILED",
+        "rows",
+        `Row ${index + 2}: ${message}`,
+      );
+    }
+    throw new AppError(
+      "VALIDATION_FAILED",
+      "rows",
+      "The file has no product rows, or more than 1000.",
+    );
+  }
+  const rows = parsed.data.rows;
+
+  const firstRowBySku = new Map<string, number>();
+  rows.forEach((row, index) => {
+    const earlier = firstRowBySku.get(row.sku);
+    if (earlier !== undefined) {
+      throw new AppError(
+        "VALIDATION_FAILED",
+        "rows",
+        `Row ${index + 2}: SKU ${row.sku} is also on row ${earlier + 2}.`,
+      );
+    }
+    firstRowBySku.set(row.sku, index);
+  });
+
+  return deps.db.transaction().execute(async (trx) => {
+    const existing = await trx
+      .selectFrom("products")
+      .select("sku")
+      .where("business_id", "=", checked.businessId)
+      .where("sku", "in", [...firstRowBySku.keys()])
+      .execute();
+    const taken = existing[0];
+    if (taken) {
+      const row = (firstRowBySku.get(taken.sku) ?? 0) + 2;
+      throw new AppError(
+        "VALIDATION_FAILED",
+        "rows",
+        `Row ${row}: a product with SKU ${taken.sku} already exists.`,
+      );
+    }
+
+    const created = await trx
+      .insertInto("products")
+      .values(
+        rows.map((row) => ({
+          business_id: checked.businessId,
+          sku: row.sku,
+          name: row.name,
+          unit: row.unit,
+          min_stock: row.minStock,
+          unit_cost: toPoisha(row.unitCost),
+          on_hand: row.openingStock,
+        })),
+      )
+      .returning(["id", "sku", "on_hand", "unit_cost"])
+      .execute();
+
+    const opening = created.filter((product) => product.on_hand > 0);
+    if (opening.length > 0) {
+      await trx
+        .insertInto("stock_movements")
+        .values(
+          opening.map((product) => ({
+            business_id: checked.businessId,
+            product_id: product.id,
+            direction: "in" as const,
+            reason: "opening" as const,
+            quantity: product.on_hand,
+            balance_after: product.on_hand,
+            unit_cost: product.unit_cost,
+            note: "Imported opening stock",
+            user_id: checked.userId,
+          })),
+        )
+        .execute();
+    }
+    return {
+      created: created.length,
+      openingUnits: opening.reduce((sum, p) => sum + p.on_hand, 0),
+    };
+  });
+}
+
+/** Every product with its stock and value, as CSV. */
+export async function exportProductsCsv(
+  deps: StockDeps,
+  caller: Caller | undefined,
+): Promise<string> {
+  const products = await listProducts(deps, caller);
+  return toCsv(
+    [
+      "SKU",
+      "Name",
+      "Unit",
+      "In stock",
+      "Minimum stock",
+      "Status",
+      "Unit cost (BDT)",
+      "Stock value (BDT)",
+    ],
+    products.map((p) => [
+      p.sku,
+      p.name,
+      p.unit,
+      p.onHand,
+      p.minStock,
+      p.status,
+      p.unitCost,
+      p.stockValue,
+    ]),
+  );
+}
+
+/** Most movements one history export holds. */
+const EXPORT_MAX_MOVEMENTS = 10_000;
+
+/** The filtered history (same filters as the page, no paging), as CSV. */
+export async function exportMovementsCsv(
+  deps: StockDeps,
+  caller: Caller | undefined,
+  query: Record<string, unknown>,
+): Promise<string> {
+  const { businessId } = requireCaller(caller, "stock.movements.export");
+  const { limit: _limit, offset: _offset, ...filters } = withoutEmpty(query);
+  const options = validate(
+    MovementQuerySchema,
+    filters,
+    MOVEMENT_QUERY_FIELD_MESSAGES,
+  );
+  const movements = await queryMovements(deps.db, businessId, {
+    ...options,
+    limit: EXPORT_MAX_MOVEMENTS,
+    offset: 0,
+  });
+  return toCsv(
+    [
+      "Date (Dhaka time)",
+      "SKU",
+      "Product",
+      "Direction",
+      "Reason",
+      "Quantity",
+      "Unit",
+      "Balance after",
+      "Value (BDT)",
+      "By",
+      "Note",
+    ],
+    movements.map((m) => [
+      dhakaDateTime(m.createdAt),
+      m.sku,
+      m.productName,
+      m.direction,
+      m.reason,
+      m.quantity,
+      m.unit,
+      m.balanceAfter,
+      m.value,
+      m.userName,
+      m.note,
+    ]),
+  );
+}
+
+type Totals = StockReport["totals"];
+
+const EMPTY_TOTALS: Totals = {
+  opening: 0,
+  received: 0,
+  sold: 0,
+  damaged: 0,
+  countDifference: 0,
+  adjusted: 0,
+  closing: 0,
+  receivedValue: 0,
+  soldValue: 0,
+  damagedValue: 0,
+  missingValue: 0,
+};
+
+const MONEY_KEYS = [
+  "receivedValue",
+  "soldValue",
+  "damagedValue",
+  "missingValue",
+] as const;
+
+/**
+ * What happened to each product between `from` (inclusive) and `to`
+ * (exclusive). Quantities at the start and end are worked back from today's
+ * quantity and the movements since, so they always agree with the ledger.
+ * Money is added up in poisha and converted once, so totals stay exact.
+ */
+export async function getStockReport(
+  deps: StockDeps,
+  caller: Caller | undefined,
+  query: Record<string, unknown>,
+): Promise<StockReport> {
+  const { businessId } = requireCaller(caller, "stock.report");
+  const range = validate(
+    ReportQuerySchema,
+    withoutEmpty(query),
+    REPORT_QUERY_FIELD_MESSAGES,
+  );
+  const from = new Date(range.from);
+  const to = new Date(range.to);
+  if (to.getTime() <= from.getTime()) {
+    throw new AppError(
+      "VALIDATION_FAILED",
+      "to",
+      "The end date must be on or after the start date.",
+    );
+  }
+
+  const products = await deps.db
+    .selectFrom("products")
+    .select(["id", "sku", "name", "unit", "on_hand"])
+    .where("business_id", "=", businessId)
+    .orderBy("name")
+    .orderBy("sku")
+    .execute();
+  const movements = await deps.db
+    .selectFrom("stock_movements")
+    .select([
+      "product_id",
+      "direction",
+      "reason",
+      "quantity",
+      "unit_cost",
+      "created_at",
+    ])
+    .where("business_id", "=", businessId)
+    .where("created_at", ">=", from)
+    .execute();
+
+  interface Work {
+    line: Omit<ReportLine, (typeof MONEY_KEYS)[number]>;
+    poisha: Record<(typeof MONEY_KEYS)[number], number>;
+    netSinceFrom: number;
+    netSinceTo: number;
+    moved: boolean;
+  }
+  const work = new Map<string, Work>();
+  for (const p of products) {
+    work.set(p.id, {
+      line: {
+        productId: p.id,
+        sku: p.sku,
+        name: p.name,
+        unit: p.unit,
+        opening: 0,
+        received: 0,
+        sold: 0,
+        damaged: 0,
+        countDifference: 0,
+        adjusted: 0,
+        closing: 0,
+      },
+      poisha: {
+        receivedValue: 0,
+        soldValue: 0,
+        damagedValue: 0,
+        missingValue: 0,
+      },
+      netSinceFrom: 0,
+      netSinceTo: 0,
+      moved: false,
+    });
+  }
+
+  for (const m of movements) {
+    const w = work.get(m.product_id);
+    if (!w) continue;
+    const signed = m.direction === "in" ? m.quantity : -m.quantity;
+    const money = m.quantity * m.unit_cost;
+    w.netSinceFrom += signed;
+    if (m.created_at.getTime() >= to.getTime()) {
+      w.netSinceTo += signed;
+      continue;
+    }
+    w.moved = true;
+    switch (m.reason) {
+      case "purchase":
+      case "return":
+      case "opening":
+        w.line.received += m.quantity;
+        w.poisha.receivedValue += money;
+        break;
+      case "sale":
+        w.line.sold += m.quantity;
+        w.poisha.soldValue += money;
+        break;
+      case "damage":
+        w.line.damaged += m.quantity;
+        w.poisha.damagedValue += money;
+        break;
+      case "count":
+        w.line.countDifference += signed;
+        if (m.direction === "out") w.poisha.missingValue += money;
+        break;
+      case "adjustment":
+        w.line.adjusted += signed;
+        break;
+    }
+  }
+
+  const lines: ReportLine[] = [];
+  const totals: Totals = { ...EMPTY_TOTALS };
+  const totalPoisha = {
+    receivedValue: 0,
+    soldValue: 0,
+    damagedValue: 0,
+    missingValue: 0,
+  };
+  for (const p of products) {
+    const w = work.get(p.id);
+    if (!w) continue;
+    w.line.opening = p.on_hand - w.netSinceFrom;
+    w.line.closing = p.on_hand - w.netSinceTo;
+    if (!w.moved && w.line.opening === 0 && w.line.closing === 0) continue;
+    const line: ReportLine = {
+      ...w.line,
+      receivedValue: fromPoisha(w.poisha.receivedValue),
+      soldValue: fromPoisha(w.poisha.soldValue),
+      damagedValue: fromPoisha(w.poisha.damagedValue),
+      missingValue: fromPoisha(w.poisha.missingValue),
+    };
+    lines.push(line);
+    for (const key of [
+      "opening",
+      "received",
+      "sold",
+      "damaged",
+      "countDifference",
+      "adjusted",
+      "closing",
+    ] as const) {
+      totals[key] += line[key];
+    }
+    for (const key of MONEY_KEYS) totalPoisha[key] += w.poisha[key];
+  }
+  for (const key of MONEY_KEYS) totals[key] = fromPoisha(totalPoisha[key]);
+
+  return { from: range.from, to: range.to, lines, totals };
+}
+
+/** The stock report with a total line, as CSV. */
+export async function exportReportCsv(
+  deps: StockDeps,
+  caller: Caller | undefined,
+  query: Record<string, unknown>,
+): Promise<string> {
+  const report = await getStockReport(deps, caller, query);
+  const numbers = (r: Totals) => [
+    r.opening,
+    r.received,
+    r.sold,
+    r.damaged,
+    r.countDifference,
+    r.adjusted,
+    r.closing,
+    r.receivedValue,
+    r.soldValue,
+    r.damagedValue,
+    r.missingValue,
+  ];
+  return toCsv(
+    [
+      "SKU",
+      "Product",
+      "Unit",
+      "Opening",
+      "Received",
+      "Sold",
+      "Damaged",
+      "Count difference",
+      "Adjusted",
+      "Closing",
+      "Received value (BDT)",
+      "Sold value (BDT)",
+      "Damaged value (BDT)",
+      "Missing value (BDT)",
+    ],
+    [
+      ...report.lines.map((line) => [
+        line.sku,
+        line.name,
+        line.unit,
+        ...numbers(line),
+      ]),
+      ["", "Total", "", ...numbers(report.totals)],
+    ],
+  );
 }

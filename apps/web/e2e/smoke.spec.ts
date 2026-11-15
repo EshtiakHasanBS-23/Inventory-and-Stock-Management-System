@@ -236,6 +236,53 @@ test("lets the owner add a worker, who signs in without the Staff page", async (
   await expectHeading(page, "Dashboard");
 });
 
+test("imports products from a CSV, downloads CSVs and shows them in the report", async ({
+  page,
+}) => {
+  await page.goto("/signin");
+  await page.getByTestId("signin-phone-input").fill(phone);
+  await page.getByTestId("signin-password-input").fill(password);
+  await page.getByTestId("signin-submit-button").click();
+  await expectHeading(page, "Dashboard");
+
+  await page.getByTestId("side-nav-products-link").click();
+  await page.getByTestId("products-import-link").click();
+  await expectHeading(page, "Import from Excel");
+  await page.getByTestId("import-file-input").setInputFiles({
+    name: "products.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(
+      "sku,name,unit,unit_cost,min_stock,opening_stock\r\n" +
+        'OIL-5,Soybean oil 5L,ctn,"1,200",2,15\r\n' +
+        "SALT-1,Salt 1kg,pcs,35,10,0\r\n",
+    ),
+  });
+  await expect(page.getByTestId("import-ready")).toHaveText(
+    "2 products are ready to import.",
+  );
+  await page.getByTestId("import-save-button").click();
+  await expect(page.getByTestId("import-done")).toContainText(
+    "Imported 2 products with 15 units of opening stock.",
+  );
+
+  const products = await page.request.get("/api/v1/products/export.csv");
+  expect(products.status()).toBe(200);
+  expect(products.headers()["content-type"]).toContain("text/csv");
+  expect(await products.text()).toContain(
+    "OIL-5,Soybean oil 5L,ctn,15,2,ok,1200,18000",
+  );
+  const history = await page.request.get(
+    "/api/v1/stock/movements/export.csv?reason=opening",
+  );
+  expect(await history.text()).toContain("OIL-5,Soybean oil 5L,in,opening,15");
+
+  await page.getByTestId("side-nav-report-link").click();
+  await expectHeading(page, "Report");
+  const report = page.getByTestId("report-table");
+  await expect(report).toContainText("Soybean oil 5L");
+  await expect(page.getByTestId("report-received-value")).toContainText("৳");
+});
+
 test.describe("on a 360 px phone", () => {
   test.use({ viewport: { width: 360, height: 740 } });
 
@@ -258,6 +305,7 @@ test.describe("on a 360 px phone", () => {
       ["side-nav-stock-link", "Stock in / out"],
       ["side-nav-count-link", "Stock count"],
       ["side-nav-history-link", "History"],
+      ["side-nav-report-link", "Report"],
       ["side-nav-staff-link", "Staff"],
       ["side-nav-account-link", "My password"],
       ["side-nav-dashboard-link", "Dashboard"],

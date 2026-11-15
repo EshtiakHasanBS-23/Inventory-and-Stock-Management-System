@@ -37,6 +37,12 @@ const StockPage = lazy(() =>
 const CountPage = lazy(() =>
   import("./pages/stock/CountPage").then((m) => ({ default: m.CountPage })),
 );
+const ImportPage = lazy(() =>
+  import("./pages/stock/ImportPage").then((m) => ({ default: m.ImportPage })),
+);
+const ReportPage = lazy(() =>
+  import("./pages/stock/ReportPage").then((m) => ({ default: m.ReportPage })),
+);
 const AccountPage = lazy(() =>
   import("./pages/stock/AccountPage").then((m) => ({
     default: m.AccountPage,
@@ -133,6 +139,22 @@ export function AppRoutes() {
           element={
             <RoleRoute path="/staff">
               <StaffPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/products/import"
+          element={
+            <RoleRoute path="/products/import">
+              <ImportPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <RoleRoute path="/reports">
+              <ReportPage />
             </RoleRoute>
           }
         />

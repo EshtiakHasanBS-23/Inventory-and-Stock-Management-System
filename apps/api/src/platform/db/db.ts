@@ -48,7 +48,14 @@ export interface StockMovementsTable {
   business_id: string;
   product_id: string;
   direction: "in" | "out";
-  reason: "purchase" | "return" | "sale" | "damage" | "adjustment" | "count";
+  reason:
+    | "purchase"
+    | "return"
+    | "sale"
+    | "damage"
+    | "adjustment"
+    | "count"
+    | "opening";
   quantity: number;
   balance_after: number;
   /** Poisha, the product's unit cost when the movement happened. */

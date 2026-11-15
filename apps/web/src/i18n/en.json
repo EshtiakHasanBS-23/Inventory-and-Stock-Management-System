@@ -29,7 +29,8 @@
     "history": "History",
     "count": "Stock count",
     "staff": "Staff",
-    "account": "My password"
+    "account": "My password",
+    "report": "Report"
   },
   "password": {
     "show": "Show",
@@ -114,7 +115,8 @@
     "noMatch": "No products match this search.",
     "unitCost": "Unit cost (৳)",
     "unitCostHint": "What you pay for one unit.",
-    "stockValue": "Stock value"
+    "stockValue": "Stock value",
+    "download": "Download CSV"
   },
   "stock": {
     "title": "Stock in / out",
@@ -133,7 +135,8 @@
       "sale": "Sale",
       "damage": "Damaged",
       "adjustment": "Count adjustment",
-      "count": "Stock count"
+      "count": "Stock count",
+      "opening": "Opening stock"
     },
     "quantity": "Quantity",
     "note": "Note (optional)",
@@ -164,7 +167,8 @@
     "from": "From",
     "to": "To",
     "clear": "Clear filters",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "download": "Download CSV"
   },
   "count": {
     "title": "Stock count",
@@ -204,5 +208,42 @@
     "new": "New password",
     "save": "Change password",
     "saved": "Password changed. Other phones signed in as you are signed out."
+  },
+  "import": {
+    "title": "Import from Excel",
+    "step1": "Fill in your products in Excel, using the template:",
+    "template": "Download template",
+    "step2": "Save the sheet as \"CSV UTF-8\".",
+    "step3": "Choose the file below, check the preview, then import.",
+    "file": "CSV file",
+    "problems_one": "{{file}} has {{count}} problem. Fix it in Excel and choose the file again.",
+    "problems_other": "{{file}} has {{count}} problems. Fix them in Excel and choose the file again.",
+    "rowProblem": "Row {{row}}: {{message}}",
+    "ready_one": "{{count}} product is ready to import.",
+    "ready_other": "{{count}} products are ready to import.",
+    "opening": "Opening stock",
+    "more": "…and {{count}} more.",
+    "save_one": "Import {{count}} product",
+    "save_other": "Import {{count}} products",
+    "done_one": "Imported {{count}} product with {{units}} units of opening stock.",
+    "done_other": "Imported {{count}} products with {{units}} units of opening stock.",
+    "seeProducts": "See products"
+  },
+  "report": {
+    "title": "Report",
+    "badRange": "Choose a start date on or before the end date.",
+    "received": "Received",
+    "sold": "Sold",
+    "lost": "Lost (damage and missing)",
+    "download": "Download CSV",
+    "empty": "No stock in this period.",
+    "opening": "Start",
+    "in": "In",
+    "soldQty": "Sold",
+    "damaged": "Damaged",
+    "count": "Count +/−",
+    "adjusted": "Adjusted",
+    "closing": "End",
+    "total": "Total"
   }
 }

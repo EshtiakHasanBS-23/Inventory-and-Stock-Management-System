@@ -7,12 +7,14 @@ import { ALL_REASONS } from "@mojud/contracts";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import {
+  movementsExportHref,
   useHistory,
   usePeople,
   useProducts,
   type HistoryFilters,
 } from "../../api/stock";
 import { ButtonSecondary } from "../../components/Buttons";
+import { DownloadLink } from "../../components/DownloadLink";
 import { InputField } from "../../components/InputField";
 import { SelectField } from "../../components/SelectField";
 import { dayStartIso, nextDayStartIso } from "../../format";
@@ -107,6 +109,13 @@ export function HistoryPage() {
           value={to}
           onChange={setFilter("to")}
           testId="history-to-input"
+        />
+      </div>
+      <div className="page-actions">
+        <DownloadLink
+          href={movementsExportHref(filters)}
+          label={t("history.download")}
+          testId="history-download"
         />
       </div>
       {anyFilter ? (
