@@ -127,6 +127,35 @@ export const MOVEMENT_FIELD_MESSAGES = {
   note: "Keep the note under 200 characters.",
 } as const;
 
+/** History page size: "Load more" asks for the next page with `offset`. */
+export const HISTORY_PAGE_SIZE = 50;
+
+/**
+ * `GET /api/v1/stock/movements` query. Every filter is optional; `from` is
+ * inclusive and `to` exclusive, both ISO date-times. Empty values are ignored.
+ */
+export const MovementQuerySchema = z.object({
+  productId: z.uuid().optional(),
+  userId: z.uuid().optional(),
+  reason: z.enum(ALL_REASONS).optional(),
+  from: z.iso.datetime().optional(),
+  to: z.iso.datetime().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+  offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+});
+
+export type MovementQuery = z.infer<typeof MovementQuerySchema>;
+
+export const MOVEMENT_QUERY_FIELD_MESSAGES = {
+  productId: "Choose a product from the list.",
+  userId: "Choose a person from the list.",
+  reason: "Choose a reason from the list.",
+  from: "Enter a valid start date.",
+  to: "Enter a valid end date.",
+  limit: "Ask for 1 to 200 movements.",
+  offset: "Ask for a valid page.",
+} as const;
+
 export interface Movement {
   id: string;
   productId: string;

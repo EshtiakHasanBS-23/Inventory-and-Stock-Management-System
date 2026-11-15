@@ -24,6 +24,7 @@ const NAV = [
   "Stock in / out",
   "Stock count",
   "History",
+  "My password",
 ];
 
 describe("app shell and role landing (BR4.1)", () => {
@@ -44,7 +45,7 @@ describe("app shell and role landing (BR4.1)", () => {
   });
 
   it.each([
-    ["owner", [...NAV, "Staff"]],
+    ["owner", [...NAV.slice(0, -1), "Staff", "My password"]],
     ["sales_rep", NAV],
     ["warehouse_worker", NAV],
     ["accountant", NAV],

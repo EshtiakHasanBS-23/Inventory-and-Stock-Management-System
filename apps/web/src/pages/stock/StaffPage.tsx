@@ -2,17 +2,22 @@
  * Staff (Owner only): add people with a role, and deactivate or reactivate
  * them. A deactivated person cannot sign in; their history stays.
  */
-import { STAFF_ROLES, type StaffRole } from "@mojud/contracts";
+import {
+  STAFF_ROLES,
+  type StaffMember,
+  type StaffRole,
+} from "@mojud/contracts";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   toFailure,
   useAddStaff,
+  useResetStaffPassword,
   useSetStaffActive,
   useStaff,
   type FormFailure,
 } from "../../api/stock";
-import { ButtonPrimary } from "../../components/Buttons";
+import { ButtonPrimary, ButtonSecondary } from "../../components/Buttons";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
 import { InputField } from "../../components/InputField";
 import { PasswordField } from "../../components/PasswordField";
@@ -119,12 +124,81 @@ function AddStaffForm() {
   );
 }
 
+/** The Owner sets a new password for someone who forgot theirs. */
+function ResetPasswordForm({
+  member,
+  onDone,
+}: {
+  member: StaffMember;
+  onDone: (message: string | null) => void;
+}) {
+  const { t } = useTranslation();
+  const reset = useResetStaffPassword();
+  const [newPassword, setNewPassword] = useState("");
+  const [failure, setFailure] = useState<FormFailure | null>(null);
+  const [submitCount, setSubmitCount] = useState(0);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (reset.isPending) return;
+    setFailure(null);
+    try {
+      await reset.mutateAsync({ id: member.id, newPassword });
+      onDone(t("staff.passwordReset", { name: member.name }));
+    } catch (error) {
+      setFailure(toFailure(error, t("errors.saveFailed")));
+      setSubmitCount((count) => count + 1);
+    }
+  };
+
+  return (
+    <form
+      className="panel"
+      noValidate
+      onSubmit={submit}
+      data-testid="reset-form"
+    >
+      <h2>{t("staff.resetHeading", { name: member.name })}</h2>
+      <p className="muted">{t("staff.resetIntro")}</p>
+      <FormErrorSummary
+        id="reset-error-summary"
+        testId="reset-error-summary"
+        formMessage={failure && !failure.field ? failure.message : undefined}
+        focusKey={submitCount}
+      />
+      <PasswordField
+        id="reset-password"
+        label={t("staff.newPassword")}
+        hint={t("signup.passwordHint")}
+        value={newPassword}
+        autoComplete="new-password"
+        error={failure?.field === "newPassword" ? failure.message : undefined}
+        testId="reset-password-input"
+        onChange={setNewPassword}
+      />
+      <div className="form-actions">
+        <ButtonPrimary testId="reset-save-button" busy={reset.isPending}>
+          {t("staff.setPassword")}
+        </ButtonPrimary>
+        <ButtonSecondary
+          testId="reset-cancel-button"
+          onClick={() => onDone(null)}
+        >
+          {t("common.cancel")}
+        </ButtonSecondary>
+      </div>
+    </form>
+  );
+}
+
 export function StaffPage() {
   const { t } = useTranslation();
   usePageTitle(t("staff.title"));
   const staff = useStaff();
   const setActive = useSetStaffActive();
   const [rowError, setRowError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<StaffMember | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const toggle = async (id: string, active: boolean) => {
     setRowError(null);
@@ -138,7 +212,23 @@ export function StaffPage() {
   return (
     <section data-testid="staff-page">
       <h1>{t("staff.title")}</h1>
-      <AddStaffForm />
+      {notice ? (
+        <p className="success" role="status" data-testid="staff-notice">
+          {notice}
+        </p>
+      ) : null}
+      {resetting ? (
+        <ResetPasswordForm
+          key={resetting.id}
+          member={resetting}
+          onDone={(message) => {
+            setResetting(null);
+            setNotice(message);
+          }}
+        />
+      ) : (
+        <AddStaffForm />
+      )}
       {rowError ? (
         <p className="refusal" role="alert">
           {rowError}
@@ -173,7 +263,20 @@ export function StaffPage() {
                   <td>
                     {member.active ? t("staff.active") : t("staff.inactive")}
                   </td>
-                  <td>
+                  <td className="row-actions">
+                    {member.role === "owner" ? null : (
+                      <button
+                        type="button"
+                        className="link-button"
+                        data-testid={`staff-reset-${member.phone}`}
+                        onClick={() => {
+                          setNotice(null);
+                          setResetting(member);
+                        }}
+                      >
+                        {t("staff.resetPassword", { name: member.name })}
+                      </button>
+                    )}
                     {member.role === "owner" ? null : (
                       <button
                         type="button"

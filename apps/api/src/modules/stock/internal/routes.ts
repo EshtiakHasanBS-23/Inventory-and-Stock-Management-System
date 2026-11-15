@@ -50,12 +50,7 @@ export function createStockRouter(deps: StockDeps): Router {
   });
 
   router.get("/stock/movements", async (req, res) => {
-    res.json(
-      await listMovements(deps, req.caller, {
-        productId: queryText(req.query.productId),
-        limit: queryText(req.query.limit),
-      }),
-    );
+    res.json(await listMovements(deps, req.caller, req.query));
   });
 
   router.post("/stock/movements", async (req, res) => {

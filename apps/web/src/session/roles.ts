@@ -32,6 +32,12 @@ const NAV_ITEMS: readonly NavItem[] = [
   { to: "/history", labelKey: "nav.history", testId: "side-nav-history-link" },
 ];
 
+const ACCOUNT_ITEM: NavItem = {
+  to: "/account",
+  labelKey: "nav.account",
+  testId: "side-nav-account-link",
+};
+
 const STAFF_ITEM: NavItem = {
   to: "/staff",
   labelKey: "nav.staff",
@@ -40,12 +46,12 @@ const STAFF_ITEM: NavItem = {
 
 /** Side navigation per role: the stock pages for everyone, Staff for the Owner. */
 export const ROLE_NAV: Readonly<Record<Role, readonly NavItem[]>> = {
-  owner: [...NAV_ITEMS, STAFF_ITEM],
-  manager: NAV_ITEMS,
-  sales_rep: NAV_ITEMS,
-  warehouse_worker: NAV_ITEMS,
-  supervisor: NAV_ITEMS,
-  accountant: NAV_ITEMS,
+  owner: [...NAV_ITEMS, STAFF_ITEM, ACCOUNT_ITEM],
+  manager: [...NAV_ITEMS, ACCOUNT_ITEM],
+  sales_rep: [...NAV_ITEMS, ACCOUNT_ITEM],
+  warehouse_worker: [...NAV_ITEMS, ACCOUNT_ITEM],
+  supervisor: [...NAV_ITEMS, ACCOUNT_ITEM],
+  accountant: [...NAV_ITEMS, ACCOUNT_ITEM],
 };
 
 /** Who may open each signed-in route: every role. */
@@ -56,6 +62,7 @@ export const ROUTE_ROLES: Readonly<Record<string, readonly Role[]>> = {
   "/history": ROLES,
   "/count": ROLES,
   "/staff": ["owner"],
+  "/account": ROLES,
 };
 
 /** Only these roles may create or edit products (matches the API). */

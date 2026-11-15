@@ -14,7 +14,9 @@ export function ThemeSwitch() {
   const [choice, setChoice] = useState<ThemeChoice>(getThemeChoice);
   return (
     <span className="theme-switch">
-      <label htmlFor="theme-switch">{t("theme.label")}</label>
+      <label htmlFor="theme-switch" className="theme-switch__label">
+        {t("theme.label")}
+      </label>
       <select
         id="theme-switch"
         value={choice}

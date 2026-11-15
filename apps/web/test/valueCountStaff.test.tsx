@@ -143,7 +143,10 @@ describe("stock value", () => {
 
   it("shows each movement's value in the history", async () => {
     setup("/history", {
-      "GET /api/v1/stock/movements": { status: 200, body: [aMovement()] },
+      "GET /api/v1/stock/movements?limit=50": {
+        status: 200,
+        body: [aMovement()],
+      },
     });
 
     const table = await screen.findByTestId("history-table");

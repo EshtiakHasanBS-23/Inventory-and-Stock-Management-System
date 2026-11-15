@@ -2,19 +2,27 @@
  * TanStack Query hooks for products, stock movements and the dashboard. Every
  * successful change refreshes all three, so each page shows current stock.
  */
-import type {
-  CountResult,
-  CreateProductInput,
-  CreateStaffInput,
-  RecordCountInput,
-  StaffMember,
-  Dashboard,
-  Movement,
-  Product,
-  RecordMovementInput,
-  UpdateProductInput,
+import {
+  HISTORY_PAGE_SIZE,
+  type ChangePasswordInput,
+  type CountResult,
+  type CreateProductInput,
+  type CreateStaffInput,
+  type RecordCountInput,
+  type StaffMember,
+  type Dashboard,
+  type Movement,
+  type PersonName,
+  type Product,
+  type RecordMovementInput,
+  type UpdateProductInput,
 } from "@mojud/contracts";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useSession } from "../session/SessionProvider";
 import { ApiError } from "./client";
 
@@ -39,16 +47,67 @@ export function useProducts(search = "") {
   });
 }
 
-export function useMovements(productId = "") {
+export interface HistoryFilters {
+  productId?: string;
+  reason?: string;
+  userId?: string;
+  /** ISO date-time, inclusive. */
+  from?: string;
+  /** ISO date-time, exclusive. */
+  to?: string;
+}
+
+/** Builds the movements URL with the filters in a fixed order. */
+export function movementsPath(filters: HistoryFilters, offset = 0): string {
+  const params = new URLSearchParams();
+  for (const key of ["productId", "reason", "userId", "from", "to"] as const) {
+    const value = filters[key];
+    if (value) params.set(key, value);
+  }
+  params.set("limit", String(HISTORY_PAGE_SIZE));
+  if (offset > 0) params.set("offset", String(offset));
+  return `/stock/movements?${params.toString()}`;
+}
+
+/** Movement history, one page of HISTORY_PAGE_SIZE at a time ("Load more"). */
+export function useHistory(filters: HistoryFilters) {
+  const { client } = useSession();
+  return useInfiniteQuery({
+    queryKey: ["movements", filters],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      client.get<Movement[]>(movementsPath(filters, pageParam)),
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === HISTORY_PAGE_SIZE
+        ? pages.length * HISTORY_PAGE_SIZE
+        : undefined,
+  });
+}
+
+/** Everyone in the business, for the "Person" filter. */
+export function usePeople() {
   const { client } = useSession();
   return useQuery({
-    queryKey: ["movements", productId],
-    queryFn: () =>
-      client.get<Movement[]>(
-        productId
-          ? `/stock/movements?productId=${encodeURIComponent(productId)}`
-          : "/stock/movements",
-      ),
+    queryKey: ["people"],
+    queryFn: () => client.get<PersonName[]>("/users/names"),
+  });
+}
+
+export function useChangePassword() {
+  const { client } = useSession();
+  return useMutation({
+    mutationFn: (body: ChangePasswordInput) =>
+      client.post<void>("/auth/password", body),
+  });
+}
+
+export function useResetStaffPassword() {
+  const { client } = useSession();
+  return useMutation({
+    mutationFn: (input: { id: string; newPassword: string }) =>
+      client.post<void>(`/users/${input.id}/password`, {
+        newPassword: input.newPassword,
+      }),
   });
 }
 

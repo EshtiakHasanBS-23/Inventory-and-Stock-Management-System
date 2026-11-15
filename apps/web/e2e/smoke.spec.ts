@@ -174,6 +174,11 @@ test("adds a product, moves stock in and out, refuses going below zero and shows
   await expect(history.getByRole("row")).toHaveCount(3);
   await expect(history.getByRole("row").nth(1)).toContainText("Damaged");
   await expect(history.getByRole("row").nth(1)).toContainText("Smoke Owner");
+  await page.getByTestId("history-reason-select").selectOption("purchase");
+  await expect(history.getByRole("row")).toHaveCount(2);
+  await expect(history.getByRole("row").nth(1)).toContainText("+10 bag");
+  await page.getByTestId("history-clear-filters").click();
+  await expect(history.getByRole("row")).toHaveCount(3);
 
   await page.getByTestId("side-nav-count-link").click();
   await expectHeading(page, "Stock count");
@@ -217,6 +222,54 @@ test("lets the owner add a worker, who signs in without the Staff page", async (
     "Warehouse worker",
   );
   await expect(page.getByTestId("side-nav-staff-link")).toHaveCount(0);
+
+  await page.getByTestId("side-nav-account-link").click();
+  await expectHeading(page, "My password");
+  await page.getByTestId("account-current-input").fill("worker-password");
+  await page.getByTestId("account-new-input").fill("worker-password-2");
+  await page.getByTestId("account-save-button").click();
+  await expect(page.getByTestId("account-saved")).toBeVisible();
+  await page.getByTestId("app-bar-sign-out-button").click();
+  await page.getByTestId("signin-phone-input").fill(workerPhone);
+  await page.getByTestId("signin-password-input").fill("worker-password-2");
+  await page.getByTestId("signin-submit-button").click();
+  await expectHeading(page, "Dashboard");
+});
+
+test.describe("on a 360 px phone", () => {
+  test.use({ viewport: { width: 360, height: 740 } });
+
+  test("fits every page with a bottom menu and no sideways scrolling", async ({
+    page,
+  }) => {
+    await page.goto("/signin");
+    await page.getByTestId("signin-phone-input").fill(phone);
+    await page.getByTestId("signin-password-input").fill(password);
+    await page.getByTestId("signin-submit-button").click();
+    await expectHeading(page, "Dashboard");
+
+    const nav = page.getByTestId("side-nav");
+    const box = await nav.boundingBox();
+    expect(box, "bottom menu").not.toBeNull();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeCloseTo(740, 0);
+
+    for (const [link, heading] of [
+      ["side-nav-products-link", "Products"],
+      ["side-nav-stock-link", "Stock in / out"],
+      ["side-nav-count-link", "Stock count"],
+      ["side-nav-history-link", "History"],
+      ["side-nav-staff-link", "Staff"],
+      ["side-nav-account-link", "My password"],
+      ["side-nav-dashboard-link", "Dashboard"],
+    ] as const) {
+      await page.getByTestId(link).click();
+      await expectHeading(page, heading);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow, `sideways scroll on ${heading}`).toBeLessThanOrEqual(0);
+    }
+  });
 });
 
 test("signs in with the keyboard only, using the skip link, with visible focus", async ({

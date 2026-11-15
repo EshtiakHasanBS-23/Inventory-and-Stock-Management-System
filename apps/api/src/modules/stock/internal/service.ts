@@ -17,6 +17,8 @@ import {
   fromPoisha,
   LOSS_REASONS,
   MOVEMENT_FIELD_MESSAGES,
+  MOVEMENT_QUERY_FIELD_MESSAGES,
+  MovementQuerySchema,
   PRODUCT_FIELD_MESSAGES,
   RecordCountSchema,
   RecordMovementSchema,
@@ -27,6 +29,7 @@ import {
   type Dashboard,
   type Direction,
   type Movement,
+  type MovementQuery,
   type Product,
   type Reason,
 } from "@mojud/contracts";
@@ -50,7 +53,6 @@ const MANAGE_PRODUCTS_ROLES: ReadonlySet<string> = new Set([
 ]);
 
 const IdSchema = z.uuid();
-const MOVEMENT_LIMIT_MAX = 200;
 
 function requireCaller(caller: Caller | undefined, action: string): Caller {
   authorize(caller, action);
@@ -348,7 +350,7 @@ export async function recordCount(
 async function queryMovements(
   db: Db,
   businessId: string,
-  options: { productId?: string; limit: number },
+  options: Partial<MovementQuery> & { limit: number },
 ): Promise<Movement[]> {
   let query = db
     .selectFrom("stock_movements as m")
@@ -372,10 +374,17 @@ async function queryMovements(
     .where("m.business_id", "=", businessId);
   if (options.productId)
     query = query.where("m.product_id", "=", options.productId);
+  if (options.userId) query = query.where("m.user_id", "=", options.userId);
+  if (options.reason) query = query.where("m.reason", "=", options.reason);
+  if (options.from)
+    query = query.where("m.created_at", ">=", new Date(options.from));
+  if (options.to)
+    query = query.where("m.created_at", "<", new Date(options.to));
   const rows = await query
     .orderBy("m.created_at", "desc")
     .orderBy("m.id", "desc")
     .limit(options.limit)
+    .offset(options.offset ?? 0)
     .execute();
   return rows.map((row) => ({
     id: row.id,
@@ -394,22 +403,27 @@ async function queryMovements(
   }));
 }
 
+/** Drops empty query values, so `?reason=` means "any reason". */
+function withoutEmpty(query: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(query).filter(
+      ([, value]) => typeof value === "string" && value !== "",
+    ),
+  );
+}
+
 export async function listMovements(
   deps: StockDeps,
   caller: Caller | undefined,
-  options: { productId?: unknown; limit?: unknown },
+  query: Record<string, unknown>,
 ): Promise<Movement[]> {
   const { businessId } = requireCaller(caller, "stock.movements.list");
-  const productId =
-    options.productId === undefined || options.productId === ""
-      ? undefined
-      : parseId(options.productId);
-  const parsedLimit = Number(options.limit);
-  const limit =
-    Number.isInteger(parsedLimit) && parsedLimit > 0
-      ? Math.min(parsedLimit, MOVEMENT_LIMIT_MAX)
-      : 100;
-  return queryMovements(deps.db, businessId, { productId, limit });
+  const options = validate(
+    MovementQuerySchema,
+    withoutEmpty(query),
+    MOVEMENT_QUERY_FIELD_MESSAGES,
+  );
+  return queryMovements(deps.db, businessId, options);
 }
 
 export async function getDashboard(

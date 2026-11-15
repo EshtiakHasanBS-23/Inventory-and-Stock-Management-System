@@ -46,3 +46,11 @@ stack, structure and conventions. Each slice is built and checked with
 | Stock value | Unit cost per product (stored in poisha), stock value per product and in total, the value of each movement, and losses (damage and count shortfalls) for the last 30 days on the dashboard. Each movement keeps the unit cost at its time, so a later price change does not alter past losses. |
 | Stock count | Enter the physically counted quantity; the product row is locked and the difference is saved as a `count` movement (in or out). A matching count saves nothing. `count` cannot be chosen by hand. |
 | Staff users | The Owner adds staff (manager, warehouse worker, sales rep, supervisor, accountant) with a phone and password, and deactivates or reactivates them. A deactivated person cannot sign in and their open session ends. The Owner cannot be deactivated. |
+
+## Round 3 additions (2026-11-16)
+
+| Item | Delivers |
+|---|---|
+| Phone layout | Below 1024px the side menu becomes a bottom tab bar that scrolls sideways, the app bar drops the business name and status, and forms use the full width. Every page fits at 360px and 320px with no sideways page scroll (checked in the browser smoke test). The "works best on a wider screen" notice is removed. |
+| Passwords | Everyone changes their own password on "My password" with their current one; their other sessions end. The Owner sets a new password for a staff member on the Staff page; all of that person's sessions end. The Owner's own password is changed only on "My password". |
+| History | Filters by product, reason, person and date range (start day inclusive, end day inclusive), kept in the URL; pages of 50 with "Load more". Every role can see the list of people's names for the filter. |

@@ -19,7 +19,14 @@ import {
   type IdentityDeps,
   type SessionGrant,
 } from "./service.js";
-import { createStaff, listStaff, setStaffActive } from "./staff.js";
+import {
+  changeOwnPassword,
+  createStaff,
+  listPeople,
+  listStaff,
+  resetStaffPassword,
+  setStaffActive,
+} from "./staff.js";
 import type { Caller } from "./types.js";
 
 export interface IdentityRouterDeps extends IdentityDeps {
@@ -121,6 +128,15 @@ export function createIdentityRouters(
     res.status(204).end();
   });
 
+  protectedRouter.post("/password", async (req, res) => {
+    await changeOwnPassword(deps, req.authSession, req.body);
+    req.log.info(
+      { event: "auth.password_changed", userId: req.caller?.userId },
+      "password changed",
+    );
+    res.status(204).end();
+  });
+
   protectedRouter.get("/me", (req, res) => {
     const session = requireSession(req);
     authorize(req.caller, "identity.me");
@@ -131,6 +147,19 @@ export function createIdentityRouters(
 
   staffRouter.get("/", async (req, res) => {
     res.json(await listStaff(deps, req.caller));
+  });
+
+  staffRouter.get("/names", async (req, res) => {
+    res.json(await listPeople(deps, req.caller));
+  });
+
+  staffRouter.post("/:id/password", async (req, res) => {
+    await resetStaffPassword(deps, req.caller, req.params.id, req.body);
+    req.log.info(
+      { event: "identity.staff_password_reset", userId: req.params.id },
+      "staff password reset",
+    );
+    res.status(204).end();
   });
 
   staffRouter.post("/", async (req, res) => {

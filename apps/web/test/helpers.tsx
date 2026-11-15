@@ -56,7 +56,8 @@ export const EMPTY_DASHBOARD = {
 export const EMPTY_STOCK: Record<string, Handler> = {
   "GET /api/v1/dashboard": { status: 200, body: EMPTY_DASHBOARD },
   "GET /api/v1/products": { status: 200, body: [] },
-  "GET /api/v1/stock/movements": { status: 200, body: [] },
+  "GET /api/v1/stock/movements?limit=50": { status: 200, body: [] },
+  "GET /api/v1/users/names": { status: 200, body: [] },
 };
 
 export const NOT_SIGNED_IN: StubResponse = {

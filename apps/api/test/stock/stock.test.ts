@@ -362,7 +362,7 @@ describe("stock module", () => {
       expect((await b.agent.get(MOVEMENTS)).body).toEqual([]);
       expect(
         (await a.agent.get(MOVEMENTS).query({ productId: "nope" })).status,
-      ).toBe(404);
+      ).toBe(400);
     });
 
     it("summarises stock on the dashboard", async () => {

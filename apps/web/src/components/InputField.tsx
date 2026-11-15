@@ -9,7 +9,7 @@ export interface InputFieldProps {
   onBlur?: () => void;
   hint?: string;
   error?: string;
-  type?: "text" | "tel" | "password";
+  type?: "text" | "tel" | "password" | "date";
   autoComplete?: string;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   testId: string;

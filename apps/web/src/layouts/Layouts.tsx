@@ -55,7 +55,6 @@ export function PublicLayout() {
 
 /** The signed-in frame; without a caller it returns the person to Sign in. */
 export function SignedInLayout() {
-  const { t } = useTranslation();
   const { session, loading, endReason } = useSession();
   const location = useLocation();
   if (loading) return <Loading />;
@@ -70,7 +69,6 @@ export function SignedInLayout() {
     <>
       <SkipLink />
       <AppBar />
-      <p className="narrow-notice">{t("app.narrowNotice")}</p>
       <div className="app-frame">
         <SideNav role={session.role} />
         <main id="main" className="app-main" tabIndex={-1}>

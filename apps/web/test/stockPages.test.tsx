@@ -15,7 +15,7 @@ import {
 
 const ME = "GET /api/v1/auth/me";
 const PRODUCTS = "GET /api/v1/products";
-const MOVEMENTS = "GET /api/v1/stock/movements";
+const MOVEMENTS = "GET /api/v1/stock/movements?limit=50";
 
 const RICE_ID = "11111111-1111-4111-8111-111111111111";
 const OIL_ID = "22222222-2222-4222-8222-222222222222";
@@ -443,7 +443,7 @@ describe("History (S4)", () => {
           aMovement({ id: "b" }),
         ],
       },
-      [`GET /api/v1/stock/movements?productId=${OIL_ID}`]: {
+      [`GET /api/v1/stock/movements?productId=${OIL_ID}&limit=50`]: {
         status: 200,
         body: [],
       },

@@ -46,3 +46,29 @@ export interface StaffMember {
   active: boolean;
   createdAt: string;
 }
+
+/** `POST /api/v1/auth/password`: anyone changes their own password. */
+export const ChangePasswordSchema = z.strictObject({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: NewPasswordSchema,
+});
+
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+
+/** `POST /api/v1/users/:id/password`: the Owner sets a staff member's password. */
+export const ResetPasswordSchema = z.strictObject({
+  newPassword: NewPasswordSchema,
+});
+
+export const PASSWORD_FIELD_MESSAGES = {
+  currentPassword: "Enter your current password.",
+  newPassword: "At least 8 characters.",
+} as const;
+
+export const WRONG_CURRENT_PASSWORD = "Your current password is not correct.";
+
+/** `GET /api/v1/users/names`: everyone in the business, for history filters. */
+export interface PersonName {
+  id: string;
+  name: string;
+}

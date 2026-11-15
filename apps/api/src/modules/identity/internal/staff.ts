@@ -5,10 +5,15 @@
  * (resolveSession). Nobody can deactivate the Owner.
  */
 import {
+  ChangePasswordSchema,
   CreateStaffSchema,
   normalizePhone,
+  PASSWORD_FIELD_MESSAGES,
+  ResetPasswordSchema,
   SetStaffActiveSchema,
   STAFF_FIELD_MESSAGES,
+  WRONG_CURRENT_PASSWORD,
+  type PersonName,
   type StaffMember,
 } from "@mojud/contracts";
 import { z } from "zod";
@@ -18,7 +23,11 @@ import {
 } from "../../../platform/errors.js";
 import { validate } from "../../../platform/validation.js";
 import { passwordHasher } from "./password.js";
-import { authorize, type IdentityDeps } from "./service.js";
+import {
+  authorize,
+  type IdentityDeps,
+  type ResolvedSession,
+} from "./service.js";
 import type { Caller } from "./types.js";
 
 const IdSchema = z.uuid();
@@ -149,4 +158,106 @@ export async function setStaffActive(
     throw new AppError("NOT_FOUND");
   }
   return toStaff(row);
+}
+
+/** Everyone in the caller's business, any role: names for history filters. */
+export async function listPeople(
+  deps: Pick<IdentityDeps, "db">,
+  caller: Caller | undefined,
+): Promise<PersonName[]> {
+  authorize(caller, "identity.people.list");
+  const { businessId } = caller as Caller;
+  return deps.db
+    .selectFrom("users")
+    .select(["id", "name"])
+    .where("business_id", "=", businessId)
+    .orderBy("name")
+    .execute();
+}
+
+/**
+ * Anyone changes their own password after giving the current one. Their
+ * other sessions end; the session making the change stays signed in.
+ */
+export async function changeOwnPassword(
+  deps: IdentityDeps,
+  session: ResolvedSession | undefined,
+  body: unknown,
+): Promise<void> {
+  authorize(session?.caller, "identity.password.change");
+  const { caller, idHash } = session as ResolvedSession;
+  const input = validate(ChangePasswordSchema, body, PASSWORD_FIELD_MESSAGES);
+  const user = await deps.db
+    .selectFrom("users")
+    .select("password_hash")
+    .where("id", "=", caller.userId)
+    .executeTakeFirstOrThrow();
+  if (
+    !(await passwordHasher.verify(user.password_hash, input.currentPassword))
+  ) {
+    throw new AppError(
+      "VALIDATION_FAILED",
+      "currentPassword",
+      WRONG_CURRENT_PASSWORD,
+    );
+  }
+  const passwordHash = await passwordHasher.hash(
+    input.newPassword,
+    deps.argon2,
+  );
+  await deps.db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("users")
+      .set({ password_hash: passwordHash })
+      .where("id", "=", caller.userId)
+      .execute();
+    await trx
+      .deleteFrom("sessions")
+      .where("user_id", "=", caller.userId)
+      .where("id_hash", "<>", idHash)
+      .execute();
+  });
+}
+
+/**
+ * The Owner sets a new password for a staff member who forgot theirs. All of
+ * that person's sessions end. The Owner's own password is changed only
+ * through changeOwnPassword.
+ */
+export async function resetStaffPassword(
+  deps: IdentityDeps,
+  caller: Caller | undefined,
+  id: unknown,
+  body: unknown,
+): Promise<void> {
+  const { businessId } = requireOwner(caller, "identity.staff.password");
+  const parsedId = IdSchema.safeParse(id);
+  if (!parsedId.success) throw new AppError("NOT_FOUND");
+  const input = validate(ResetPasswordSchema, body, PASSWORD_FIELD_MESSAGES);
+  const member = await deps.db
+    .selectFrom("users")
+    .select(["id", "role"])
+    .where("id", "=", parsedId.data)
+    .where("business_id", "=", businessId)
+    .executeTakeFirst();
+  if (!member) throw new AppError("NOT_FOUND");
+  if (member.role === "owner") {
+    throw new AppError(
+      "FORBIDDEN",
+      undefined,
+      "Change your own password on the My password page.",
+    );
+  }
+  const passwordHash = await passwordHasher.hash(
+    input.newPassword,
+    deps.argon2,
+  );
+  await deps.db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("users")
+      .set({ password_hash: passwordHash })
+      .where("id", "=", member.id)
+      .execute();
+    await trx.deleteFrom("sessions").where("user_id", "=", member.id).execute();
+  });
 }
