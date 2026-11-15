@@ -22,6 +22,7 @@ import {
   createIdentityRouters,
   equalizeSignInFailure,
 } from "./modules/identity/index.js";
+import { createStockRouter } from "./modules/stock/index.js";
 import type { Config } from "./platform/config.js";
 import type { Db } from "./platform/db/db.js";
 import { AppError } from "./platform/errors.js";
@@ -124,6 +125,7 @@ export function createApp(deps: AppDeps): AppBundle {
   app.use(extendSession());
 
   mount(`${API_PREFIX}/auth`, identity.protectedRouter, "protected");
+  mount(API_PREFIX, createStockRouter({ db }), "protected");
 
   app.use((_req, _res, next) => {
     next(new AppError("NOT_FOUND"));

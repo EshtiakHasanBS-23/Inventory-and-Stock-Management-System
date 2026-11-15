@@ -34,6 +34,7 @@ export interface RequestOptions {
 export interface ApiClient {
   get<T>(path: string, options?: RequestOptions): Promise<T>;
   post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  patch<T>(path: string, body?: unknown): Promise<T>;
 }
 
 export interface ApiClientOptions {
@@ -112,5 +113,6 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     get: (path, requestOptions) => send("GET", path, undefined, requestOptions),
     post: (path, body, requestOptions) =>
       send("POST", path, body, requestOptions),
+    patch: (path, body) => send("PATCH", path, body),
   };
 }

@@ -41,6 +41,22 @@ export function stubFetch(
   });
 }
 
+/** Empty answers for the stock pages, so a signed-in landing makes no surprise request. */
+export const EMPTY_DASHBOARD = {
+  productCount: 0,
+  totalUnits: 0,
+  lowStockCount: 0,
+  outOfStockCount: 0,
+  lowStock: [],
+  recentMovements: [],
+};
+
+export const EMPTY_STOCK: Record<string, Handler> = {
+  "GET /api/v1/dashboard": { status: 200, body: EMPTY_DASHBOARD },
+  "GET /api/v1/products": { status: 200, body: [] },
+  "GET /api/v1/stock/movements": { status: 200, body: [] },
+};
+
 export const NOT_SIGNED_IN: StubResponse = {
   status: 401,
   body: { code: "NOT_SIGNED_IN", message: "Sign in to continue." },

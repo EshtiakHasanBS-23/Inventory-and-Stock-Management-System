@@ -65,7 +65,10 @@ describe("database schema (0001_identity)", () => {
 
     expect(first.results.every((r) => r.status === "Success")).toBe(true);
     expect(second.results).toHaveLength(0);
-    expect(applied.rows.map((row) => row.name)).toEqual(["0001_identity"]);
+    expect(applied.rows.map((row) => row.name)).toEqual([
+      "0001_identity",
+      "0002_stock",
+    ]);
   });
 
   it("rejects a duplicate phone with 23505 on users_phone_key", async () => {

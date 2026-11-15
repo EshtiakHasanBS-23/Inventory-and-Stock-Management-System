@@ -29,10 +29,37 @@ export interface SessionsTable {
   expires_at: Date;
 }
 
+/** Stock tables (migrations/0002_stock.sql). */
+export interface ProductsTable {
+  id: Generated<string>;
+  business_id: string;
+  sku: string;
+  name: string;
+  unit: string;
+  min_stock: number;
+  on_hand: Generated<number>;
+  created_at: Generated<Date>;
+}
+
+export interface StockMovementsTable {
+  id: Generated<string>;
+  business_id: string;
+  product_id: string;
+  direction: "in" | "out";
+  reason: "purchase" | "return" | "sale" | "damage" | "adjustment";
+  quantity: number;
+  balance_after: number;
+  note: string | null;
+  user_id: string;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   businesses: BusinessesTable;
   users: UsersTable;
   sessions: SessionsTable;
+  products: ProductsTable;
+  stock_movements: StockMovementsTable;
 }
 
 export type Db = Kysely<Database>;

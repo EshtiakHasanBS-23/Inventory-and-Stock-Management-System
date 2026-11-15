@@ -5,7 +5,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 /** Modules in apps/api/src/modules. Each may use only its own internal/ folder. */
-const API_MODULES = ["identity"];
+const API_MODULES = ["identity", "stock"];
 
 const MIGRATION_PROVIDER =
   "apps/api/src/platform/db/sqlFileMigrationProvider.ts";
@@ -40,6 +40,7 @@ export default tseslint.config(
       "design-process/**",
       "docs/**",
       ".claude/**",
+      ".puku-cli/**",
       ".agents/**",
       ".gemini/**",
     ],

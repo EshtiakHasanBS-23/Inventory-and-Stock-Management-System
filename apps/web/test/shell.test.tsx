@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   aSession,
   callOf,
+  EMPTY_STOCK,
   NOT_SIGNED_IN,
   renderApp,
   stubFetch,
@@ -13,17 +14,20 @@ import {
 const ME = "GET /api/v1/auth/me";
 const SIGNOUT = "POST /api/v1/auth/signout";
 const signedInAs = (role: Role) => ({
+  ...EMPTY_STOCK,
   [ME]: { status: 200, body: aSession(role) },
 });
 
+const NAV = ["Dashboard", "Products", "Stock in / out", "History"];
+
 describe("app shell and role landing (BR4.1)", () => {
   it.each([
-    ["owner", "/setup", "Setup home"],
-    ["manager", "/setup", "Setup home"],
-    ["sales_rep", "/dispatch-orders", "Dispatch orders"],
-    ["warehouse_worker", "/my-tasks", "My tasks"],
-    ["supervisor", "/later", "Your screens are coming in a later round"],
-    ["accountant", "/later", "Your screens are coming in a later round"],
+    ["owner", "/dashboard", "Dashboard"],
+    ["manager", "/dashboard", "Dashboard"],
+    ["sales_rep", "/dashboard", "Dashboard"],
+    ["warehouse_worker", "/dashboard", "Dashboard"],
+    ["supervisor", "/dashboard", "Dashboard"],
+    ["accountant", "/dashboard", "Dashboard"],
   ] as const)("lands a %s on %s", async (role, path, heading) => {
     renderApp({ path: "/", fetchFn: stubFetch(signedInAs(role)) });
 
@@ -34,10 +38,10 @@ describe("app shell and role landing (BR4.1)", () => {
   });
 
   it.each([
-    ["owner", ["Setup home"]],
-    ["sales_rep", ["Dispatch orders"]],
-    ["warehouse_worker", ["My tasks"]],
-    ["accountant", []],
+    ["owner", NAV],
+    ["sales_rep", NAV],
+    ["warehouse_worker", NAV],
+    ["accountant", NAV],
   ] as const)(
     "shows the side-nav items for a %s, marking the current one",
     async (role, items) => {
@@ -51,14 +55,14 @@ describe("app shell and role landing (BR4.1)", () => {
     },
   );
 
-  it("sends a role away from a page it may not open, to its own home", async () => {
+  it("sends an unknown page to the dashboard", async () => {
     renderApp({
       path: "/setup",
       fetchFn: stubFetch(signedInAs("warehouse_worker")),
     });
 
     expect(
-      await screen.findByRole("heading", { name: "My tasks" }),
+      await screen.findByRole("heading", { name: "Dashboard" }),
     ).toBeInTheDocument();
   });
 
@@ -81,7 +85,7 @@ describe("app shell and role landing (BR4.1)", () => {
     renderApp({ path: "/signin", fetchFn: stubFetch(signedInAs("sales_rep")) });
 
     expect(
-      await screen.findByRole("heading", { name: "Dispatch orders" }),
+      await screen.findByRole("heading", { name: "Dashboard" }),
     ).toBeInTheDocument();
   });
 });
@@ -110,7 +114,7 @@ describe("401 handling (frontend-components.md)", () => {
       [SIGNOUT]: { status: 204 },
     });
     renderApp({ path: "/", fetchFn });
-    await screen.findByRole("heading", { name: "Setup home" });
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     await user.click(screen.getByTestId("app-bar-sign-out-button"));
 
@@ -120,7 +124,10 @@ describe("401 handling (frontend-components.md)", () => {
     expect(
       screen.queryByTestId("signin-session-ended"),
     ).not.toBeInTheDocument();
-    expect(callOf(fetchFn, 1).headers["X-CSRF-Token"]).toBe(
+    const signOutIndex = fetchFn.mock.calls.findIndex(([url]) =>
+      String(url).endsWith("/auth/signout"),
+    );
+    expect(callOf(fetchFn, signOutIndex).headers["X-CSRF-Token"]).toBe(
       "csrf-token-from-server",
     );
   });
@@ -128,7 +135,7 @@ describe("401 handling (frontend-components.md)", () => {
   it('returns to Sign in with "Your session ended" when a later call gets SESSION_ENDED', async () => {
     const user = userEvent.setup();
     renderApp({
-      path: "/setup",
+      path: "/dashboard",
       fetchFn: stubFetch({
         ...signedInAs("owner"),
         [SIGNOUT]: {
@@ -140,7 +147,7 @@ describe("401 handling (frontend-components.md)", () => {
         },
       }),
     });
-    await screen.findByRole("heading", { name: "Setup home" });
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     await user.click(screen.getByTestId("app-bar-sign-out-button"));
 
@@ -152,10 +159,10 @@ describe("401 handling (frontend-components.md)", () => {
   it("returns to Sign in with no message when a later call gets NOT_SIGNED_IN", async () => {
     const user = userEvent.setup();
     renderApp({
-      path: "/setup",
+      path: "/dashboard",
       fetchFn: stubFetch({ ...signedInAs("owner"), [SIGNOUT]: NOT_SIGNED_IN }),
     });
-    await screen.findByRole("heading", { name: "Setup home" });
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     await user.click(screen.getByTestId("app-bar-sign-out-button"));
 
@@ -170,7 +177,7 @@ describe("401 handling (frontend-components.md)", () => {
   it("keeps the person signed in and says so when sign-out fails on the server", async () => {
     const user = userEvent.setup();
     renderApp({
-      path: "/setup",
+      path: "/dashboard",
       fetchFn: stubFetch({
         ...signedInAs("owner"),
         [SIGNOUT]: {
@@ -179,7 +186,7 @@ describe("401 handling (frontend-components.md)", () => {
         },
       }),
     });
-    await screen.findByRole("heading", { name: "Setup home" });
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     await user.click(screen.getByTestId("app-bar-sign-out-button"));
 
@@ -187,7 +194,7 @@ describe("401 handling (frontend-components.md)", () => {
       "Couldn't save. Try again.",
     );
     expect(
-      screen.getByRole("heading", { name: "Setup home" }),
+      screen.getByRole("heading", { name: "Dashboard" }),
     ).toBeInTheDocument();
   });
 });

@@ -15,6 +15,7 @@ design-artifacts/
 design-process/
 docs/
 .claude/
+.puku-cli/
 .agents/
 .gemini/
 idea.md

@@ -24,9 +24,10 @@
   },
   "nav": {
     "label": "Main",
-    "setup": "Setup home",
-    "dispatchOrders": "Dispatch orders",
-    "myTasks": "My tasks"
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "stock": "Stock in / out",
+    "history": "History"
   },
   "password": {
     "show": "Show",
@@ -67,27 +68,87 @@
     "saveFailed": "Couldn't save. Try again.",
     "invalidCredentials": "Sign-in details are not correct.",
     "deactivated": "This account is deactivated.",
-    "sessionEnded": "Your session ended. Sign in again."
-  },
-  "pages": {
-    "setup": {
-      "title": "Setup home",
-      "body": "Setting up {{businessName}} starts here."
-    },
-    "dispatchOrders": {
-      "title": "Dispatch orders",
-      "body": "Dispatch orders will appear here."
-    },
-    "myTasks": {
-      "title": "My tasks",
-      "body": "Your tasks will appear here."
-    },
-    "later": {
-      "title": "Your screens are coming in a later round",
-      "body": "You can sign in, but there is nothing to do here yet."
-    }
+    "sessionEnded": "Your session ended. Sign in again.",
+    "loadFailed": "Couldn't load this. Refresh the page to try again."
   },
   "common": {
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "cancel": "Cancel"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "products": "Products",
+    "units": "Units in stock",
+    "low": "Low stock",
+    "out": "Out of stock",
+    "attention": "Needs restocking",
+    "allGood": "Every product is above its minimum stock.",
+    "onHand": "{{count}} {{unit}} (min {{min}})",
+    "restock": "Stock in",
+    "recent": "Recent movements"
+  },
+  "products": {
+    "title": "Products",
+    "addHeading": "Add a product",
+    "editHeading": "Edit {{sku}}",
+    "sku": "SKU",
+    "name": "Name",
+    "unit": "Unit",
+    "unitHint": "For example pcs, ctn or bag.",
+    "minStock": "Minimum stock",
+    "minStockHint": "Marked low at or below this quantity.",
+    "add": "Add product",
+    "saveChanges": "Save changes",
+    "search": "Search by name or SKU",
+    "onHand": "In stock",
+    "status": "Status",
+    "actions": "Actions",
+    "move": "Stock in / out",
+    "history": "History",
+    "edit": "Edit",
+    "empty": "No products yet.",
+    "noMatch": "No products match this search."
+  },
+  "stock": {
+    "title": "Stock in / out",
+    "product": "Product",
+    "chooseProduct": "Choose a product",
+    "onHand": "In stock now: {{count}} {{unit}}",
+    "directionLabel": "Direction",
+    "direction": {
+      "in": "Stock in",
+      "out": "Stock out"
+    },
+    "reason": "Reason",
+    "reasons": {
+      "purchase": "Purchase",
+      "return": "Customer return",
+      "sale": "Sale",
+      "damage": "Damaged",
+      "adjustment": "Count adjustment"
+    },
+    "quantity": "Quantity",
+    "note": "Note (optional)",
+    "save": "Save",
+    "saved": "Saved. {{direction}} {{quantity}} {{unit}} of {{product}}. Now {{balance}} {{unit}} in stock.",
+    "noProducts": "There are no products yet.",
+    "addProducts": "Add products first.",
+    "status": {
+      "ok": "OK",
+      "low": "Low",
+      "out": "Out"
+    }
+  },
+  "history": {
+    "title": "History",
+    "filter": "Product",
+    "allProducts": "All products",
+    "when": "When",
+    "product": "Product",
+    "change": "Change",
+    "reason": "Reason",
+    "balance": "Balance after",
+    "by": "By",
+    "empty": "No stock movements yet."
   }
 }

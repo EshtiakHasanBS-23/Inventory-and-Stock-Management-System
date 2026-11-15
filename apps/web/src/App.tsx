@@ -21,23 +21,21 @@ const SignUpPage = lazy(() =>
 const SignInPage = lazy(() =>
   import("./pages/SignInPage").then((m) => ({ default: m.SignInPage })),
 );
-const SetupHomePlaceholder = lazy(() =>
-  import("./pages/Placeholders").then((m) => ({
-    default: m.SetupHomePlaceholder,
+const DashboardPage = lazy(() =>
+  import("./pages/stock/DashboardPage").then((m) => ({
+    default: m.DashboardPage,
   })),
 );
-const DispatchOrdersPlaceholder = lazy(() =>
-  import("./pages/Placeholders").then((m) => ({
-    default: m.DispatchOrdersPlaceholder,
+const ProductsPage = lazy(() =>
+  import("./pages/stock/ProductsPage").then((m) => ({
+    default: m.ProductsPage,
   })),
 );
-const MyTasksPlaceholder = lazy(() =>
-  import("./pages/Placeholders").then((m) => ({
-    default: m.MyTasksPlaceholder,
-  })),
+const StockPage = lazy(() =>
+  import("./pages/stock/StockPage").then((m) => ({ default: m.StockPage })),
 );
-const ComingLaterPage = lazy(() =>
-  import("./pages/Placeholders").then((m) => ({ default: m.ComingLaterPage })),
+const HistoryPage = lazy(() =>
+  import("./pages/stock/HistoryPage").then((m) => ({ default: m.HistoryPage })),
 );
 
 /** React Router v7 behaviour, opted into now so the upgrade changes nothing. */
@@ -80,34 +78,34 @@ export function AppRoutes() {
       <Route element={<SignedInLayout />}>
         <Route index element={<RoleHomeRedirect />} />
         <Route
-          path="/setup"
+          path="/dashboard"
           element={
-            <RoleRoute path="/setup">
-              <SetupHomePlaceholder />
+            <RoleRoute path="/dashboard">
+              <DashboardPage />
             </RoleRoute>
           }
         />
         <Route
-          path="/dispatch-orders"
+          path="/products"
           element={
-            <RoleRoute path="/dispatch-orders">
-              <DispatchOrdersPlaceholder />
+            <RoleRoute path="/products">
+              <ProductsPage />
             </RoleRoute>
           }
         />
         <Route
-          path="/my-tasks"
+          path="/stock"
           element={
-            <RoleRoute path="/my-tasks">
-              <MyTasksPlaceholder />
+            <RoleRoute path="/stock">
+              <StockPage />
             </RoleRoute>
           }
         />
         <Route
-          path="/later"
+          path="/history"
           element={
-            <RoleRoute path="/later">
-              <ComingLaterPage />
+            <RoleRoute path="/history">
+              <HistoryPage />
             </RoleRoute>
           }
         />

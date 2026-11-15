@@ -11,6 +11,7 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
   FORBIDDEN: "Couldn't save. Try again.",
   NOT_FOUND: "Not found",
   INTERNAL_ERROR: "Couldn't save. Try again.",
+  INSUFFICIENT_STOCK: "Not enough stock.",
 };
 
 /**

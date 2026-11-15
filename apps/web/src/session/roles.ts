@@ -1,13 +1,13 @@
-import type { Role } from "@mojud/contracts";
+import { ROLES, type Role } from "@mojud/contracts";
 
-/** Each role's home after sign-in (BR4.1). */
+/** Every role lands on the dashboard (simplified-plan.md). */
 export const ROLE_HOME: Readonly<Record<Role, string>> = {
-  owner: "/setup",
-  manager: "/setup",
-  sales_rep: "/dispatch-orders",
-  warehouse_worker: "/my-tasks",
-  supervisor: "/later",
-  accountant: "/later",
+  owner: "/dashboard",
+  manager: "/dashboard",
+  sales_rep: "/dashboard",
+  warehouse_worker: "/dashboard",
+  supervisor: "/dashboard",
+  accountant: "/dashboard",
 };
 
 export interface NavItem {
@@ -16,36 +16,40 @@ export interface NavItem {
   testId: string;
 }
 
-const SETUP: NavItem = {
-  to: "/setup",
-  labelKey: "nav.setup",
-  testId: "side-nav-setup-link",
-};
-const DISPATCH: NavItem = {
-  to: "/dispatch-orders",
-  labelKey: "nav.dispatchOrders",
-  testId: "side-nav-dispatch-orders-link",
-};
-const MY_TASKS: NavItem = {
-  to: "/my-tasks",
-  labelKey: "nav.myTasks",
-  testId: "side-nav-my-tasks-link",
-};
+const NAV_ITEMS: readonly NavItem[] = [
+  {
+    to: "/dashboard",
+    labelKey: "nav.dashboard",
+    testId: "side-nav-dashboard-link",
+  },
+  {
+    to: "/products",
+    labelKey: "nav.products",
+    testId: "side-nav-products-link",
+  },
+  { to: "/stock", labelKey: "nav.stock", testId: "side-nav-stock-link" },
+  { to: "/history", labelKey: "nav.history", testId: "side-nav-history-link" },
+];
 
-/** Side navigation items per role in this unit (frontend-components.md). */
+/** Side navigation items per role: the same four pages for everyone. */
 export const ROLE_NAV: Readonly<Record<Role, readonly NavItem[]>> = {
-  owner: [SETUP],
-  manager: [SETUP],
-  sales_rep: [DISPATCH],
-  warehouse_worker: [MY_TASKS],
-  supervisor: [],
-  accountant: [],
+  owner: NAV_ITEMS,
+  manager: NAV_ITEMS,
+  sales_rep: NAV_ITEMS,
+  warehouse_worker: NAV_ITEMS,
+  supervisor: NAV_ITEMS,
+  accountant: NAV_ITEMS,
 };
 
-/** Who may open each signed-in route (frontend-components.md Routes). */
+/** Who may open each signed-in route: every role. */
 export const ROUTE_ROLES: Readonly<Record<string, readonly Role[]>> = {
-  "/setup": ["owner", "manager"],
-  "/dispatch-orders": ["owner", "manager", "sales_rep"],
-  "/my-tasks": ["warehouse_worker"],
-  "/later": ["supervisor", "accountant"],
+  "/dashboard": ROLES,
+  "/products": ROLES,
+  "/stock": ROLES,
+  "/history": ROLES,
 };
+
+/** Only these roles may create or edit products (matches the API). */
+export function canManageProducts(role: Role): boolean {
+  return role === "owner" || role === "manager";
+}

@@ -8,6 +8,7 @@ import {
   renderApp,
   stubFetch,
   type StubResponse,
+  EMPTY_STOCK,
 } from "./helpers";
 
 const SIGNUP = "POST /api/v1/auth/signup";
@@ -122,13 +123,17 @@ describe("SignUpPage (M1, US1.1)", () => {
     expect(screen.getByLabelText("Your name")).toHaveValue("Abdul Haque");
   });
 
-  it("shows the button as busy while saving, sends one request, then opens the Setup home", async () => {
+  it("shows the button as busy while saving, sends one request, then opens the dashboard", async () => {
     const user = userEvent.setup();
     let release: (value: StubResponse) => void = () => undefined;
     const pending = new Promise<StubResponse>((resolve) => {
       release = resolve;
     });
-    const fetchFn = stubFetch({ [ME]: NOT_SIGNED_IN, [SIGNUP]: () => pending });
+    const fetchFn = stubFetch({
+      ...EMPTY_STOCK,
+      [ME]: NOT_SIGNED_IN,
+      [SIGNUP]: () => pending,
+    });
     renderApp({ path: "/signup", fetchFn });
     await screen.findByRole("heading", { name: "Create your business" });
     await fillForm(user);
@@ -140,13 +145,14 @@ describe("SignUpPage (M1, US1.1)", () => {
     release({ status: 201, body: aSession("owner") });
 
     expect(
-      await screen.findByRole("heading", { name: "Setup home" }),
+      await screen.findByRole("heading", { name: "Dashboard" }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent("/dashboard");
     expect(
-      screen.getByText("Setting up Haque Traders starts here."),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("location")).toHaveTextContent("/setup");
-    expect(fetchFn).toHaveBeenCalledTimes(2);
+      fetchFn.mock.calls.filter(([url]) =>
+        String(url).endsWith("/auth/signup"),
+      ),
+    ).toHaveLength(1);
     const signUpCall = callOf(fetchFn, 1);
     expect(signUpCall.credentials).toBe("include");
     expect(signUpCall.body).toEqual({

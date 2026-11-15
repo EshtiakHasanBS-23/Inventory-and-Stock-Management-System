@@ -7,6 +7,7 @@ import {
   NOT_SIGNED_IN,
   renderApp,
   stubFetch,
+  EMPTY_STOCK,
 } from "./helpers";
 
 const ME = "GET /api/v1/auth/me";
@@ -75,8 +76,9 @@ describe("SignInPage (M2, US1.2)", () => {
     const fetchFn = stubFetch({
       [ME]: NOT_SIGNED_IN,
       [SIGNIN]: { status: 200, body: aSession("manager") },
+      ...EMPTY_STOCK,
     });
-    renderApp({ path: "/dispatch-orders", fetchFn });
+    renderApp({ path: "/history", fetchFn });
     await screen.findByRole("heading", { name: "Sign in" });
     expect(screen.getByTestId("location")).toHaveTextContent("/signin");
     expect(
@@ -86,11 +88,9 @@ describe("SignInPage (M2, US1.2)", () => {
     await signIn(user);
 
     expect(
-      await screen.findByRole("heading", { name: "Dispatch orders" }),
+      await screen.findByRole("heading", { name: "History" }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("location")).toHaveTextContent(
-      "/dispatch-orders",
-    );
+    expect(screen.getByTestId("location")).toHaveTextContent("/history");
     expect(callOf(fetchFn, 1).body).toEqual({
       phone: "01711000001",
       password: "correct horse",

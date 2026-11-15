@@ -11,6 +11,7 @@ export const ERROR_CODES = [
   "FORBIDDEN",
   "NOT_FOUND",
   "INTERNAL_ERROR",
+  "INSUFFICIENT_STOCK",
 ] as const;
 
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
@@ -41,4 +42,5 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, number>> = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   INTERNAL_ERROR: 500,
+  INSUFFICIENT_STOCK: 409,
 };

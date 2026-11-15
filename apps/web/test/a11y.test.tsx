@@ -3,7 +3,13 @@ import { axe } from "jest-axe";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { aSession, NOT_SIGNED_IN, renderApp, stubFetch } from "./helpers";
+import {
+  aSession,
+  EMPTY_STOCK,
+  NOT_SIGNED_IN,
+  renderApp,
+  stubFetch,
+} from "./helpers";
 
 // Vitest stubs CSS imports, so the token file is read from disk. Under jsdom
 // import.meta.url is not a file URL, so the path comes from __dirname.
@@ -59,9 +65,10 @@ describe("accessibility of the skeleton screens (NFR6.1)", () => {
       await checkPage(
         "/",
         stubFetch({
+          ...EMPTY_STOCK,
           "GET /api/v1/auth/me": { status: 200, body: aSession("owner") },
         }),
-        "Setup home",
+        "Dashboard",
         theme,
       );
       expect(screen.getByRole("banner")).toBeInTheDocument();

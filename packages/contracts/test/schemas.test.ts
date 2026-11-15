@@ -112,7 +112,7 @@ describe("Caller and Error shapes (contract C1)", () => {
 
   it("maps every error code to its catalogue status and parses the Error shape", () => {
     expect(ERROR_CODES.map((code) => ERROR_STATUS[code])).toEqual([
-      400, 409, 401, 401, 401, 401, 403, 404, 500,
+      400, 409, 401, 401, 401, 401, 403, 404, 500, 409,
     ]);
     expect(
       ErrorSchema.parse({ code: "DUPLICATE", message: "m", field: "phone" }),

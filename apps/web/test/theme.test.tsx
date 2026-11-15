@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { getThemeChoice, THEME_STORAGE_KEY } from "../src/theme/theme";
 import themeInitSource from "../public/theme-init.js?raw";
-import { aSession, renderApp, stubFetch } from "./helpers";
+import { aSession, EMPTY_STOCK, renderApp, stubFetch } from "./helpers";
 
 function runThemeInit(): void {
   new Function(themeInitSource)();
@@ -13,6 +13,7 @@ async function renderSignedIn() {
   renderApp({
     path: "/",
     fetchFn: stubFetch({
+      ...EMPTY_STOCK,
       "GET /api/v1/auth/me": { status: 200, body: aSession() },
     }),
   });

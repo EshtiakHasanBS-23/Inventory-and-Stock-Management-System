@@ -1,6 +1,6 @@
 /**
  * Smoke test of the running stack (verify stage 5; cicd-pipeline.md):
- * sign-up -> home -> sign-out -> sign-in, the timing targets (NFR5.1-NFR5.4),
+ * sign-up -> dashboard -> sign-out -> sign-in, a stock journey, the timing targets (NFR5.1-NFR5.4),
  * the keyboard path (NFR6.2), the web security headers (NFR1.14) and the dark
  * theme applied on first load (BR5.1).
  */
@@ -61,7 +61,7 @@ test("serves the web app with security headers on /, an asset and /theme-init.js
   expect(themeInit.headers()["cache-control"]).toContain("no-cache");
 });
 
-test("signs up, lands on Setup home, signs out and signs in again within 2 s each", async ({
+test("signs up, lands on the dashboard, signs out and signs in again within 2 s each", async ({
   page,
 }) => {
   const firstLoad = await timed(async () => {
@@ -82,15 +82,13 @@ test("signs up, lands on Setup home, signs out and signs in again within 2 s eac
     await page.getByTestId("signup-submit-button").click();
     await response;
     signUpResponseMs = Date.now() - start;
-    await expectHeading(page, "Setup home");
+    await expectHeading(page, "Dashboard");
   });
   console.log(
     `first load ${firstLoad} ms; sign-up ${signUp} ms (API answered after ${signUpResponseMs} ms)`,
   );
   expect(signUp, "sign-up (NFR5.1)").toBeLessThanOrEqual(LIMIT_MS);
-  await expect(
-    page.getByText(`Setting up ${businessName} starts here.`),
-  ).toBeVisible();
+  await expect(page.getByTestId("app-bar-user-name")).toHaveText("Smoke Owner");
 
   await page.getByTestId("app-bar-sign-out-button").click();
   await expectHeading(page, "Sign in");
@@ -99,7 +97,7 @@ test("signs up, lands on Setup home, signs out and signs in again within 2 s eac
   await page.getByTestId("signin-password-input").fill(password);
   const signIn = await timed(async () => {
     await page.getByTestId("signin-submit-button").click();
-    await expectHeading(page, "Setup home");
+    await expectHeading(page, "Dashboard");
   });
   console.log(`sign-in ${signIn} ms`);
   expect(signIn, "sign-in (NFR5.2)").toBeLessThanOrEqual(LIMIT_MS);
@@ -120,6 +118,59 @@ test("signs up, lands on Setup home, signs out and signs in again within 2 s eac
     `/auth/me median server time: ${median} ms (budget 50 ms, fails above ${ME_MEDIAN_LIMIT_MS} ms)`,
   );
   expect(median).toBeLessThanOrEqual(ME_MEDIAN_LIMIT_MS);
+});
+
+test("adds a product, moves stock in and out, refuses going below zero and shows the history", async ({
+  page,
+}) => {
+  await page.goto("/signin");
+  await page.getByTestId("signin-phone-input").fill(phone);
+  await page.getByTestId("signin-password-input").fill(password);
+  await page.getByTestId("signin-submit-button").click();
+  await expectHeading(page, "Dashboard");
+
+  await page.getByTestId("side-nav-products-link").click();
+  await expectHeading(page, "Products");
+  await page.getByTestId("product-sku-input").fill("RICE-25");
+  await page.getByTestId("product-name-input").fill("Miniket rice");
+  await page.getByTestId("product-unit-input").fill("bag");
+  await page.getByTestId("product-min-input").fill("5");
+  await page.getByTestId("product-save-button").click();
+  const row = page.getByTestId("product-row-RICE-25");
+  await expect(row).toContainText("0 bag");
+  await expect(row).toContainText("Out");
+
+  await row.getByRole("link", { name: "Stock in / out" }).click();
+  await expectHeading(page, "Stock in / out");
+  await page.getByTestId("stock-quantity-input").fill("10");
+  await page.getByTestId("stock-save-button").click();
+  await expect(page.getByTestId("stock-saved")).toContainText(
+    "Now 10 bag in stock.",
+  );
+
+  await page.getByTestId("stock-direction-out").check();
+  await page.getByTestId("stock-quantity-input").fill("15");
+  await page.getByTestId("stock-save-button").click();
+  await expect(page.getByText("Only 10 bag in stock.")).toBeVisible();
+
+  await page.getByTestId("stock-quantity-input").fill("6");
+  await page.getByTestId("stock-reason-select").selectOption("damage");
+  await page.getByTestId("stock-save-button").click();
+  await expect(page.getByTestId("stock-saved")).toContainText(
+    "Now 4 bag in stock.",
+  );
+
+  await page.getByTestId("side-nav-dashboard-link").click();
+  await expect(page.getByTestId("stat-low")).toHaveText("1");
+  await expect(page.getByTestId("attention-list")).toContainText(
+    "Miniket rice",
+  );
+
+  await page.getByTestId("side-nav-history-link").click();
+  const history = page.getByTestId("history-table");
+  await expect(history.getByRole("row")).toHaveCount(3);
+  await expect(history.getByRole("row").nth(1)).toContainText("Damaged");
+  await expect(history.getByRole("row").nth(1)).toContainText("Smoke Owner");
 });
 
 test("signs in with the keyboard only, using the skip link, with visible focus", async ({
@@ -146,7 +197,7 @@ test("signs in with the keyboard only, using the skip link, with visible focus",
   await page.keyboard.type(password);
   await page.keyboard.press("Enter");
 
-  await expectHeading(page, "Setup home");
+  await expectHeading(page, "Dashboard");
 });
 
 test("applies a saved dark theme on first load", async ({ page }) => {
