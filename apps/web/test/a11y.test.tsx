@@ -119,6 +119,15 @@ const TEXT_PAIRS: readonly [string, string][] = [
   ["colors-primary", "colors-surface"],
   ["colors-primary", "colors-surface-alt"],
   ["colors-danger", "colors-surface"],
+  // Visual refresh: pills, tiles and the saved toast.
+  ["colors-success", "colors-success-tint"],
+  ["colors-danger", "colors-danger-tint"],
+  ["colors-on-warning-tint", "colors-warning-tint"],
+  ["colors-primary", "colors-primary-tint"],
+  ["colors-text", "colors-primary-tint"],
+  ["colors-on-success", "colors-success"],
+  ["colors-warning", "colors-surface"],
+  ["colors-text", "colors-danger-tint"],
 ];
 
 describe("token contrast (NFR6.2)", () => {

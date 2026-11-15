@@ -90,7 +90,10 @@
     "restock": "Stock in",
     "recent": "Recent movements",
     "value": "Stock value",
-    "losses": "Losses, last 30 days"
+    "losses": "Losses, last 30 days",
+    "subtitle": "Your stock and money at a glance.",
+    "unitsIn": "{{units}} units across {{products}} products",
+    "seeDamage": "See damage"
   },
   "products": {
     "title": "Products",
@@ -148,6 +151,10 @@
       "ok": "OK",
       "low": "Low",
       "out": "Out"
+    },
+    "directionHint": {
+      "in": "Purchase, return or adjustment",
+      "out": "Sale, damage or adjustment"
     }
   },
   "history": {

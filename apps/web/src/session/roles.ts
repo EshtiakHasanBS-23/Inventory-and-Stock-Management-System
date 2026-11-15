@@ -1,4 +1,5 @@
 import { ROLES, type Role } from "@mojud/contracts";
+import type { IconName } from "../components/Icons";
 
 /** Every role lands on the dashboard (simplified-plan.md). */
 export const ROLE_HOME: Readonly<Record<Role, string>> = {
@@ -14,6 +15,7 @@ export interface NavItem {
   to: string;
   labelKey: string;
   testId: string;
+  icon: IconName;
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
@@ -21,28 +23,52 @@ const NAV_ITEMS: readonly NavItem[] = [
     to: "/dashboard",
     labelKey: "nav.dashboard",
     testId: "side-nav-dashboard-link",
+    icon: "dashboard",
   },
   {
     to: "/products",
     labelKey: "nav.products",
     testId: "side-nav-products-link",
+    icon: "box",
   },
-  { to: "/stock", labelKey: "nav.stock", testId: "side-nav-stock-link" },
-  { to: "/count", labelKey: "nav.count", testId: "side-nav-count-link" },
-  { to: "/history", labelKey: "nav.history", testId: "side-nav-history-link" },
-  { to: "/reports", labelKey: "nav.report", testId: "side-nav-report-link" },
+  {
+    to: "/stock",
+    labelKey: "nav.stock",
+    testId: "side-nav-stock-link",
+    icon: "swap",
+  },
+  {
+    to: "/count",
+    labelKey: "nav.count",
+    testId: "side-nav-count-link",
+    icon: "clipboard",
+  },
+  {
+    to: "/history",
+    labelKey: "nav.history",
+    testId: "side-nav-history-link",
+    icon: "clock",
+  },
+  {
+    to: "/reports",
+    labelKey: "nav.report",
+    testId: "side-nav-report-link",
+    icon: "chart",
+  },
 ];
 
 const ACCOUNT_ITEM: NavItem = {
   to: "/account",
   labelKey: "nav.account",
   testId: "side-nav-account-link",
+  icon: "key",
 };
 
 const STAFF_ITEM: NavItem = {
   to: "/staff",
   labelKey: "nav.staff",
   testId: "side-nav-staff-link",
+  icon: "users",
 };
 
 /** Side navigation per role: the stock pages for everyone, Staff for the Owner. */

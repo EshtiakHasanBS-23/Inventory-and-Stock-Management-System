@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSession } from "../session/SessionProvider";
 import { ButtonSecondary } from "./Buttons";
+import { Icon } from "./Icons";
 import { ThemeSwitch } from "./ThemeSwitch";
 
 function CloudCheckIcon() {
@@ -41,8 +42,16 @@ export function AppBar() {
 
   return (
     <header className="app-bar">
-      <span className="app-bar__brand">{t("app.name")}</span>
+      <span className="app-bar__brand">
+        <span className="app-bar__logo">
+          <Icon name="logo" size={22} />
+        </span>
+        {t("app.name")}
+      </span>
       <span className="app-bar__business">{session.businessName}</span>
+      <span className="app-bar__avatar" aria-hidden="true">
+        {session.name.trim().charAt(0).toUpperCase()}
+      </span>
       <span className="app-bar__user">
         <span data-testid="app-bar-user-name">{session.name}</span>
         <span className="app-bar__meta" data-testid="app-bar-user-role">

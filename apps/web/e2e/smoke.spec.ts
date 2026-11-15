@@ -363,5 +363,6 @@ test("applies a saved dark theme on first load", async ({ page }) => {
   const background = await page.evaluate(
     () => getComputedStyle(document.body).backgroundColor,
   );
-  expect(background).toBe("rgb(14, 23, 22)");
+  // The app background is the dark surface-alt token (#18241f), as in the mockups.
+  expect(background).toBe("rgb(24, 36, 31)");
 });

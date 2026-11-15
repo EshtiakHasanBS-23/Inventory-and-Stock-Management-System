@@ -731,3 +731,796 @@ h2 {
   font-weight: normal;
   text-align: left;
 }
+
+/* =====================================================================
+ * Visual refresh (mockups key-owner-view and key-receiving, DESIGN.md
+ * "Calm Professional"): a tinted app background with white cards, side
+ * nav pills with icons, big figures, tinted state pills and gentle motion.
+ * Every animation sits in the no-preference motion block at the end.
+ * ===================================================================== */
+
+body {
+  background: var(--colors-surface-alt);
+}
+
+.icon {
+  flex: none;
+}
+
+/* App bar */
+.app-bar {
+  box-shadow: var(--shadow-card);
+}
+
+.app-bar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--colors-primary);
+  letter-spacing: 0.01em;
+}
+
+.app-bar__logo {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--colors-on-primary);
+  background: var(--colors-primary);
+  border-radius: var(--rounded-md);
+}
+
+.app-bar__avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-left: auto;
+  font-weight: var(--typography-title-weight);
+  color: var(--colors-primary);
+  background: var(--colors-primary-tint);
+  border-radius: var(--rounded-full);
+}
+
+.app-bar__avatar + .app-bar__user {
+  margin-left: 0;
+}
+
+/* Side nav: pills with icons, the current page on a white pill. */
+.side-nav {
+  padding: var(--spacing-3);
+  background: var(--colors-surface-alt);
+  border-right: 1px solid var(--colors-border);
+}
+
+.side-nav ul {
+  display: grid;
+  gap: var(--spacing-1);
+}
+
+.side-nav a {
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-left: none;
+  border-radius: var(--rounded-md);
+}
+
+.side-nav a:hover {
+  text-decoration: none;
+  background: var(--colors-primary-tint);
+}
+
+.side-nav a[aria-current="page"] {
+  color: var(--colors-primary);
+  background: var(--colors-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.side-nav a .icon {
+  color: var(--colors-text-muted);
+}
+
+.side-nav a[aria-current="page"] .icon {
+  color: var(--colors-primary);
+}
+
+/* Page header */
+.page-header {
+  margin-bottom: var(--spacing-5);
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.page-header__sub {
+  margin: var(--spacing-1) 0 0;
+  color: var(--colors-text-muted);
+}
+
+/* Cards */
+.card,
+.panel {
+  background: var(--colors-surface);
+  border: 1px solid var(--colors-border);
+  border-radius: var(--rounded-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card {
+  padding: var(--spacing-4);
+}
+
+.card h2 {
+  margin: 0 0 var(--spacing-3);
+}
+
+.panel {
+  padding: var(--spacing-5);
+}
+
+/* Metric tiles */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-4);
+  margin: 0 0 var(--spacing-5);
+}
+
+.tile {
+  display: grid;
+  align-content: start;
+  gap: var(--spacing-1);
+  padding: var(--spacing-4);
+  background: var(--colors-surface);
+  border: 1px solid var(--colors-border);
+  border-radius: var(--rounded-md);
+  box-shadow: var(--shadow-card);
+}
+
+.tile--hero {
+  grid-column: span 2;
+  padding: var(--spacing-5);
+}
+
+.tile dd {
+  margin: 0;
+}
+
+.tile__label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-weight: var(--typography-body-strong-weight);
+  color: var(--colors-text-muted);
+}
+
+.tile__value {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile--hero .tile__value {
+  font-size: 2.25rem;
+}
+
+.tile__value--primary {
+  color: var(--colors-primary);
+}
+
+.tile__value--danger {
+  color: var(--colors-danger);
+}
+
+.tile__value--warning {
+  color: var(--colors-warning);
+}
+
+.tile__meta {
+  color: var(--colors-text-muted);
+}
+
+.go {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  min-height: var(--spacing-target-min);
+  font-weight: var(--typography-body-strong-weight);
+  text-decoration: none;
+}
+
+.go:hover {
+  text-decoration: underline;
+}
+
+/* Dashboard columns */
+.dash-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: var(--spacing-4);
+  align-items: start;
+}
+
+.attention-list {
+  gap: 0;
+}
+
+.attention-list li {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: var(--spacing-2) 0;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--colors-border);
+  border-radius: 0;
+}
+
+.attention-list__name {
+  display: grid;
+  font-weight: var(--typography-body-strong-weight);
+}
+
+.attention-list__name .muted {
+  font-weight: normal;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: var(--spacing-4);
+  color: var(--colors-text-muted);
+  background: var(--colors-surface-alt);
+  border-radius: var(--rounded-md);
+}
+
+.empty-state .icon {
+  color: var(--colors-success);
+}
+
+/* Tables sit on a card; rows highlight on hover. */
+.table-wrap {
+  background: var(--colors-surface);
+  border: 1px solid var(--colors-border);
+  border-radius: var(--rounded-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card .table-wrap {
+  border: none;
+  box-shadow: none;
+}
+
+.data-table thead th {
+  background: var(--colors-surface-alt);
+}
+
+.data-table tbody tr:last-child td,
+.data-table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+  background: var(--colors-surface-alt);
+}
+
+/* State pills: tint, icon and text (never colour alone). */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 0.125rem var(--spacing-2);
+  white-space: nowrap;
+}
+
+.badge--ok {
+  color: var(--colors-success);
+  background: var(--colors-success-tint);
+}
+
+.badge--low {
+  color: var(--colors-on-warning-tint);
+  background: var(--colors-warning-tint);
+  outline: 2px dashed var(--colors-on-warning-tint);
+  outline-offset: -4px;
+  padding: 0.125rem 0.625rem;
+}
+
+.badge--out {
+  color: var(--colors-danger);
+  background: var(--colors-danger-tint);
+}
+
+.change {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.0625rem var(--spacing-2);
+  font-weight: var(--typography-body-strong-weight);
+  white-space: nowrap;
+  border-radius: var(--rounded-full);
+}
+
+.change--in {
+  color: var(--colors-success);
+  background: var(--colors-success-tint);
+}
+
+.change--out {
+  color: var(--colors-danger);
+  background: var(--colors-danger-tint);
+}
+
+/* Buttons */
+.button {
+  transition:
+    transform 120ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.button:hover {
+  text-decoration: none;
+}
+
+.button--primary:hover {
+  box-shadow: var(--shadow-raised);
+}
+
+.button--secondary:hover {
+  background: var(--colors-primary-tint);
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.link-button:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Saved message: a green toast with a check mark. */
+.success {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  color: var(--colors-on-success);
+  background: var(--colors-success);
+  border-left: none;
+  border-radius: var(--rounded-md);
+  box-shadow: var(--shadow-float);
+}
+
+.success::before {
+  content: "";
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.success a {
+  color: inherit;
+}
+
+.success--warning {
+  color: var(--colors-on-warning-tint);
+  background: var(--colors-warning-tint);
+}
+
+.error-summary {
+  background: var(--colors-danger-tint);
+  border-radius: var(--rounded-md);
+}
+
+/* Big Stock in / Stock out choice: real radios, drawn as tiles. */
+.choice-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.choice-tiles legend {
+  margin-bottom: var(--spacing-2);
+  font-weight: var(--typography-body-strong-weight);
+}
+
+.choice-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  min-height: 4.5rem;
+  padding: var(--spacing-3);
+  cursor: pointer;
+  background: var(--colors-surface);
+  border: 2px solid var(--colors-control-border);
+  border-radius: var(--rounded-md);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 120ms ease;
+}
+
+/* The real radio covers the whole tile, invisibly, so a tap anywhere on the
+   tile chooses it and keyboard, screen readers and tests use the radio. */
+.choice-tile input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.choice-tile:has(input:focus-visible) {
+  outline: 3px solid var(--colors-text);
+  outline-offset: 2px;
+}
+
+.choice-tile__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--colors-text-muted);
+  background: var(--colors-surface-alt);
+  border-radius: var(--rounded-full);
+}
+
+.choice-tile__text {
+  display: grid;
+  font-weight: var(--typography-title-weight);
+}
+
+.choice-tile__hint {
+  font-size: var(--typography-meta-size);
+  font-weight: normal;
+  color: var(--colors-text-muted);
+}
+
+.choice-tile--in:has(input:checked) {
+  background: var(--colors-success-tint);
+  border-color: var(--colors-success);
+}
+
+.choice-tile--in:has(input:checked) .choice-tile__icon {
+  color: var(--colors-on-success);
+  background: var(--colors-success);
+}
+
+.choice-tile--out:has(input:checked) {
+  background: var(--colors-danger-tint);
+  border-color: var(--colors-danger);
+}
+
+.choice-tile--out:has(input:checked) .choice-tile__icon {
+  color: var(--colors-on-danger);
+  background: var(--colors-danger);
+}
+
+/* Report summary tiles reuse the tile look. */
+.stat {
+  border: 1px solid var(--colors-border);
+  border-left: 4px solid var(--colors-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.stat dd {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sign in and Sign up: a card on the tinted background. */
+.auth-card {
+  padding: var(--spacing-6);
+  background: var(--colors-surface);
+  border: 1px solid var(--colors-border);
+  border-radius: var(--rounded-lg);
+  box-shadow: var(--shadow-raised);
+}
+
+/* Dashboard recent movements: a list that reads well on a phone. */
+.movement-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.movement-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) 0;
+  border-top: 1px solid var(--colors-border);
+}
+
+.movement-list__main {
+  display: grid;
+  min-width: 0;
+}
+
+.movement-list__name {
+  font-weight: var(--typography-body-strong-weight);
+}
+
+/* Row actions: bold links, underlined on hover. */
+.row-actions a,
+.row-actions .link-button {
+  font-weight: var(--typography-body-strong-weight);
+  text-decoration: none;
+}
+
+.row-actions a:hover,
+.row-actions .link-button:hover {
+  text-decoration: underline;
+}
+
+.app-bar .button--secondary {
+  white-space: nowrap;
+}
+
+/* Loading placeholders */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-4);
+}
+
+.skeleton {
+  height: 7rem;
+  background: linear-gradient(
+    90deg,
+    var(--colors-surface) 25%,
+    var(--colors-primary-tint) 50%,
+    var(--colors-surface) 75%
+  );
+  background-size: 200% 100%;
+  border: 1px solid var(--colors-border);
+  border-radius: var(--rounded-md);
+}
+
+@media (max-width: 1199px) {
+  .dash-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .app-bar {
+    flex-wrap: nowrap;
+  }
+
+  .app-bar__logo,
+  .app-bar__avatar {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .app-bar__user {
+    min-width: 0;
+  }
+
+  .app-bar__user > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-bar .button--secondary {
+    padding: 0 var(--spacing-3);
+  }
+
+  .side-nav {
+    padding: 0;
+    background: var(--colors-surface);
+    border-right: none;
+    box-shadow: 0 -2px 8px rgb(13 31 28 / 8%);
+  }
+
+  .side-nav ul {
+    display: flex;
+    gap: 0;
+  }
+
+  .side-nav a {
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 4.5rem;
+    padding: var(--spacing-2) var(--spacing-2) var(--spacing-1);
+    border-radius: 0;
+    border-top: 3px solid transparent;
+    box-shadow: none;
+  }
+
+  .side-nav a[aria-current="page"] {
+    background: var(--colors-primary-tint);
+    box-shadow: none;
+  }
+
+  .hero-grid,
+  .skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-3);
+  }
+
+  .tile {
+    padding: var(--spacing-3);
+  }
+
+  .tile--hero {
+    padding: var(--spacing-4);
+  }
+
+  .tile__value {
+    font-size: 1.375rem;
+  }
+
+  .tile--hero .tile__value {
+    font-size: 1.75rem;
+  }
+
+  .panel {
+    padding: var(--spacing-4);
+  }
+
+  .choice-tile {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .attention-list li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .attention-list .go {
+    grid-column: 1 / -1;
+    min-height: 2.5rem;
+  }
+
+  .auth-card {
+    padding: var(--spacing-5) var(--spacing-4);
+  }
+}
+
+/* Small phones: the avatar stands in for the name and role. */
+@media (max-width: 599px) {
+  .app-bar__brand {
+    font-size: var(--typography-body-size);
+  }
+
+  .app-bar__user {
+    display: none;
+  }
+
+  .app-bar__avatar {
+    margin-left: auto;
+  }
+
+  .theme-switch select {
+    max-width: 6.5rem;
+  }
+}
+
+@media (max-width: 359px) {
+  .theme-switch {
+    display: none;
+  }
+}
+
+/* Motion: only for people who have not asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(-12px) scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  .app-main > section {
+    animation: fade-up 260ms ease-out both;
+  }
+
+  .tile,
+  .card,
+  .panel,
+  .table-wrap {
+    animation: fade-up 320ms ease-out both;
+  }
+
+  .hero-grid > :nth-child(2) {
+    animation-delay: 50ms;
+  }
+
+  .hero-grid > :nth-child(3) {
+    animation-delay: 100ms;
+  }
+
+  .hero-grid > :nth-child(4) {
+    animation-delay: 150ms;
+  }
+
+  .hero-grid > :nth-child(5) {
+    animation-delay: 200ms;
+  }
+
+  .hero-grid > :nth-child(6) {
+    animation-delay: 250ms;
+  }
+
+  .dash-columns > :nth-child(2) {
+    animation-delay: 120ms;
+  }
+
+  .tile,
+  .attention-list li,
+  .side-nav a {
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+  }
+
+  .tile:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .button--primary:hover {
+    transform: translateY(-1px);
+  }
+
+  .button:active,
+  .choice-tile:active {
+    transform: scale(0.98);
+  }
+
+  .success,
+  .error-summary {
+    animation: slide-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .choice-tile:has(input:checked) .choice-tile__icon {
+    animation: slide-in 220ms ease-out;
+  }
+
+  .skeleton {
+    animation: shimmer 1.4s linear infinite;
+  }
+}

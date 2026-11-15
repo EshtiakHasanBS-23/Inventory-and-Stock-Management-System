@@ -34,6 +34,20 @@
   --colors-text-disabled: #4f625f;
   --colors-scrim: #0d1f1c80;
 
+  /* Tints for pills and highlights (mockups: key-owner-view, key-receiving) */
+  --colors-page: #e3ecea;
+  --colors-primary-tint: #d7ece8;
+  --colors-success-tint: #dff1e4;
+  --colors-warning-tint: #ffc94d;
+  --colors-on-warning-tint: #2b1d00;
+  --colors-danger-tint: #fbe3e1;
+  --colors-info-tint: #e1ecf8;
+
+  /* Elevation (DESIGN.md Elevation & Depth) */
+  --shadow-card: 0 1px 2px rgb(13 31 28 / 6%);
+  --shadow-raised: 0 6px 16px rgb(13 31 28 / 12%);
+  --shadow-float: 0 6px 16px rgb(0 0 0 / 25%);
+
   /* Typography */
   --typography-font-family:
     system-ui, "Segoe UI", Roboto, "Noto Sans Bengali", "Nirmala UI", sans-serif;
@@ -99,6 +113,16 @@
   --colors-surface-disabled: #1e2a27;
   --colors-text-disabled: #a3b5b1;
   --colors-scrim: #00000099;
+  --colors-page: #0a1210;
+  --colors-primary-tint: #12302c;
+  --colors-success-tint: #12301b;
+  --colors-warning-tint: #f4b65c;
+  --colors-on-warning-tint: #2b1d00;
+  --colors-danger-tint: #3a1714;
+  --colors-info-tint: #13243a;
+  --shadow-card: none;
+  --shadow-raised: none;
+  --shadow-float: 0 6px 16px rgb(0 0 0 / 50%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -123,5 +147,15 @@
     --colors-surface-disabled: #1e2a27;
     --colors-text-disabled: #a3b5b1;
     --colors-scrim: #00000099;
+    --colors-page: #0a1210;
+    --colors-primary-tint: #12302c;
+    --colors-success-tint: #12301b;
+    --colors-warning-tint: #f4b65c;
+    --colors-on-warning-tint: #2b1d00;
+    --colors-danger-tint: #3a1714;
+    --colors-info-tint: #13243a;
+    --shadow-card: none;
+    --shadow-raised: none;
+    --shadow-float: 0 6px 16px rgb(0 0 0 / 50%);
   }
 }

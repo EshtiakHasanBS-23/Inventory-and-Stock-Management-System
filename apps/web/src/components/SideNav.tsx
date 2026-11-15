@@ -2,6 +2,7 @@ import type { Role } from "@mojud/contracts";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { ROLE_NAV } from "../session/roles";
+import { Icon } from "./Icons";
 
 export interface SideNavProps {
   role: Role;
@@ -21,7 +22,8 @@ export function SideNav({ role }: SideNavProps) {
         {items.map((item) => (
           <li key={item.to}>
             <NavLink to={item.to} data-testid={item.testId}>
-              {t(item.labelKey)}
+              <Icon name={item.icon} />
+              <span className="side-nav__label">{t(item.labelKey)}</span>
             </NavLink>
           </li>
         ))}

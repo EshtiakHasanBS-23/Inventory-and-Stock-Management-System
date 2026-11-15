@@ -19,6 +19,7 @@ import {
 } from "../../api/stock";
 import { ButtonPrimary } from "../../components/Buttons";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
+import { Icon } from "../../components/Icons";
 import { InputField } from "../../components/InputField";
 import { SelectField } from "../../components/SelectField";
 import { usePageTitle } from "../usePageTitle";
@@ -119,10 +120,10 @@ export function StockPage() {
             {t("stock.onHand", { count: selected.onHand, unit: selected.unit })}
           </p>
         ) : null}
-        <fieldset className="segmented">
+        <fieldset className="choice-tiles">
           <legend>{t("stock.directionLabel")}</legend>
           {(["in", "out"] as const).map((value) => (
-            <label key={value}>
+            <label key={value} className={`choice-tile choice-tile--${value}`}>
               <input
                 type="radio"
                 name="stock-direction"
@@ -131,7 +132,15 @@ export function StockPage() {
                 onChange={() => changeDirection(value)}
                 data-testid={`stock-direction-${value}`}
               />
-              {t(`stock.direction.${value}`)}
+              <span className="choice-tile__icon">
+                <Icon name={value} size={26} />
+              </span>
+              <span className="choice-tile__text">
+                {t(`stock.direction.${value}`)}
+                <span className="choice-tile__hint">
+                  {t(`stock.directionHint.${value}`)}
+                </span>
+              </span>
             </label>
           ))}
         </fieldset>

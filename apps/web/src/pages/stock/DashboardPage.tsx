@@ -1,11 +1,34 @@
-/** S4 Dashboard: totals, products that need attention and recent movements. */
+/**
+ * Dashboard (Owner view, mockup key-owner-view): big metric tiles for stock
+ * value, losses and low stock, the products that need restocking as rows
+ * with a chevron, and recent movements. Figures count up when they load.
+ */
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useDashboard } from "../../api/stock";
+import { Icon } from "../../components/Icons";
 import { formatTaka } from "../../format";
+import { useCountUp } from "../../useCountUp";
 import { usePageTitle } from "../usePageTitle";
 import { MovementTable } from "./MovementTable";
 import { StockBadge } from "./StockBadge";
+
+function Figure({
+  value,
+  money = false,
+  testId,
+}: {
+  value: number;
+  money?: boolean;
+  testId: string;
+}) {
+  const shown = useCountUp(value);
+  // Whole numbers while counting; the exact figure (with poisha) at the end.
+  const rounded = shown === value ? value : Math.round(shown);
+  return (
+    <span data-testid={testId}>{money ? formatTaka(rounded) : rounded}</span>
+  );
+}
 
 export function DashboardPage() {
   const { t } = useTranslation();
@@ -14,69 +37,126 @@ export function DashboardPage() {
 
   return (
     <section data-testid="dashboard-page">
-      <h1>{t("dashboard.title")}</h1>
-      {isPending ? <p>{t("app.loading")}</p> : null}
+      <div className="page-header">
+        <h1>{t("dashboard.title")}</h1>
+        <p className="page-header__sub">{t("dashboard.subtitle")}</p>
+      </div>
+      {isPending ? (
+        <div className="skeleton-grid" aria-busy="true">
+          <p className="visually-hidden">{t("app.loading")}</p>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="skeleton" />
+          ))}
+        </div>
+      ) : null}
       {isError ? <p className="refusal">{t("errors.loadFailed")}</p> : null}
       {data ? (
         <>
-          <dl className="stat-grid">
-            <div className="stat">
-              <dt>{t("dashboard.value")}</dt>
-              <dd data-testid="stat-value">{formatTaka(data.stockValue)}</dd>
+          <dl className="hero-grid">
+            <div className="tile tile--hero">
+              <dt className="tile__label">
+                <Icon name="box" /> {t("dashboard.value")}
+              </dt>
+              <dd className="tile__value tile__value--primary">
+                <Figure value={data.stockValue} money testId="stat-value" />
+              </dd>
+              <dd className="tile__meta">
+                {t("dashboard.unitsIn", {
+                  units: data.totalUnits,
+                  products: data.productCount,
+                })}
+              </dd>
             </div>
-            <div className="stat stat--out">
-              <dt>{t("dashboard.losses")}</dt>
-              <dd data-testid="stat-losses">{formatTaka(data.lossValue30d)}</dd>
+            <div className="tile tile--hero">
+              <dt className="tile__label">
+                <Icon name="alert" /> {t("dashboard.losses")}
+              </dt>
+              <dd className="tile__value tile__value--danger">
+                <Figure value={data.lossValue30d} money testId="stat-losses" />
+              </dd>
+              <dd className="tile__meta">
+                <Link
+                  className="go"
+                  to="/history?reason=damage"
+                  data-testid="losses-link"
+                >
+                  {t("dashboard.seeDamage")} <Icon name="chevron" size={16} />
+                </Link>
+              </dd>
             </div>
-            <div className="stat">
-              <dt>{t("dashboard.products")}</dt>
-              <dd data-testid="stat-products">{data.productCount}</dd>
+            <div className="tile">
+              <dt className="tile__label">{t("dashboard.low")}</dt>
+              <dd className="tile__value tile__value--warning">
+                <Icon name="alert" size={26} />
+                <Figure value={data.lowStockCount} testId="stat-low" />
+              </dd>
             </div>
-            <div className="stat">
-              <dt>{t("dashboard.units")}</dt>
-              <dd data-testid="stat-units">{data.totalUnits}</dd>
+            <div className="tile">
+              <dt className="tile__label">{t("dashboard.out")}</dt>
+              <dd className="tile__value tile__value--danger">
+                <Icon name="x" size={26} />
+                <Figure value={data.outOfStockCount} testId="stat-out" />
+              </dd>
             </div>
-            <div className="stat stat--low">
-              <dt>{t("dashboard.low")}</dt>
-              <dd data-testid="stat-low">{data.lowStockCount}</dd>
+            <div className="tile">
+              <dt className="tile__label">{t("dashboard.products")}</dt>
+              <dd className="tile__value">
+                <Figure value={data.productCount} testId="stat-products" />
+              </dd>
             </div>
-            <div className="stat stat--out">
-              <dt>{t("dashboard.out")}</dt>
-              <dd data-testid="stat-out">{data.outOfStockCount}</dd>
+            <div className="tile">
+              <dt className="tile__label">{t("dashboard.units")}</dt>
+              <dd className="tile__value">
+                <Figure value={data.totalUnits} testId="stat-units" />
+              </dd>
             </div>
           </dl>
 
-          <h2>{t("dashboard.attention")}</h2>
-          {data.lowStock.length === 0 ? (
-            <p data-testid="attention-empty">{t("dashboard.allGood")}</p>
-          ) : (
-            <ul className="attention-list" data-testid="attention-list">
-              {data.lowStock.map((product) => (
-                <li key={product.id}>
-                  <span>
-                    {product.name} <span className="muted">{product.sku}</span>
-                  </span>
-                  <span>
-                    {t("dashboard.onHand", {
-                      count: product.onHand,
-                      unit: product.unit,
-                      min: product.minStock,
-                    })}
-                  </span>
-                  <StockBadge status={product.status} />
-                  <Link to={`/stock?productId=${product.id}`}>
-                    {t("dashboard.restock")}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="dash-columns">
+            <section className="card" aria-labelledby="attention-heading">
+              <h2 id="attention-heading">{t("dashboard.attention")}</h2>
+              {data.lowStock.length === 0 ? (
+                <p className="empty-state" data-testid="attention-empty">
+                  <Icon name="check" size={28} />
+                  {t("dashboard.allGood")}
+                </p>
+              ) : (
+                <ul className="attention-list" data-testid="attention-list">
+                  {data.lowStock.map((product) => (
+                    <li key={product.id}>
+                      <span className="attention-list__name">
+                        {product.name}
+                        <span className="muted">
+                          {t("dashboard.onHand", {
+                            count: product.onHand,
+                            unit: product.unit,
+                            min: product.minStock,
+                          })}
+                        </span>
+                      </span>
+                      <StockBadge status={product.status} />
+                      <Link
+                        className="go"
+                        to={`/stock?productId=${product.id}`}
+                      >
+                        {t("dashboard.restock")}
+                        <Icon name="chevron" size={16} />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
 
-          <h2>{t("dashboard.recent")}</h2>
-          <MovementTable
-            movements={data.recentMovements}
-            testId="recent-movements"
-          />
+            <section className="card" aria-labelledby="recent-heading">
+              <h2 id="recent-heading">{t("dashboard.recent")}</h2>
+              <MovementTable
+                movements={data.recentMovements}
+                testId="recent-movements"
+                compact
+              />
+            </section>
+          </div>
         </>
       ) : null}
     </section>
