@@ -15,24 +15,22 @@ export interface InputFieldProps {
   testId: string;
   /** Extra control beside the input, such as the password Show/Hide button. */
   addon?: ReactNode;
+  /** Spans two columns in a form grid (for long values such as names). */
+  wide?: boolean;
 }
 
 /**
- * input-field: label above, hint and error linked with aria-describedby,
- * aria-invalid on error. Typed values are kept by the parent form.
+ * input-field: label above, the box, then the hint and any error below it,
+ * both linked with aria-describedby; aria-invalid on error. Hints sit below
+ * the box so boxes in the same form row always line up.
  */
 export function InputField(props: InputFieldProps) {
   const hintId = props.hint ? `${props.id}-hint` : undefined;
   const errorId = props.error ? `${props.id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
   return (
-    <div className="field">
+    <div className={props.wide ? "field field--wide" : "field"}>
       <label htmlFor={props.id}>{props.label}</label>
-      {props.hint ? (
-        <p className="field__hint" id={hintId}>
-          {props.hint}
-        </p>
-      ) : null}
       <div className="field__control">
         <input
           id={props.id}
@@ -49,6 +47,11 @@ export function InputField(props: InputFieldProps) {
         />
         {props.addon}
       </div>
+      {props.hint ? (
+        <p className="field__hint" id={hintId}>
+          {props.hint}
+        </p>
+      ) : null}
       {props.error ? (
         <RefusalMessage id={errorId} message={props.error} />
       ) : null}

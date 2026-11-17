@@ -129,7 +129,14 @@
     "stockValue": "Stock value",
     "download": "Download CSV",
     "held": "{{count}} held as damaged",
-    "flag": "Flag damage"
+    "flag": "Flag damage",
+    "subtitle": "Everything you stock, with what it is worth.",
+    "count_one": "{{count}} product",
+    "count_other": "{{count}} products",
+    "colProduct": "Product",
+    "colMin": "Min stock",
+    "colCost": "Unit cost",
+    "colValue": "Value"
   },
   "stock": {
     "title": "Stock in / out",
@@ -222,7 +229,15 @@
     "resetIntro": "Tell them the new password. They are signed out everywhere and sign in with it.",
     "newPassword": "New password",
     "setPassword": "Set password",
-    "passwordReset": "{{name}}'s password is changed. Tell them the new one."
+    "passwordReset": "{{name}}'s password is changed. Tell them the new one.",
+    "subtitle": "Add the people who work with you, and choose what each can do.",
+    "team": "Your team",
+    "count_one": "{{count}} person",
+    "count_other": "{{count}} people",
+    "resetShort": "Reset password",
+    "deactivateShort": "Deactivate",
+    "reactivateShort": "Reactivate",
+    "ownerNote": "That's you"
   },
   "account": {
     "title": "My password",

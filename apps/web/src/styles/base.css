@@ -1521,6 +1521,340 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Products and Staff: aligned forms, roomy tables, cards on phones. */
+.page-header--split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.page-header--split .page-actions {
+  margin: 0;
+}
+
+.page-actions .button .icon {
+  margin-right: 0.125rem;
+}
+
+.panel--wide {
+  max-width: none;
+}
+
+/* Fixed columns, so every box in a row starts and ends in line. */
+.form-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-4) var(--spacing-5);
+  align-items: start;
+}
+
+.form-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-4) var(--spacing-5);
+  align-items: start;
+}
+
+.field--wide {
+  grid-column: span 2;
+}
+
+.field__hint {
+  margin-top: 0.125rem;
+}
+
+.list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  margin: var(--spacing-5) 0 var(--spacing-3);
+}
+
+.list-toolbar__search {
+  flex: 1 1 22rem;
+  max-width: 28rem;
+}
+
+.list-toolbar__title {
+  margin: 0;
+}
+
+.list-toolbar__count {
+  margin: 0;
+  padding: var(--spacing-1) var(--spacing-3);
+  font-weight: var(--typography-body-strong-weight);
+  color: var(--colors-primary);
+  background: var(--colors-primary-tint);
+  border-radius: var(--rounded-full);
+}
+
+.data-table--stack th,
+.data-table--stack td {
+  padding: var(--spacing-3) var(--spacing-4);
+  vertical-align: middle;
+}
+
+.cell-title {
+  font-weight: var(--typography-body-strong-weight);
+}
+
+.cell-name {
+  display: grid;
+  min-width: 9rem;
+}
+
+.cell-name .cell-code {
+  font-size: var(--typography-meta-size);
+  font-weight: normal;
+}
+
+.data-table--stack thead th {
+  white-space: nowrap;
+}
+
+/* The main area never grows past the screen; wide tables scroll inside
+   their own box instead. */
+.app-main {
+  min-width: 0;
+}
+
+.cell-code {
+  font-variant-numeric: tabular-nums;
+  color: var(--colors-text-muted);
+  white-space: nowrap;
+}
+
+.cell-strong {
+  font-weight: var(--typography-body-strong-weight);
+  white-space: nowrap;
+}
+
+.cell-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.row-actions {
+  flex-wrap: nowrap;
+  gap: var(--spacing-2);
+}
+
+/* Products: four actions wrap into a tidy 2 x 2 block in their cell. */
+.data-table--stack .row-actions:has(> :nth-child(3)) {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  justify-content: end;
+}
+
+.data-table--stack .row-actions .chip-button {
+  justify-content: center;
+}
+
+.chip-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  min-height: 2.25rem;
+  padding: 0 var(--spacing-3);
+  font: inherit;
+  font-size: var(--typography-meta-size);
+  font-weight: var(--typography-body-strong-weight);
+  color: var(--colors-primary);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--colors-surface);
+  border: 1px solid var(--colors-control-border);
+  border-radius: var(--rounded-full);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.row-actions .chip-button:hover,
+.chip-button:hover {
+  text-decoration: none;
+  background: var(--colors-primary-tint);
+  border-color: var(--colors-primary);
+}
+
+.chip-button--danger {
+  color: var(--colors-danger);
+}
+
+.row-actions .chip-button--danger:hover,
+.chip-button--danger:hover {
+  background: var(--colors-danger-tint);
+  border-color: var(--colors-danger);
+}
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  white-space: nowrap;
+}
+
+.person__avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-weight: 700;
+  color: var(--colors-primary);
+  background: var(--colors-primary-tint);
+  border-radius: var(--rounded-full);
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.125rem var(--spacing-3);
+  font-size: var(--typography-meta-size);
+  font-weight: var(--typography-body-strong-weight);
+  white-space: nowrap;
+  border-radius: var(--rounded-full);
+}
+
+.pill--role {
+  color: var(--colors-info);
+  background: var(--colors-info-tint);
+}
+
+.pill--owner {
+  color: var(--colors-on-primary);
+  background: var(--colors-primary);
+}
+
+.badge--muted {
+  color: var(--colors-text-muted);
+  background: var(--colors-surface-alt);
+  outline: 1px solid var(--colors-border);
+}
+
+.row--inactive .cell-title,
+.row--inactive .cell-code {
+  color: var(--colors-text-muted);
+}
+
+.row--inactive .person__avatar {
+  color: var(--colors-text-muted);
+  background: var(--colors-surface-alt);
+}
+
+@media (max-width: 1199px) {
+  .form-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .form-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Phones: one column of boxes, and each table row becomes a card with a
+   label beside every value. */
+@media (max-width: 699px) {
+  .form-grid--3,
+  .form-grid--4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .field--wide {
+    grid-column: auto;
+  }
+
+  .list-toolbar__search {
+    max-width: none;
+  }
+
+  .data-table--stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .data-table--stack,
+  .data-table--stack tbody,
+  .data-table--stack tr,
+  .data-table--stack td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table--stack tr {
+    padding: var(--spacing-3) var(--spacing-4);
+    border-bottom: 1px solid var(--colors-border);
+  }
+
+  .data-table--stack tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .data-table--stack td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-3);
+    padding: var(--spacing-1) 0;
+    text-align: right;
+    border-bottom: none;
+  }
+
+  .data-table--stack td[data-label]::before {
+    content: attr(data-label);
+    font-size: var(--typography-meta-size);
+    font-weight: var(--typography-body-strong-weight);
+    color: var(--colors-text-muted);
+    text-align: left;
+  }
+
+  .data-table--stack .cell-name {
+    min-width: 0;
+  }
+
+  .data-table--stack td.cell-title {
+    padding-bottom: var(--spacing-2);
+    font-size: var(--typography-title-size);
+    text-align: left;
+  }
+
+  .data-table--stack td.cell-title::before {
+    content: none;
+  }
+
+  .data-table--stack td .held {
+    margin-left: var(--spacing-2);
+  }
+
+  .data-table--stack td.num {
+    flex-wrap: wrap;
+  }
+
+  .data-table--stack .cell-actions {
+    width: 100%;
+    padding-top: var(--spacing-3);
+    white-space: normal;
+  }
+
+  .data-table--stack .row-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .data-table--stack .chip-button {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: var(--spacing-target-min);
+  }
+}
+
 /* Loading placeholders */
 .skeleton-grid {
   display: grid;

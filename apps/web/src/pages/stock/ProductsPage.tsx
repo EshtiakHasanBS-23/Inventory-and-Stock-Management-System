@@ -16,6 +16,7 @@ import {
 import { ButtonPrimary, ButtonSecondary } from "../../components/Buttons";
 import { DownloadLink } from "../../components/DownloadLink";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
+import { Icon } from "../../components/Icons";
 import { InputField } from "../../components/InputField";
 import { formatTaka } from "../../format";
 import { canManageProducts } from "../../session/roles";
@@ -97,7 +98,7 @@ function ProductForm({
 
   return (
     <form
-      className="panel"
+      className="panel panel--wide"
       noValidate
       onSubmit={submit}
       data-testid="product-form"
@@ -113,7 +114,7 @@ function ProductForm({
         formMessage={failure && !failure.field ? failure.message : undefined}
         focusKey={submitCount}
       />
-      <div className="form-grid">
+      <div className="form-grid form-grid--3">
         {editing ? null : (
           <InputField
             id="product-sku"
@@ -127,6 +128,7 @@ function ProductForm({
         <InputField
           id="product-name"
           label={t("products.name")}
+          wide
           value={draft.name}
           error={fieldError("name")}
           onChange={set("name")}
@@ -187,22 +189,28 @@ export function ProductsPage() {
 
   return (
     <section data-testid="products-page">
-      <h1>{t("products.title")}</h1>
-      <div className="page-actions">
-        {canManage ? (
-          <Link
-            className="button button--secondary"
-            to="/products/import"
-            data-testid="products-import-link"
-          >
-            {t("import.title")}
-          </Link>
-        ) : null}
-        <DownloadLink
-          href={PRODUCTS_EXPORT_HREF}
-          label={t("products.download")}
-          testId="products-download"
-        />
+      <div className="page-header page-header--split">
+        <div>
+          <h1>{t("products.title")}</h1>
+          <p className="page-header__sub">{t("products.subtitle")}</p>
+        </div>
+        <div className="page-actions">
+          {canManage ? (
+            <Link
+              className="button button--secondary"
+              to="/products/import"
+              data-testid="products-import-link"
+            >
+              <Icon name="upload" />
+              {t("import.title")}
+            </Link>
+          ) : null}
+          <DownloadLink
+            href={PRODUCTS_EXPORT_HREF}
+            label={t("products.download")}
+            testId="products-download"
+          />
+        </div>
       </div>
       {canManage ? (
         <ProductForm
@@ -212,14 +220,21 @@ export function ProductsPage() {
         />
       ) : null}
 
-      <div className="toolbar">
-        <InputField
-          id="product-search"
-          label={t("products.search")}
-          value={search}
-          onChange={setSearch}
-          testId="product-search-input"
-        />
+      <div className="list-toolbar">
+        <div className="list-toolbar__search">
+          <InputField
+            id="product-search"
+            label={t("products.search")}
+            value={search}
+            onChange={setSearch}
+            testId="product-search-input"
+          />
+        </div>
+        {products.data ? (
+          <p className="list-toolbar__count" data-testid="products-count">
+            {t("products.count", { count: products.data.length })}
+          </p>
+        ) : null}
       </div>
 
       {products.isPending ? <p>{t("app.loading")}</p> : null}
@@ -227,28 +242,31 @@ export function ProductsPage() {
         <p className="refusal">{t("errors.loadFailed")}</p>
       ) : null}
       {products.data && products.data.length === 0 ? (
-        <p data-testid="products-empty">
+        <p className="empty-state" data-testid="products-empty">
+          <Icon name="box" size={28} />
           {search ? t("products.noMatch") : t("products.empty")}
         </p>
       ) : null}
       {products.data && products.data.length > 0 ? (
         <div className="table-wrap">
-          <table className="data-table" data-testid="products-table">
+          <table
+            className="data-table data-table--stack"
+            data-testid="products-table"
+          >
             <thead>
               <tr>
-                <th scope="col">{t("products.sku")}</th>
-                <th scope="col">{t("products.name")}</th>
+                <th scope="col">{t("products.colProduct")}</th>
                 <th scope="col" className="num">
                   {t("products.onHand")}
                 </th>
                 <th scope="col" className="num">
-                  {t("products.minStock")}
+                  {t("products.colMin")}
                 </th>
                 <th scope="col" className="num">
-                  {t("products.unitCost")}
+                  {t("products.colCost")}
                 </th>
                 <th scope="col" className="num">
-                  {t("products.stockValue")}
+                  {t("products.colValue")}
                 </th>
                 <th scope="col">{t("products.status")}</th>
                 <th scope="col">
@@ -261,42 +279,68 @@ export function ProductsPage() {
             <tbody>
               {products.data.map((product) => (
                 <tr key={product.id} data-testid={`product-row-${product.sku}`}>
-                  <td>{product.sku}</td>
-                  <td>{product.name}</td>
-                  <td className="num">
-                    {product.onHand} {product.unit}
+                  <td className="cell-title" data-label={t("products.name")}>
+                    <span className="cell-name">
+                      {product.name}
+                      <span className="cell-code">{product.sku}</span>
+                    </span>
+                  </td>
+                  <td className="num" data-label={t("products.onHand")}>
+                    <span className="cell-strong">
+                      {product.onHand} {product.unit}
+                    </span>
                     {product.damaged > 0 ? (
                       <span className="held">
                         {t("products.held", { count: product.damaged })}
                       </span>
                     ) : null}
                   </td>
-                  <td className="num">{product.minStock}</td>
-                  <td className="num">{formatTaka(product.unitCost)}</td>
-                  <td className="num">{formatTaka(product.stockValue)}</td>
-                  <td>
+                  <td className="num" data-label={t("products.colMin")}>
+                    {product.minStock}
+                  </td>
+                  <td className="num" data-label={t("products.colCost")}>
+                    {formatTaka(product.unitCost)}
+                  </td>
+                  <td className="num" data-label={t("products.colValue")}>
+                    {formatTaka(product.stockValue)}
+                  </td>
+                  <td data-label={t("products.status")}>
                     <StockBadge status={product.status} />
                   </td>
-                  <td className="row-actions">
-                    <Link to={`/stock?productId=${product.id}`}>
-                      {t("products.move")}
-                    </Link>
-                    <Link to={`/damage?productId=${product.id}`}>
-                      {t("products.flag")}
-                    </Link>
-                    <Link to={`/history?productId=${product.id}`}>
-                      {t("products.history")}
-                    </Link>
-                    {canManage ? (
-                      <button
-                        type="button"
-                        className="link-button"
-                        data-testid={`product-edit-${product.sku}`}
-                        onClick={() => setEditing(product)}
+                  <td className="cell-actions">
+                    <div className="row-actions">
+                      <Link
+                        className="chip-button"
+                        to={`/stock?productId=${product.id}`}
                       >
-                        {t("products.edit")}
-                      </button>
-                    ) : null}
+                        <Icon name="swap" size={16} />
+                        {t("products.move")}
+                      </Link>
+                      <Link
+                        className="chip-button chip-button--danger"
+                        to={`/damage?productId=${product.id}`}
+                      >
+                        <Icon name="alert" size={16} />
+                        {t("products.flag")}
+                      </Link>
+                      <Link
+                        className="chip-button"
+                        to={`/history?productId=${product.id}`}
+                      >
+                        <Icon name="clock" size={16} />
+                        {t("products.history")}
+                      </Link>
+                      {canManage ? (
+                        <button
+                          type="button"
+                          className="chip-button"
+                          data-testid={`product-edit-${product.sku}`}
+                          onClick={() => setEditing(product)}
+                        >
+                          {t("products.edit")}
+                        </button>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

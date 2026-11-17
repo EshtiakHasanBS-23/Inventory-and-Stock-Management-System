@@ -19,6 +19,7 @@ import {
 } from "../../api/stock";
 import { ButtonPrimary, ButtonSecondary } from "../../components/Buttons";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
+import { Icon } from "../../components/Icons";
 import { InputField } from "../../components/InputField";
 import { PasswordField } from "../../components/PasswordField";
 import { SelectField } from "../../components/SelectField";
@@ -56,7 +57,7 @@ function AddStaffForm() {
 
   return (
     <form
-      className="panel"
+      className="panel panel--wide"
       noValidate
       onSubmit={submit}
       data-testid="staff-form"
@@ -73,7 +74,7 @@ function AddStaffForm() {
         formMessage={failure && !failure.field ? failure.message : undefined}
         focusKey={submitCount}
       />
-      <div className="form-grid">
+      <div className="form-grid form-grid--4">
         <InputField
           id="staff-name"
           label={t("staff.name")}
@@ -211,7 +212,10 @@ export function StaffPage() {
 
   return (
     <section data-testid="staff-page">
-      <h1>{t("staff.title")}</h1>
+      <div className="page-header">
+        <h1>{t("staff.title")}</h1>
+        <p className="page-header__sub">{t("staff.subtitle")}</p>
+      </div>
       {notice ? (
         <p className="success" role="status" data-testid="staff-notice">
           {notice}
@@ -239,62 +243,116 @@ export function StaffPage() {
         <p className="refusal">{t("errors.loadFailed")}</p>
       ) : null}
       {staff.data ? (
-        <div className="table-wrap">
-          <table className="data-table" data-testid="staff-table">
-            <thead>
-              <tr>
-                <th scope="col">{t("staff.name")}</th>
-                <th scope="col">{t("staff.phone")}</th>
-                <th scope="col">{t("staff.role")}</th>
-                <th scope="col">{t("staff.status")}</th>
-                <th scope="col">
-                  <span className="visually-hidden">
-                    {t("products.actions")}
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {staff.data.map((member) => (
-                <tr key={member.id} data-testid={`staff-row-${member.phone}`}>
-                  <td>{member.name}</td>
-                  <td>{member.phone}</td>
-                  <td>{t(`roles.${member.role}`)}</td>
-                  <td>
-                    {member.active ? t("staff.active") : t("staff.inactive")}
-                  </td>
-                  <td className="row-actions">
-                    {member.role === "owner" ? null : (
-                      <button
-                        type="button"
-                        className="link-button"
-                        data-testid={`staff-reset-${member.phone}`}
-                        onClick={() => {
-                          setNotice(null);
-                          setResetting(member);
-                        }}
-                      >
-                        {t("staff.resetPassword", { name: member.name })}
-                      </button>
-                    )}
-                    {member.role === "owner" ? null : (
-                      <button
-                        type="button"
-                        className="link-button"
-                        data-testid={`staff-toggle-${member.phone}`}
-                        onClick={() => void toggle(member.id, !member.active)}
-                      >
-                        {member.active
-                          ? t("staff.deactivate", { name: member.name })
-                          : t("staff.reactivate", { name: member.name })}
-                      </button>
-                    )}
-                  </td>
+        <>
+          <div className="list-toolbar">
+            <h2 className="list-toolbar__title">{t("staff.team")}</h2>
+            <p className="list-toolbar__count" data-testid="staff-count">
+              {t("staff.count", { count: staff.data.length })}
+            </p>
+          </div>
+          <div className="table-wrap">
+            <table
+              className="data-table data-table--stack"
+              data-testid="staff-table"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">{t("staff.name")}</th>
+                  <th scope="col">{t("staff.phone")}</th>
+                  <th scope="col">{t("staff.role")}</th>
+                  <th scope="col">{t("staff.status")}</th>
+                  <th scope="col">
+                    <span className="visually-hidden">
+                      {t("products.actions")}
+                    </span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {staff.data.map((member) => (
+                  <tr
+                    key={member.id}
+                    data-testid={`staff-row-${member.phone}`}
+                    className={member.active ? undefined : "row--inactive"}
+                  >
+                    <td className="cell-title" data-label={t("staff.name")}>
+                      <span className="person">
+                        <span className="person__avatar" aria-hidden="true">
+                          {member.name.trim().charAt(0).toUpperCase()}
+                        </span>
+                        {member.name}
+                      </span>
+                    </td>
+                    <td className="cell-code" data-label={t("staff.phone")}>
+                      {member.phone}
+                    </td>
+                    <td data-label={t("staff.role")}>
+                      <span
+                        className={`pill pill--role${member.role === "owner" ? " pill--owner" : ""}`}
+                      >
+                        {t(`roles.${member.role}`)}
+                      </span>
+                    </td>
+                    <td data-label={t("staff.status")}>
+                      <span
+                        className={`badge ${member.active ? "badge--ok" : "badge--muted"}`}
+                      >
+                        <Icon name={member.active ? "check" : "x"} size={14} />
+                        {member.active
+                          ? t("staff.active")
+                          : t("staff.inactive")}
+                      </span>
+                    </td>
+                    <td className="cell-actions">
+                      {member.role === "owner" ? (
+                        <span className="muted">{t("staff.ownerNote")}</span>
+                      ) : (
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="chip-button"
+                            data-testid={`staff-reset-${member.phone}`}
+                            aria-label={t("staff.resetPassword", {
+                              name: member.name,
+                            })}
+                            onClick={() => {
+                              setNotice(null);
+                              setResetting(member);
+                            }}
+                          >
+                            <Icon name="key" size={16} />
+                            {t("staff.resetShort")}
+                          </button>
+                          <button
+                            type="button"
+                            className={`chip-button${member.active ? " chip-button--danger" : ""}`}
+                            data-testid={`staff-toggle-${member.phone}`}
+                            aria-label={
+                              member.active
+                                ? t("staff.deactivate", { name: member.name })
+                                : t("staff.reactivate", { name: member.name })
+                            }
+                            onClick={() =>
+                              void toggle(member.id, !member.active)
+                            }
+                          >
+                            <Icon
+                              name={member.active ? "x" : "check"}
+                              size={16}
+                            />
+                            {member.active
+                              ? t("staff.deactivateShort")
+                              : t("staff.reactivateShort")}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : null}
     </section>
   );
