@@ -390,6 +390,11 @@ h2 {
 
 .field select {
   flex: 1;
+  /* Without these a select is as wide as its longest option and spills
+     into the next grid column. */
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
   min-height: var(--spacing-target-min);
   padding: 0 var(--spacing-3);
   font: inherit;
@@ -575,6 +580,10 @@ h2 {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--spacing-3);
   margin-bottom: var(--spacing-3);
+}
+
+.filter-grid > * {
+  min-width: 0;
 }
 
 .field input[type="date"] {
