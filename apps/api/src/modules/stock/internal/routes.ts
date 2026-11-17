@@ -4,6 +4,13 @@
  */
 import { Router } from "express";
 import { sendCsv } from "../../../platform/csv.js";
+import {
+  decideApproval,
+  flagDamage,
+  getWorkRecord,
+  listApprovals,
+  requestReversal,
+} from "./approvals.js";
 import "../../../platform/http.js";
 import {
   createProduct,
@@ -118,6 +125,60 @@ export function createStockRouter(deps: StockDeps): Router {
       "stock count recorded",
     );
     res.status(201).json(result);
+  });
+
+  router.post("/stock/damage-flags", async (req, res) => {
+    const approval = await flagDamage(deps, req.caller, req.body);
+    req.log.info(
+      {
+        event: "stock.damage_flagged",
+        approvalId: approval.id,
+        quantity: approval.quantity,
+      },
+      "damage flagged",
+    );
+    res.status(201).json(approval);
+  });
+
+  router.get("/approvals", async (req, res) => {
+    res.json(await listApprovals(deps, req.caller, req.query));
+  });
+
+  router.post("/approvals/reversals", async (req, res) => {
+    const approval = await requestReversal(deps, req.caller, req.body);
+    req.log.info(
+      { event: "stock.reversal_requested", approvalId: approval.id },
+      "reversal requested",
+    );
+    res.status(201).json(approval);
+  });
+
+  for (const [path, approve] of [
+    ["approve", true],
+    ["reject", false],
+  ] as const) {
+    router.post(`/approvals/:id/${path}`, async (req, res) => {
+      const approval = await decideApproval(
+        deps,
+        req.caller,
+        req.params.id,
+        approve,
+      );
+      req.log.info(
+        {
+          event: "stock.approval_decided",
+          approvalId: approval.id,
+          kind: approval.kind,
+          status: approval.status,
+        },
+        "approval decided",
+      );
+      res.json(approval);
+    });
+  }
+
+  router.get("/me/record", async (req, res) => {
+    res.json(await getWorkRecord(deps, req.caller, req.query));
   });
 
   router.get("/dashboard", async (req, res) => {

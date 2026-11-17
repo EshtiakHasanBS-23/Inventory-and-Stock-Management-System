@@ -43,6 +43,17 @@ const ImportPage = lazy(() =>
 const ReportPage = lazy(() =>
   import("./pages/stock/ReportPage").then((m) => ({ default: m.ReportPage })),
 );
+const ApprovalsPage = lazy(() =>
+  import("./pages/stock/ApprovalsPage").then((m) => ({
+    default: m.ApprovalsPage,
+  })),
+);
+const DamagePage = lazy(() =>
+  import("./pages/stock/DamagePage").then((m) => ({ default: m.DamagePage })),
+);
+const RecordPage = lazy(() =>
+  import("./pages/stock/RecordPage").then((m) => ({ default: m.RecordPage })),
+);
 const AccountPage = lazy(() =>
   import("./pages/stock/AccountPage").then((m) => ({
     default: m.AccountPage,
@@ -155,6 +166,30 @@ export function AppRoutes() {
           element={
             <RoleRoute path="/reports">
               <ReportPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/approvals"
+          element={
+            <RoleRoute path="/approvals">
+              <ApprovalsPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/damage"
+          element={
+            <RoleRoute path="/damage">
+              <DamagePage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/record"
+          element={
+            <RoleRoute path="/record">
+              <RecordPage />
             </RoleRoute>
           }
         />

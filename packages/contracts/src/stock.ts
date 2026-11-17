@@ -69,6 +69,8 @@ export interface Product {
   unitCost: number;
   /** onHand × unitCost, in taka. */
   stockValue: number;
+  /** Units flagged as damaged, waiting for a decision (not in onHand). */
+  damaged: number;
   status: StockStatus;
 }
 
@@ -100,10 +102,30 @@ export const ALL_REASONS = [
   "adjustment",
   "count",
   "opening",
+  "damage_flagged",
+  "damage_rejected",
+  "reversal",
 ] as const;
 
-/** Stock leaving for these reasons is a loss, shown in taka. */
-export const LOSS_REASONS: readonly Reason[] = ["damage", "count"];
+/**
+ * Stock leaving for these reasons is a loss, shown in taka. A rejected
+ * damage flag (`damage_rejected`, stock coming back) reduces the loss.
+ */
+export const LOSS_REASONS: readonly Reason[] = [
+  "damage",
+  "count",
+  "damage_flagged",
+];
+
+/** Movements an Owner or Manager may ask to reverse (PRD FR-15). */
+export const REVERSIBLE_REASONS: readonly Reason[] = [
+  "purchase",
+  "return",
+  "sale",
+  "damage",
+  "adjustment",
+  "opening",
+];
 export type Reason = (typeof ALL_REASONS)[number];
 
 /** `POST /api/v1/stock/movements` body. */
@@ -172,6 +194,8 @@ export interface Movement {
   balanceAfter: number;
   /** quantity × the unit cost at the time, in taka. */
   value: number;
+  /** For a reversal: the movement it undoes. */
+  reversesMovementId: string | null;
   note: string | null;
   userName: string;
   createdAt: string;
@@ -202,9 +226,24 @@ export interface CountResult {
   movement: Movement | null;
 }
 
+/** Where the last 30 days' losses came from, in taka (PRD FR-48). */
+export interface LossBreakdown {
+  /** Written off directly by an Owner or Manager. */
+  damage: number;
+  /** Damage flags, approved or waiting, less rejected ones. */
+  damageFlagged: number;
+  /** Stock counts that found less than recorded. */
+  missing: number;
+}
+
 export interface Dashboard {
   productCount: number;
   totalUnits: number;
+  lossBreakdown: LossBreakdown;
+  /** Approvals waiting for a decision. */
+  pendingApprovals: number;
+  /** Units held as damaged across all products, in taka. */
+  damagedValue: number;
   /** Sum of every product's stock value, in taka. */
   stockValue: number;
   /** Damage and count shortfalls in the last 30 days, in taka. */

@@ -30,7 +30,9 @@
     "count": "Stock count",
     "staff": "Staff",
     "account": "My password",
-    "report": "Report"
+    "report": "Report",
+    "approvals": "Approvals",
+    "record": "My record"
   },
   "password": {
     "show": "Show",
@@ -93,7 +95,13 @@
     "losses": "Losses, last 30 days",
     "subtitle": "Your stock and money at a glance.",
     "unitsIn": "{{units}} units across {{products}} products",
-    "seeDamage": "See damage"
+    "seeDamage": "See damage",
+    "lossDamage": "Written off",
+    "lossFlags": "Damage flags",
+    "lossMissing": "Missing in counts",
+    "pending_one": "{{count}} request waiting for approval",
+    "pending_other": "{{count}} requests waiting for approval",
+    "held": "{{value}} held as damaged, waiting for a decision"
   },
   "products": {
     "title": "Products",
@@ -119,7 +127,9 @@
     "unitCost": "Unit cost (৳)",
     "unitCostHint": "What you pay for one unit.",
     "stockValue": "Stock value",
-    "download": "Download CSV"
+    "download": "Download CSV",
+    "held": "{{count}} held as damaged",
+    "flag": "Flag damage"
   },
   "stock": {
     "title": "Stock in / out",
@@ -139,7 +149,10 @@
       "damage": "Damaged",
       "adjustment": "Count adjustment",
       "count": "Stock count",
-      "opening": "Opening stock"
+      "opening": "Opening stock",
+      "damage_flagged": "Damage flagged",
+      "damage_rejected": "Flag rejected, back in stock",
+      "reversal": "Reversal"
     },
     "quantity": "Quantity",
     "note": "Note (optional)",
@@ -155,7 +168,9 @@
     "directionHint": {
       "in": "Purchase, return or adjustment",
       "out": "Sale, damage or adjustment"
-    }
+    },
+    "flagInstead": "Found damaged stock?",
+    "flagLink": "Flag damage"
   },
   "history": {
     "title": "History",
@@ -252,5 +267,57 @@
     "adjusted": "Adjusted",
     "closing": "End",
     "total": "Total"
+  },
+  "damage": {
+    "title": "Flag damage",
+    "intro": "Flag stock that is damaged or expired. It leaves the sellable stock now, and a supervisor, manager or owner approves or rejects it.",
+    "quantity": "Damaged quantity",
+    "save": "Flag damage",
+    "saved": "Flagged {{quantity}} {{unit}} of {{product}} ({{value}}). Waiting for a decision."
+  },
+  "approvals": {
+    "title": "Approvals",
+    "intro": "Damage flags and reversals need a second person. You can never decide your own request.",
+    "pending": "Waiting",
+    "decided": "Decided",
+    "empty": "Nothing is waiting for a decision.",
+    "emptyDecided": "Nothing has been decided yet.",
+    "damage": "Damage flag",
+    "reversal": "Reversal",
+    "reverses": "Undo {{reason}} of {{time}}",
+    "by": "Asked by {{name}} · {{time}}",
+    "decidedBy": "{{status}} by {{name}} · {{time}}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveDamage": "Approve: write off",
+    "rejectDamage": "Reject: back to stock",
+    "waitingOther": "Waiting for someone else to decide.",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "done": "{{status}}: {{product}}."
+  },
+  "reversal": {
+    "action": "Reverse…",
+    "label": "Reverse {{reason}} of {{quantity}} {{unit}} {{product}}",
+    "heading": "Ask to reverse this movement",
+    "why": "Why should it be reversed?",
+    "send": "Ask for reversal",
+    "sent": "Reversal asked for. Another owner or manager must approve it."
+  },
+  "record": {
+    "title": "My record",
+    "intro": "Your own work, as proof of what you did.",
+    "person": "Person",
+    "me": "Me",
+    "today": "Today",
+    "week": "Last 7 days",
+    "month": "Last 30 days",
+    "movements": "Stock in and out",
+    "unitsInOut": "{{in}} in · {{out}} out",
+    "counts": "Stock counts",
+    "countDiff": "{{missing}} missing · {{extra}} extra",
+    "flags": "Damage flags",
+    "flagOutcome": "{{approved}} approved · {{rejected}} rejected · {{pending}} waiting",
+    "decisions": "Decisions for others"
   }
 }

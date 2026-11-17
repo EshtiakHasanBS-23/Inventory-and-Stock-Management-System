@@ -1,4 +1,4 @@
-import type { Movement } from "@mojud/contracts";
+import { REVERSIBLE_REASONS, type Movement } from "@mojud/contracts";
 import { useTranslation } from "react-i18next";
 import { Icon } from "../../components/Icons";
 import { formatTaka } from "../../format";
@@ -31,10 +31,13 @@ export function MovementTable({
   movements,
   testId,
   compact = false,
+  onReverse,
 }: {
   movements: readonly Movement[];
   testId: string;
   compact?: boolean;
+  /** When given, reversible rows get a "Reverse…" action (Owner, Manager). */
+  onReverse?: (movement: Movement) => void;
 }) {
   const { t } = useTranslation();
   if (movements.length === 0) {
@@ -81,6 +84,11 @@ export function MovementTable({
               {t("history.balance")}
             </th>
             <th scope="col">{t("history.by")}</th>
+            {onReverse ? (
+              <th scope="col">
+                <span className="visually-hidden">{t("products.actions")}</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -100,6 +108,26 @@ export function MovementTable({
               </td>
               <td className="num">{m.balanceAfter}</td>
               <td>{m.userName}</td>
+              {onReverse ? (
+                <td>
+                  {REVERSIBLE_REASONS.includes(m.reason) ? (
+                    <button
+                      type="button"
+                      className="link-button"
+                      data-testid={`reverse-${m.id}`}
+                      aria-label={t("reversal.label", {
+                        reason: t(`stock.reasons.${m.reason}`),
+                        quantity: m.quantity,
+                        unit: m.unit,
+                        product: m.productName,
+                      })}
+                      onClick={() => onReverse(m)}
+                    >
+                      {t("reversal.action")}
+                    </button>
+                  ) : null}
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

@@ -22,12 +22,17 @@ import { FormErrorSummary } from "../../components/FormErrorSummary";
 import { Icon } from "../../components/Icons";
 import { InputField } from "../../components/InputField";
 import { SelectField } from "../../components/SelectField";
+import { canManageProducts } from "../../session/roles";
+import { useSession } from "../../session/SessionProvider";
 import { usePageTitle } from "../usePageTitle";
 
 export function StockPage() {
   const { t } = useTranslation();
   usePageTitle(t("stock.title"));
   const [params] = useSearchParams();
+  const { session } = useSession();
+  // Only an Owner or Manager writes damage off directly; others flag it.
+  const mayWriteOff = session ? canManageProducts(session.role) : false;
   const products = useProducts();
   const record = useRecordMovement();
   const [productId, setProductId] = useState(params.get("productId") ?? "");
@@ -73,6 +78,15 @@ export function StockPage() {
   return (
     <section data-testid="stock-page">
       <h1>{t("stock.title")}</h1>
+      <p className="flag-hint">
+        {t("stock.flagInstead")}{" "}
+        <Link
+          to={productId ? `/damage?productId=${productId}` : "/damage"}
+          data-testid="stock-flag-link"
+        >
+          {t("stock.flagLink")}
+        </Link>
+      </p>
       {saved ? (
         <p className="success" role="status" data-testid="stock-saved">
           {t("stock.saved", {
@@ -149,10 +163,12 @@ export function StockPage() {
             id="stock-reason"
             label={t("stock.reason")}
             value={reason}
-            options={REASONS[direction].map((value) => ({
-              value,
-              label: t(`stock.reasons.${value}`),
-            }))}
+            options={REASONS[direction]
+              .filter((value) => value !== "damage" || mayWriteOff)
+              .map((value) => ({
+                value,
+                label: t(`stock.reasons.${value}`),
+              }))}
             error={fieldError("reason")}
             onChange={(value) => setReason(value as Reason)}
             testId="stock-reason-select"

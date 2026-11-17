@@ -62,3 +62,14 @@ stack, structure and conventions. Each slice is built and checked with
 | Import from Excel | Owner or Manager uploads a CSV (template provided; loose headers, comma or semicolon, Excel-style numbers). Every row is checked in the browser first and problems are listed by spreadsheet row; the server checks again and creates all products or none. Opening quantities are saved as `opening` movements. At most 1000 rows per import. |
 | Export to Excel | CSV downloads of the product list (stock and value), the filtered history (same filters, up to 10,000 rows, dates in Dhaka time) and the report. Files carry a UTF-8 byte order mark for Bangla names, and text cells starting with = + - @ are prefixed with an apostrophe against formula injection. |
 | Report | For a date range (this month by default): per product, quantity at the start, received, sold, damaged, count difference, adjusted, and quantity at the end, with taka values at the cost of the time and a total line. Start and end quantities are worked back from the ledger. |
+
+## Round 5: UI refresh and accountability (2026-11-16)
+
+| Item | Delivers |
+|---|---|
+| UI refresh | The look of the HTML mockups (key-owner-view, key-receiving): tinted background with white cards, icon side nav pills, hero tiles with count-up figures, tinted state pills with icons, green saved toast, big Stock in / Stock out tiles, bottom tab bar with icons on phones; gentle motion only when reduced motion is not requested. New tint tokens for light and dark, each text pair checked at 4.5:1. |
+| Damage flag + approval (PRD FR-29, FR-30) | Anyone flags damage; the units leave sellable stock into a Damaged hold (`damage_flagged` movement). A supervisor, manager or owner who did not flag it approves (written off) or rejects (`damage_rejected`, back in stock) in one tap. Workers can no longer write damage off directly. |
+| Reversal (PRD FR-15) | An owner or manager asks to undo a movement with a reason; a different owner or manager approves, and the opposite `reversal` movement is recorded, linked to the original. Counts and flags cannot be reversed; one open or approved reversal per movement; a reversal that would go below zero is refused and stays open. |
+| Approvals inbox | One inbox (waiting / decided) for flags and reversals. Nobody decides their own request (also a database check); a decision locks the row so only one of two simultaneous decisions wins. |
+| My record (PRD FR-51) | Each person's movements, counts (missing / extra), flags by outcome and decisions for today (Dhaka time), the last 7 and the last 30 days. Owners and managers can view anyone. |
+| Losses by source (PRD FR-48, FR-49) | The dashboard splits 30-day losses into written off, damage flags (less rejections) and missing in counts, each linking to the movements behind it, with a banner for requests waiting and the value held as damaged. |

@@ -35,6 +35,7 @@ const RICE: Product = {
   onHand: 10,
   unitCost: 1250.5,
   stockValue: 12505,
+  damaged: 0,
   status: "ok",
 };
 
@@ -50,6 +51,7 @@ function aMovement(overrides: Partial<Movement> = {}): Movement {
     quantity: 2,
     balanceAfter: 8,
     value: 2501,
+    reversesMovementId: null,
     note: "Counted 8, system had 10.",
     userName: "Abdul Haque",
     createdAt: "2026-11-16T08:30:00.000Z",

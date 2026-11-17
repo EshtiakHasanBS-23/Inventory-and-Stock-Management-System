@@ -31,6 +31,7 @@ function aMovement(index: number, overrides: Partial<Movement> = {}): Movement {
     quantity: index + 1,
     balanceAfter: 100,
     value: 0,
+    reversesMovementId: null,
     note: null,
     userName: "Abdul Haque",
     createdAt: "2026-11-16T08:30:00.000Z",

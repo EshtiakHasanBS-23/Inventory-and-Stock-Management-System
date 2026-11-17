@@ -52,6 +52,26 @@ export function DashboardPage() {
       {isError ? <p className="refusal">{t("errors.loadFailed")}</p> : null}
       {data ? (
         <>
+          {data.pendingApprovals > 0 ? (
+            <Link
+              className="banner"
+              to="/approvals"
+              data-testid="pending-approvals"
+            >
+              <Icon name="alert" />
+              <span>
+                {t("dashboard.pending", { count: data.pendingApprovals })}
+                {data.damagedValue > 0 ? (
+                  <span className="banner__sub">
+                    {t("dashboard.held", {
+                      value: formatTaka(data.damagedValue),
+                    })}
+                  </span>
+                ) : null}
+              </span>
+              <Icon name="chevron" />
+            </Link>
+          ) : null}
           <dl className="hero-grid">
             <div className="tile tile--hero">
               <dt className="tile__label">
@@ -75,13 +95,31 @@ export function DashboardPage() {
                 <Figure value={data.lossValue30d} money testId="stat-losses" />
               </dd>
               <dd className="tile__meta">
-                <Link
-                  className="go"
-                  to="/history?reason=damage"
-                  data-testid="losses-link"
-                >
-                  {t("dashboard.seeDamage")} <Icon name="chevron" size={16} />
-                </Link>
+                <ul className="loss-rows" data-testid="loss-breakdown">
+                  {(
+                    [
+                      ["lossDamage", data.lossBreakdown.damage, "damage"],
+                      [
+                        "lossFlags",
+                        data.lossBreakdown.damageFlagged,
+                        "damage_flagged",
+                      ],
+                      ["lossMissing", data.lossBreakdown.missing, "count"],
+                    ] as const
+                  ).map(([key, value, reason]) => (
+                    <li key={key}>
+                      <Link
+                        className="loss-row"
+                        to={`/history?reason=${reason}`}
+                        data-testid={`loss-${reason}`}
+                      >
+                        <span>{t(`dashboard.${key}`)}</span>
+                        <b>{formatTaka(value)}</b>
+                        <Icon name="chevron" size={16} />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </dd>
             </div>
             <div className="tile">

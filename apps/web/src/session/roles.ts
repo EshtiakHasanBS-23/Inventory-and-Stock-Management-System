@@ -50,12 +50,25 @@ const NAV_ITEMS: readonly NavItem[] = [
     icon: "clock",
   },
   {
+    to: "/approvals",
+    labelKey: "nav.approvals",
+    testId: "side-nav-approvals-link",
+    icon: "check",
+  },
+  {
     to: "/reports",
     labelKey: "nav.report",
     testId: "side-nav-report-link",
     icon: "chart",
   },
 ];
+
+const RECORD_ITEM: NavItem = {
+  to: "/record",
+  labelKey: "nav.record",
+  testId: "side-nav-record-link",
+  icon: "person",
+};
 
 const ACCOUNT_ITEM: NavItem = {
   to: "/account",
@@ -73,12 +86,12 @@ const STAFF_ITEM: NavItem = {
 
 /** Side navigation per role: the stock pages for everyone, Staff for the Owner. */
 export const ROLE_NAV: Readonly<Record<Role, readonly NavItem[]>> = {
-  owner: [...NAV_ITEMS, STAFF_ITEM, ACCOUNT_ITEM],
-  manager: [...NAV_ITEMS, ACCOUNT_ITEM],
-  sales_rep: [...NAV_ITEMS, ACCOUNT_ITEM],
-  warehouse_worker: [...NAV_ITEMS, ACCOUNT_ITEM],
-  supervisor: [...NAV_ITEMS, ACCOUNT_ITEM],
-  accountant: [...NAV_ITEMS, ACCOUNT_ITEM],
+  owner: [...NAV_ITEMS, RECORD_ITEM, STAFF_ITEM, ACCOUNT_ITEM],
+  manager: [...NAV_ITEMS, RECORD_ITEM, ACCOUNT_ITEM],
+  sales_rep: [...NAV_ITEMS, RECORD_ITEM, ACCOUNT_ITEM],
+  warehouse_worker: [...NAV_ITEMS, RECORD_ITEM, ACCOUNT_ITEM],
+  supervisor: [...NAV_ITEMS, RECORD_ITEM, ACCOUNT_ITEM],
+  accountant: [...NAV_ITEMS, RECORD_ITEM, ACCOUNT_ITEM],
 };
 
 /** Who may open each signed-in route: every role. */
@@ -89,6 +102,9 @@ export const ROUTE_ROLES: Readonly<Record<string, readonly Role[]>> = {
   "/history": ROLES,
   "/count": ROLES,
   "/staff": ["owner"],
+  "/approvals": ROLES,
+  "/record": ROLES,
+  "/damage": ROLES,
   "/reports": ROLES,
   "/products/import": ["owner", "manager"],
   "/account": ROLES,

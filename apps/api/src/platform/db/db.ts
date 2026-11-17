@@ -38,9 +38,29 @@ export interface ProductsTable {
   unit: string;
   min_stock: number;
   on_hand: Generated<number>;
+  /** Units flagged as damaged, waiting for a decision. */
+  damaged: Generated<number>;
   /** Poisha. */
   unit_cost: Generated<number>;
   created_at: Generated<Date>;
+}
+
+/** migrations/0005_approvals.sql: damage flags and reversal requests. */
+export interface ApprovalsTable {
+  id: Generated<string>;
+  business_id: string;
+  kind: "damage" | "reversal";
+  product_id: string;
+  quantity: number;
+  unit_cost: number;
+  note: string | null;
+  movement_id: string;
+  status: Generated<"pending" | "approved" | "rejected">;
+  requested_by: string;
+  requested_at: Generated<Date>;
+  decided_by: string | null;
+  decided_at: Date | null;
+  result_movement_id: string | null;
 }
 
 export interface StockMovementsTable {
@@ -55,7 +75,11 @@ export interface StockMovementsTable {
     | "damage"
     | "adjustment"
     | "count"
-    | "opening";
+    | "opening"
+    | "damage_flagged"
+    | "damage_rejected"
+    | "reversal";
+  reverses_movement_id: Generated<string | null>;
   quantity: number;
   balance_after: number;
   /** Poisha, the product's unit cost when the movement happened. */
@@ -71,6 +95,7 @@ export interface Database {
   sessions: SessionsTable;
   products: ProductsTable;
   stock_movements: StockMovementsTable;
+  approvals: ApprovalsTable;
 }
 
 export type Db = Kysely<Database>;

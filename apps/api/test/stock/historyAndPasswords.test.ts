@@ -96,16 +96,18 @@ describe("history filters and passwords", () => {
 
       await move(as(a), rice, "in", 10, "purchase");
       await move(as(a), oil, "in", 5, "purchase");
-      await move(workerAs, rice, "out", 2, "damage");
+      await move(workerAs, rice, "out", 2, "adjustment");
       await move(workerAs, oil, "out", 1, "sale");
 
-      const damage = await a.agent.get(MOVEMENTS).query({ reason: "damage" });
+      const damage = await a.agent
+        .get(MOVEMENTS)
+        .query({ reason: "adjustment" });
       expect(damage.body.map((m: Movement) => m.quantity)).toEqual([2]);
 
       const byWorker = await a.agent.get(MOVEMENTS).query({ userId: workerId });
       expect(byWorker.body.map((m: Movement) => m.reason)).toEqual([
         "sale",
-        "damage",
+        "adjustment",
       ]);
 
       const riceByOwner = await a.agent

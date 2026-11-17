@@ -30,6 +30,7 @@ function aProduct(overrides: Partial<Product> = {}): Product {
     onHand: 12,
     unitCost: 1250.5,
     stockValue: 15006,
+    damaged: 0,
     status: "ok",
     ...overrides,
   };
@@ -56,6 +57,7 @@ function aMovement(overrides: Partial<Movement> = {}): Movement {
     quantity: 10,
     balanceAfter: 12,
     value: 12505,
+    reversesMovementId: null,
     note: null,
     userName: "Abdul Haque",
     createdAt: "2026-11-16T08:30:00.000Z",
@@ -89,6 +91,7 @@ describe("Dashboard (S4)", () => {
       "GET /api/v1/dashboard": {
         status: 200,
         body: {
+          ...EMPTY_DASHBOARD,
           productCount: 2,
           totalUnits: 14,
           lowStockCount: 1,

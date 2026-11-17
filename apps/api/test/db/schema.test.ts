@@ -70,6 +70,7 @@ describe("database schema (0001_identity)", () => {
       "0002_stock",
       "0003_value_and_count",
       "0004_opening_stock",
+      "0005_approvals",
     ]);
   });
 

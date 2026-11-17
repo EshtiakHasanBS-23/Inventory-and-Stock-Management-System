@@ -283,6 +283,87 @@ test("imports products from a CSV, downloads CSVs and shows them in the report",
   await expect(page.getByTestId("report-received-value")).toContainText("৳");
 });
 
+test("a worker flags damage, a supervisor approves it, and the owner sees the loss", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/signin");
+  await page.getByTestId("signin-phone-input").fill(phone);
+  await page.getByTestId("signin-password-input").fill(password);
+  await page.getByTestId("signin-submit-button").click();
+  await expectHeading(page, "Dashboard");
+
+  const me = await (await page.request.get("/api/v1/auth/me")).json();
+  // Writes need the CSRF token and an allowed Origin (the API's own checks).
+  const headers = {
+    "X-CSRF-Token": me.csrfToken,
+    Origin: new URL(page.url()).origin,
+  };
+  const people = {
+    worker: `01${String(Date.now() + 11).slice(-9)}`,
+    supervisor: `01${String(Date.now() + 13).slice(-9)}`,
+  };
+  for (const [role, staffPhone] of [
+    ["warehouse_worker", people.worker],
+    ["supervisor", people.supervisor],
+  ] as const) {
+    const added = await page.request.post("/api/v1/users", {
+      headers,
+      data: {
+        name: role === "supervisor" ? "Smoke Supervisor" : "Smoke Flagger",
+        phone: staffPhone,
+        password: "staff-password",
+        role,
+      },
+    });
+    expect(added.status()).toBe(201);
+  }
+  const products = await (await page.request.get("/api/v1/products")).json();
+  const rice = products.find((p: { sku: string }) => p.sku === "RICE-25");
+
+  async function signedIn(staffPhone: string) {
+    const context = await browser.newContext();
+    const staffPage = await context.newPage();
+    await staffPage.goto("/signin");
+    await staffPage.getByTestId("signin-phone-input").fill(staffPhone);
+    await staffPage.getByTestId("signin-password-input").fill("staff-password");
+    await staffPage.getByTestId("signin-submit-button").click();
+    await expectHeading(staffPage, "Dashboard");
+    return { context, staffPage };
+  }
+
+  const worker = await signedIn(people.worker);
+  await worker.staffPage.goto(`/damage?productId=${rice.id}`);
+  await expectHeading(worker.staffPage, "Flag damage");
+  await worker.staffPage.getByTestId("damage-note-input").fill("wet bag");
+  await worker.staffPage.getByTestId("damage-save-button").click();
+  await expect(worker.staffPage.getByTestId("damage-saved")).toContainText(
+    "Waiting for a decision.",
+  );
+
+  const supervisor = await signedIn(people.supervisor);
+  await supervisor.staffPage.getByTestId("side-nav-approvals-link").click();
+  await expectHeading(supervisor.staffPage, "Approvals");
+  await supervisor.staffPage
+    .getByRole("listitem")
+    .filter({ hasText: "wet bag" })
+    .getByRole("button", { name: "Approve: write off" })
+    .click();
+  await expect(
+    supervisor.staffPage.getByTestId("approvals-notice"),
+  ).toContainText("Approved: Miniket rice.");
+
+  await page.reload();
+  await expect(page.getByTestId("loss-damage_flagged")).toContainText("৳100");
+
+  await worker.staffPage.getByTestId("side-nav-record-link").click();
+  await expect(worker.staffPage.getByTestId("record-today")).toContainText(
+    "1 approved · 0 rejected · 0 waiting",
+  );
+  await worker.context.close();
+  await supervisor.context.close();
+});
+
 test.describe("on a 360 px phone", () => {
   test.use({ viewport: { width: 360, height: 740 } });
 
@@ -305,7 +386,9 @@ test.describe("on a 360 px phone", () => {
       ["side-nav-stock-link", "Stock in / out"],
       ["side-nav-count-link", "Stock count"],
       ["side-nav-history-link", "History"],
+      ["side-nav-approvals-link", "Approvals"],
       ["side-nav-report-link", "Report"],
+      ["side-nav-record-link", "My record"],
       ["side-nav-staff-link", "Staff"],
       ["side-nav-account-link", "My password"],
       ["side-nav-dashboard-link", "Dashboard"],

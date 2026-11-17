@@ -4,7 +4,11 @@
  */
 import {
   HISTORY_PAGE_SIZE,
+  type Approval,
   type ChangePasswordInput,
+  type FlagDamageInput,
+  type RequestReversalInput,
+  type WorkRecord,
   type CountResult,
   type ImportResult,
   type ImportRow,
@@ -34,6 +38,8 @@ const STOCK_KEYS = [
   ["movements"],
   ["dashboard"],
   ["report"],
+  ["approvals"],
+  ["record"],
 ] as const;
 
 function useInvalidateStock() {
@@ -235,11 +241,70 @@ export interface FormFailure {
   message: string;
 }
 
-/** Turns a failed save into a field error, or a form message. */
+/**
+ * Turns a failed save into a field error, or a form message. A refusal
+ * (4xx) carries the server's own words, such as "This was already decided";
+ * anything else gets the general "Couldn't save" message.
+ */
 export function toFailure(error: unknown, fallback: string): FormFailure {
   if (error instanceof ApiError) {
     if (error.field) return { field: error.field, message: error.message };
-    if (error.code === "FORBIDDEN") return { message: error.message };
+    if (error.status >= 400 && error.status < 500) {
+      return { message: error.message };
+    }
   }
   return { message: fallback };
+}
+
+export function useApprovals(status: "pending" | "decided") {
+  const { client } = useSession();
+  return useQuery({
+    queryKey: ["approvals", status],
+    queryFn: () => client.get<Approval[]>(`/approvals?status=${status}`),
+  });
+}
+
+export function useFlagDamage() {
+  const { client } = useSession();
+  const invalidate = useInvalidateStock();
+  return useMutation({
+    mutationFn: (body: FlagDamageInput) =>
+      client.post<Approval>("/stock/damage-flags", body),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRequestReversal() {
+  const { client } = useSession();
+  const invalidate = useInvalidateStock();
+  return useMutation({
+    mutationFn: (body: RequestReversalInput) =>
+      client.post<Approval>("/approvals/reversals", body),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDecideApproval() {
+  const { client } = useSession();
+  const invalidate = useInvalidateStock();
+  return useMutation({
+    mutationFn: (input: { id: string; approve: boolean }) =>
+      client.post<Approval>(
+        `/approvals/${input.id}/${input.approve ? "approve" : "reject"}`,
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+export function useWorkRecord(userId: string) {
+  const { client } = useSession();
+  return useQuery({
+    queryKey: ["record", userId],
+    queryFn: () =>
+      client.get<WorkRecord>(
+        userId
+          ? `/me/record?userId=${encodeURIComponent(userId)}`
+          : "/me/record",
+      ),
+  });
 }

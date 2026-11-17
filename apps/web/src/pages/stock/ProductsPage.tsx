@@ -265,6 +265,11 @@ export function ProductsPage() {
                   <td>{product.name}</td>
                   <td className="num">
                     {product.onHand} {product.unit}
+                    {product.damaged > 0 ? (
+                      <span className="held">
+                        {t("products.held", { count: product.damaged })}
+                      </span>
+                    ) : null}
                   </td>
                   <td className="num">{product.minStock}</td>
                   <td className="num">{formatTaka(product.unitCost)}</td>
@@ -275,6 +280,9 @@ export function ProductsPage() {
                   <td className="row-actions">
                     <Link to={`/stock?productId=${product.id}`}>
                       {t("products.move")}
+                    </Link>
+                    <Link to={`/damage?productId=${product.id}`}>
+                      {t("products.flag")}
                     </Link>
                     <Link to={`/history?productId=${product.id}`}>
                       {t("products.history")}

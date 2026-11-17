@@ -95,6 +95,7 @@ interface ProductRow {
   min_stock: number;
   on_hand: number;
   unit_cost: number;
+  damaged: number;
 }
 
 function toProduct(row: ProductRow): Product {
@@ -107,6 +108,7 @@ function toProduct(row: ProductRow): Product {
     onHand: row.on_hand,
     unitCost: fromPoisha(row.unit_cost),
     stockValue: fromPoisha(row.on_hand * row.unit_cost),
+    damaged: row.damaged,
     status: stockStatus(row.on_hand, row.min_stock),
   };
 }
@@ -119,6 +121,7 @@ const PRODUCT_COLUMNS = [
   "min_stock",
   "on_hand",
   "unit_cost",
+  "damaged",
 ] as const;
 
 /** Escapes LIKE wildcards so a search for "50%" matches the text "50%". */
@@ -207,12 +210,14 @@ export async function updateProduct(
   return toProduct(row);
 }
 
-interface MovementRequest {
+export interface MovementRequest {
   productId: string;
   direction: Direction;
   reason: Reason;
   quantity: number;
   note: string | null;
+  /** For a reversal: the movement it undoes. */
+  reversesMovementId?: string;
 }
 
 /**
@@ -220,7 +225,7 @@ interface MovementRequest {
  * quantity update, then the append-only movement row with the unit cost at
  * this moment. Refuses stock that would go below zero.
  */
-async function applyMovement(
+export async function applyMovement(
   trx: Transaction<Database>,
   caller: Caller,
   request: MovementRequest,
@@ -269,6 +274,7 @@ async function applyMovement(
       unit_cost: product.unit_cost,
       note: request.note,
       user_id: caller.userId,
+      reverses_movement_id: request.reversesMovementId ?? null,
     })
     .returning(["id", "created_at"])
     .executeTakeFirstOrThrow();
@@ -284,6 +290,7 @@ async function applyMovement(
     quantity: request.quantity,
     balanceAfter: product.on_hand,
     value: fromPoisha(request.quantity * product.unit_cost),
+    reversesMovementId: request.reversesMovementId ?? null,
     note: request.note,
     userName: caller.name,
     createdAt: movement.created_at.toISOString(),
@@ -297,6 +304,15 @@ export async function recordMovement(
 ): Promise<Movement> {
   const checked = requireCaller(caller, "stock.movements.record");
   const input = validate(RecordMovementSchema, body, MOVEMENT_FIELD_MESSAGES);
+  // Segregation of duties (PRD FR-5, FR-29): only an Owner or Manager writes
+  // damage off directly; everyone else flags it for a second person.
+  if (input.reason === "damage" && !MANAGE_PRODUCTS_ROLES.has(checked.role)) {
+    throw new AppError(
+      "VALIDATION_FAILED",
+      "reason",
+      "Use Flag damage: a supervisor, manager or owner decides it.",
+    );
+  }
   return deps.db.transaction().execute((trx) =>
     applyMovement(trx, checked, {
       productId: input.productId,
@@ -376,6 +392,7 @@ async function queryMovements(
       "m.quantity",
       "m.balance_after",
       "m.unit_cost",
+      "m.reverses_movement_id",
       "m.note",
       "u.name as user_name",
       "m.created_at",
@@ -406,6 +423,7 @@ async function queryMovements(
     quantity: row.quantity,
     balanceAfter: row.balance_after,
     value: fromPoisha(row.quantity * row.unit_cost),
+    reversesMovementId: row.reverses_movement_id,
     note: row.note,
     userName: row.user_name,
     createdAt: row.created_at.toISOString(),
@@ -413,7 +431,9 @@ async function queryMovements(
 }
 
 /** Drops empty query values, so `?reason=` means "any reason". */
-function withoutEmpty(query: Record<string, unknown>): Record<string, unknown> {
+export function withoutEmpty(
+  query: Record<string, unknown>,
+): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(query).filter(
       ([, value]) => typeof value === "string" && value !== "",
@@ -449,12 +469,29 @@ export async function getDashboard(
   const products = rows.map(toProduct);
   const losses = await deps.db
     .selectFrom("stock_movements")
-    .select(["quantity", "unit_cost"])
+    .select(["direction", "reason", "quantity", "unit_cost"])
     .where("business_id", "=", businessId)
-    .where("direction", "=", "out")
-    .where("reason", "in", LOSS_REASONS)
+    .where("reason", "in", [...LOSS_REASONS, "damage_rejected"])
     .where("created_at", ">=", sql<Date>`now() - interval '30 days'`)
     .execute();
+  // Poisha per source: direct write-offs, flags less rejections, and count
+  // shortfalls (a count that found extra stock is not a loss).
+  const lossPoisha = { damage: 0, damageFlagged: 0, missing: 0 };
+  for (const row of losses) {
+    const money = row.quantity * row.unit_cost;
+    if (row.reason === "damage") lossPoisha.damage += money;
+    else if (row.reason === "damage_flagged") lossPoisha.damageFlagged += money;
+    else if (row.reason === "damage_rejected")
+      lossPoisha.damageFlagged -= money;
+    else if (row.reason === "count" && row.direction === "out")
+      lossPoisha.missing += money;
+  }
+  const pending = await deps.db
+    .selectFrom("approvals")
+    .select((eb) => eb.fn.countAll<string>().as("n"))
+    .where("business_id", "=", businessId)
+    .where("status", "=", "pending")
+    .executeTakeFirstOrThrow();
   const needsAttention = products
     .filter((product) => product.status !== "ok")
     .sort((a, b) => a.onHand - b.onHand);
@@ -465,7 +502,16 @@ export async function getDashboard(
       rows.reduce((sum, row) => sum + row.on_hand * row.unit_cost, 0),
     ),
     lossValue30d: fromPoisha(
-      losses.reduce((sum, row) => sum + row.quantity * row.unit_cost, 0),
+      lossPoisha.damage + lossPoisha.damageFlagged + lossPoisha.missing,
+    ),
+    lossBreakdown: {
+      damage: fromPoisha(lossPoisha.damage),
+      damageFlagged: fromPoisha(lossPoisha.damageFlagged),
+      missing: fromPoisha(lossPoisha.missing),
+    },
+    pendingApprovals: Number(pending.n),
+    damagedValue: fromPoisha(
+      rows.reduce((sum, row) => sum + row.damaged * row.unit_cost, 0),
     ),
     lowStockCount: products.filter((product) => product.status === "low")
       .length,
@@ -791,14 +837,20 @@ export async function getStockReport(
         w.poisha.soldValue += money;
         break;
       case "damage":
+      case "damage_flagged":
         w.line.damaged += m.quantity;
         w.poisha.damagedValue += money;
+        break;
+      case "damage_rejected":
+        w.line.damaged -= m.quantity;
+        w.poisha.damagedValue -= money;
         break;
       case "count":
         w.line.countDifference += signed;
         if (m.direction === "out") w.poisha.missingValue += money;
         break;
       case "adjustment":
+      case "reversal":
         w.line.adjusted += signed;
         break;
     }

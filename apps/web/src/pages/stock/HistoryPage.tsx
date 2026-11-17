@@ -3,23 +3,28 @@
  * reason, person and date range live in the URL, so a filtered view can be
  * shared or bookmarked. Pages of 50 load with "Load more".
  */
-import { ALL_REASONS } from "@mojud/contracts";
+import { ALL_REASONS, type Movement } from "@mojud/contracts";
+import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import {
+  toFailure,
+  useRequestReversal,
   movementsExportHref,
   useHistory,
   usePeople,
   useProducts,
   type HistoryFilters,
 } from "../../api/stock";
-import { ButtonSecondary } from "../../components/Buttons";
+import { ButtonPrimary, ButtonSecondary } from "../../components/Buttons";
 import { DownloadLink } from "../../components/DownloadLink";
 import { InputField } from "../../components/InputField";
 import { SelectField } from "../../components/SelectField";
 import { dayStartIso, nextDayStartIso } from "../../format";
+import { canManageProducts } from "../../session/roles";
+import { useSession } from "../../session/SessionProvider";
 import { usePageTitle } from "../usePageTitle";
-import { MovementTable } from "./MovementTable";
+import { formatDateTime, MovementTable } from "./MovementTable";
 
 const FILTER_KEYS = ["productId", "reason", "userId", "from", "to"] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
@@ -27,10 +32,76 @@ type FilterKey = (typeof FILTER_KEYS)[number];
 /** A full YYYY-MM-DD date; anything else (half-typed) is ignored. */
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Asks a second Owner or Manager to undo one movement (PRD FR-15). */
+function ReversalForm({
+  movement,
+  onDone,
+}: {
+  movement: Movement;
+  onDone: (sent: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const request = useRequestReversal();
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | undefined>();
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (request.isPending) return;
+    setError(undefined);
+    try {
+      await request.mutateAsync({ movementId: movement.id, note });
+      onDone(true);
+    } catch (failure) {
+      setError(toFailure(failure, t("errors.saveFailed")).message);
+    }
+  };
+
+  return (
+    <form
+      className="panel"
+      noValidate
+      onSubmit={submit}
+      data-testid="reversal-form"
+    >
+      <h2>{t("reversal.heading")}</h2>
+      <p className="muted">
+        {t(`stock.reasons.${movement.reason}`)} · {movement.productName} ·{" "}
+        {movement.direction === "in" ? "+" : "−"}
+        {movement.quantity} {movement.unit} ·{" "}
+        {formatDateTime(movement.createdAt)}
+      </p>
+      <InputField
+        id="reversal-note"
+        label={t("reversal.why")}
+        value={note}
+        error={error}
+        onChange={setNote}
+        testId="reversal-note-input"
+      />
+      <div className="form-actions">
+        <ButtonPrimary testId="reversal-send-button" busy={request.isPending}>
+          {t("reversal.send")}
+        </ButtonPrimary>
+        <ButtonSecondary
+          testId="reversal-cancel-button"
+          onClick={() => onDone(false)}
+        >
+          {t("common.cancel")}
+        </ButtonSecondary>
+      </div>
+    </form>
+  );
+}
+
 export function HistoryPage() {
   const { t } = useTranslation();
   usePageTitle(t("history.title"));
   const [params, setParams] = useSearchParams();
+  const { session } = useSession();
+  const mayReverse = session ? canManageProducts(session.role) : false;
+  const [reversing, setReversing] = useState<Movement | null>(null);
+  const [sent, setSent] = useState(false);
   const value = (key: FilterKey) => params.get(key) ?? "";
   const from = value("from");
   const to = value("to");
@@ -136,7 +207,33 @@ export function HistoryPage() {
       ) : null}
       {history.data ? (
         <>
-          <MovementTable movements={movements} testId="history-table" />
+          {sent ? (
+            <p className="success" role="status" data-testid="reversal-sent">
+              {t("reversal.sent")}
+            </p>
+          ) : null}
+          {reversing ? (
+            <ReversalForm
+              key={reversing.id}
+              movement={reversing}
+              onDone={(wasSent) => {
+                setReversing(null);
+                setSent(wasSent);
+              }}
+            />
+          ) : null}
+          <MovementTable
+            movements={movements}
+            testId="history-table"
+            onReverse={
+              mayReverse
+                ? (movement) => {
+                    setSent(false);
+                    setReversing(movement);
+                  }
+                : undefined
+            }
+          />
           {history.hasNextPage ? (
             <div className="load-more">
               <ButtonSecondary
