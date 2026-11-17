@@ -30,6 +30,8 @@ aidlc/diagnostics/
 _bmad/
 _wds-learn/
 .claude/
+.puku-cli/
+aidlc/active-memory/
 
 # --- Personal / secret settings ---
 .env
