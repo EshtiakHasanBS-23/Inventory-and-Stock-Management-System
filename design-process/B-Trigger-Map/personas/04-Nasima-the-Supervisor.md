@@ -1,20 +1,22 @@
 # Nasima the Supervisor: Tertiary Persona
 
-> Tertiary target. Closes the loop on every flag, shortfall and difference.
+> Tertiary target. The second person who decides every damage flag.
+
+Updated 2026-11-16 to match the built app.
 
 **Priority:** TERTIARY
-**Role in flywheel:** decides damage flags and issues quickly → damage captured at source (objective 5) and clean records (objectives 3 and 4)
+**Role in flywheel:** decides damage flags quickly and fairly → damage written off only after a second look, losses explained in taka (objectives 4 and 5)
 **Created:** 2026-10-23
-**Sources:** PRD §2.1 JTBD, UJ-3, FR-31–33a; EXPERIENCE.md → Issue decisions. Fears and quotes are `[ASSUMPTION]` until interviews.
+**Sources:** as-built app (FR-13, FR-14, FR-16, FR-23); user story US-10; scenario S03. Fears and quotes are `[ASSUMPTION]` until checked with a pilot distributor.
 
 ## Profile Summary
 
-**Nasima supervises the Narayanganj floor. Problems reach her by shouting,
-phone calls and WhatsApp photos, and she is accountable for every one of them.**
-She wants a single short list, worst first, where each card already shows what
-happened, who found it and when, so she can decide in a tap and go home with
-nothing open. Above all she doesn't want to sign off something wrong and carry
-the blame.
+**Nasima supervises the warehouse floor. Damaged stock used to reach her by
+shouting, phone calls and WhatsApp photos, and she is accountable for every
+write-off.** She wants one list where each card already shows what was flagged,
+how many, what it is worth, who flagged it and when, so she can decide in a tap
+and get back to the floor. She doesn't want to be the reason decisions pile up,
+and she doesn't want anyone to say she approved her own request.
 
 ## Visual Representation
 
@@ -28,35 +30,32 @@ softly out of focus behind her, even fluorescent lighting, documentary style."
 
 - **Where:** on the floor and at a small desk by the bay
 - **Device:** her own Android phone
-- **Moments:** the shift-end inbox sweep (UJ-3), quick approvals mid-shift, assigning an issue
+- **Moments:** deciding a flag Karim just raised (S03), clearing the Waiting tab before shift end, checking the Decided tab when someone asks what happened to a flag
 
 ## Goals (usage context)
 
-- See the issue with the most money at risk first
-- Approve or reject with the evidence on the card
-- Reach an empty inbox before the shift ends
+- See every waiting damage flag in one place (Approvals, Waiting tab, FR-16)
+- Approve (written off) or reject (back in stock) in one tap (FR-14)
+- Know the decision is final and recorded with her name ("This was already decided." if someone else got there first)
 
 ## Driving Forces
 
 **Positive (wants):**
-- ✅ One ranked list instead of scattered alerts
-- ✅ Decisions in one tap
-- ✅ A record that settles disputes between workers
+- ✅ One-tap decisions with product, quantity, value in taka, note, who asked and when on the card
+- ✅ Fairness: nobody decides their own request; the card says "Waiting for someone else to decide." when it isn't hers to decide (FR-16, FR-23)
 
 **Negative (fears):**
-- ❌ Alert overload and constant notifications
-- ❌ Approving something wrong and being blamed
-- ❌ He-said-she-said disputes with no evidence
-- ❌ Being unable to approve her own records when she's the only one on shift (segregation of duties)
+- ❌ Being the bottleneck (answered: any Supervisor, Manager or Owner who did not raise the flag can decide it, and the Dashboard banner shows what is waiting)
 
 ## Illustrative Quote
 
-> "Show me the worst one first, show me who found it, and let me close it."
+> "Show me what was flagged, who flagged it, and let me close it."
 > *(illustrative, not from an interview)*
 
 ## Design Implications
 
-- Issues inbox ranked: assigned → reserved stock → value at risk → age (FR-31)
-- Cards carry what, quantity, where, who and when; decide inline (FR-32, FR-33a)
-- An empty-inbox state that feels like closure
-- Segregation of duties shown clearly ("needs another approver"), never a dead end (FR-5)
+- Approvals inbox with Waiting / Decided tabs; each card shows kind, product, quantity, value, note, who asked and when (FR-16)
+- Approve / Reject shown only to people allowed to decide who did not ask (FR-16, FR-23)
+- Flagged units leave sellable stock at once into a Damaged hold, so stock is right while the decision waits (FR-13)
+- A rejected flag puts the units back with a "Flag rejected, back in stock" movement (FR-14)
+- An empty Waiting tab that reads as done

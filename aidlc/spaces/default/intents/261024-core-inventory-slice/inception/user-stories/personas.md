@@ -1,57 +1,55 @@
 # Personas — Mojud core slice
 
-Plain role names are used in the stories (user-stories Q2). Each role below is drawn from `requirements.md` (FR2.1, FR2.3) and the PRD's jobs-to-be-done; the named personas in `design-process/B-Trigger-Map/personas/` remain the deeper background.
+Updated 2026-11-16 to match the built app.
 
-## Owner
+Four named personas use the built app. Each is drawn from `requirements.md` (FR-1 to FR-23 and the roles table) and the named personas in `design-process/B-Trigger-Map/personas/`. Everyone lands on the Dashboard after signing in and sees the same menu: Dashboard, Products, Stock in / out, Stock count, History, Approvals, Report, My record and My password; the Owner also sees Staff.
 
-- **Role:** pays for Mojud, creates the business, has every permission this round.
-- **Goals:** get the business set up quickly; trust that stock numbers are right without visiting the warehouse.
-- **Pain points:** Excel and paper records nobody trusts; losses with no explanation.
-- **Tech comfort:** medium; uses a desktop browser for setup.
-- **Frequency this round:** setup, then occasional checks of the Issues list.
-- **Lands on:** Setup home.
+## Mr. Abdul Haque — Owner
 
-## Manager
+- **Role:** creates the business at sign-up and has every permission: products, imports, stock, counts, direct damage write-offs, deciding flags and reversals, anyone's record, and Staff (add, deactivate, reactivate, reset passwords).
+- **Goals:** trust the stock numbers from a distance; see stock value and losses in taka and where they came from; stop silent write-offs; set up quickly from Excel; control who can do what.
+- **Pain points:** losses found too late; write-offs nobody can explain.
+- **Tech comfort:** medium; desk computer for setup and the month-end report, phone for quick checks.
+- **How he uses Mojud:** signs up (US-01), imports products (US-06), adds staff (US-03), resets a forgotten password (US-04), watches the Dashboard (US-12), searches History and asks for reversals (US-13, US-11), closes the month with the Report and CSV downloads (US-14, US-15).
 
-- **Role:** runs stock day to day; sets up products, suppliers, opening stock and purchase orders; can do anything the Owner can except manage Owners.
-- **Goals:** get products and opening stock in correctly; send purchase orders; see problems that need attention.
-- **Pain points:** discrepancies with no trail of who did what.
-- **Tech comfort:** medium to high; desktop.
-- **Frequency this round:** daily.
-- **Lands on:** Setup home.
+## Karim — Warehouse worker (primary user)
 
-## Sales rep
+- **Role:** records stock in and out, counts stock, flags damage; cannot write damage off directly, cannot decide approvals, sees only his own record.
+- **Goals:** record work quickly on his phone; know it was saved; have a permanent record with his name that protects him from blame.
+- **Pain points:** slow paperwork; being blamed for gaps he did not cause.
+- **Tech comfort:** low to medium; phone with the bottom menu.
+- **How he uses Mojud:** signs in (US-02), records deliveries and sales (US-07), flags a wet bag (US-09), checks My record (US-16), changes his password (US-04).
 
-- **Role:** creates dispatch orders for customers.
-- **Goals:** promise only what is really available, and know it is held for the customer.
-- **Pain points:** promising stock that turns out not to exist.
-- **Tech comfort:** medium.
-- **Frequency this round:** several times a day.
-- **Lands on:** Dispatch orders.
+## Nasima — Supervisor
 
-## Warehouse worker (primary user)
+- **Role:** records stock and counts like a worker, and decides damage flags raised by others; cannot write damage off directly, cannot ask for or decide reversals.
+- **Goals:** clear damage decisions fast; be fair, with a clear view of who asked and a rule that nobody decides their own flag.
+- **Pain points:** becoming the bottleneck for the team.
+- **Tech comfort:** medium; phone or desk.
+- **How she uses Mojud:** approves or rejects flags in one tap in Approvals (US-10); her decisions appear in her record (US-16).
 
-- **Role:** receives supplier deliveries, picks dispatch orders and flags damage, in assigned warehouses only.
-- **Goals:** see the next task without asking; record work fast; know it was saved; have a record that protects them from blame.
-- **Pain points:** slow paperwork; being blamed for gaps they did not cause.
-- **Tech comfort:** low to medium.
-- **Frequency this round:** all day.
-- **Lands on:** My tasks.
+## Rafiq — Manager
 
-## Supervisor and Accountant
+- **Role:** manages products and imports, records stock and counts, writes damage off directly, decides damage flags, asks for and approves reversals (never his own), and sees anyone's record. He cannot manage staff.
+- **Goals:** keep the catalogue right; keep counts accurate; correct mistakes without editing history.
+- **Pain points:** wrong numbers with no trail of who did what.
+- **Tech comfort:** medium to high; desk and phone.
+- **How he uses Mojud:** adds and edits products (US-05), counts the rice shelf (US-08), approves Haque's reversal (US-11), reviews a worker's record (US-16).
 
-These roles exist with their permissions (FR2.1) but have no screens this round; they land on a "coming in a later round" page (FR2.3).
+## Other roles
+
+Sales rep and Accountant accounts exist with the same permissions as a Warehouse worker: they see everything, record stock and counts, flag damage and see their own record. An Accountant uses the Report and CSV downloads (US-14, US-15).
 
 ## Relationships and Priority
 
-| Priority | Role | Why |
+| Priority | Persona | Why |
 |---|---|---|
-| 1 | Warehouse worker | Every stock record starts with their actions; the product fails if they don't record |
-| 2 | Manager | Creates the records the worker acts on |
-| 3 | Sales rep | Creates the demand the worker picks |
-| 4 | Owner | Creates the business; benefits from trustworthy records |
+| 1 | Karim (Warehouse worker) | Most stock changes start with him; the record is only as good as his recording |
+| 2 | Mr. Haque (Owner) | Creates the business and staff; the dashboard and losses answer his questions |
+| 3 | Nasima (Supervisor) | The second person on every damage flag |
+| 4 | Rafiq (Manager) | Keeps products and counts right; the second person on reversals |
 
-The Owner creates the business and users; the Manager sets up products, stock and purchase orders; the Sales rep orders stock for customers; the Warehouse worker receives and picks.
+Haque creates the business and adds Karim, Nasima and Rafiq. Karim records stock and flags damage; Nasima (or Rafiq or Haque) decides the flag. Haque or Rafiq asks for a reversal and the other approves it. Everyone's work shows in History and in each person's record.
 
 ## Assumptions & Open Questions
 

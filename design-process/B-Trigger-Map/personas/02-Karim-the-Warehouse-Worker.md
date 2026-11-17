@@ -1,20 +1,21 @@
-# Karim the Warehouse Worker: Primary Persona
+# Karim the Warehouse Worker: Secondary Persona
 
-> Primary target. His weekly recording is what every other objective depends on.
+> Secondary target. The record is only complete if he records what he handles.
 
-**Priority:** PRIMARY
-**Role in flywheel:** records receipts, picks, damage and counts at source → complete, accurate record → owner trust → product proof
+Updated 2026-11-16 to match the built app.
+
+**Priority:** SECONDARY
+**Role in flywheel:** records stock in, stock out, counts and damage flags at the moment they happen → complete, permanent record → owner trust → product proof
 **Created:** 2026-10-23
-**Sources:** PRD §2.1 JTBD, UJ-1, UJ-2, UJ-9; EXPERIENCE.md → Foundation. Fears and quotes are `[ASSUMPTION]` until interviews.
+**Sources:** as-built app (FR-2, FR-5, FR-9 … FR-11, FR-13, FR-22, FR-23); user stories US-02, US-04, US-07, US-09, US-16. Fears and quotes are `[ASSUMPTION]` until checked with a pilot distributor.
 
 ## Profile Summary
 
-**Karim works the floor at the Narayanganj warehouse: receiving deliveries,
-picking dispatch orders, moving cartons. He's quick with his hands and slow to
-trust paperwork, because paperwork has never protected him.** When stock goes
-missing today, the worker nearest the gap gets blamed. If Mojud makes recording
-faster than skipping it, and makes his record his defence, he records. If it
-doesn't, nothing else in the product matters.
+**Karim works in the warehouse: unloading deliveries, handing out goods for sales,
+moving cartons and bags. He's quick with his hands and slow to trust
+paperwork, because paperwork has never protected him.** When stock goes missing
+today, the worker nearest the gap gets blamed. If recording in Mojud is quick
+and his own record becomes his defence, he records.
 
 ## Visual Representation
 
@@ -27,45 +28,38 @@ a roller door, documentary photography style, shallow depth of field."
 
 ## Context of Use
 
-- **Where:** warehouse floor and loading bay, standing, often one-handed
-- **Device:** a shared low-end Android phone in Chrome, with a cracked screen possible; low battery common
-- **Connectivity:** patchy; drops at the back of the warehouse
-- **Language:** reads Bangla comfortably and some English; product names stay as printed
-- **Moments:** receiving a supplier truck (blind count), picking a dispatch order, finding a crushed carton, counting an aisle, receiving a transfer
+- **Where:** warehouse floor and loading bay, standing
+- **Device:** a low-cost Android phone in the browser (layout works from 320 px; bottom tab bar on phones)
+- **Moments:** recording the morning delivery as stock in (S02), recording a sale as stock out, flagging a wet or crushed bag (S03), checking his week in My record (S06), changing his password after the owner resets it (S08)
 
 ## Goals (usage context)
 
-- Finish the current task and see the next one without asking anyone
-- Record a line in one scan and one tap
-- Know for certain that what he recorded was saved
-- Have something to point to when a gap is questioned ("My record")
+- Record a stock change in one short form: product, direction, reason, quantity, optional note (FR-9)
+- See at once that it was saved, with the new balance
+- Flag damage without needing a manager's permission first (FR-13)
+- Have something to point to when a gap is questioned (My record, FR-22)
 
 ## Driving Forces
 
 **Positive (wants):**
-- ✅ Speed: get the truck unloaded, the order picked
-- ✅ Proof: a visible trail of what he counted and flagged
-- ✅ Clarity: one obvious next action on every screen
-- ✅ Respect: a tool that treats him as trustworthy
+- ✅ Speed: a short form that works on his phone
+- ✅ Proof: every movement carries his name and time and can never be edited or deleted (FR-11)
+- ✅ Clarity: clear messages when something is refused ("Only N unit in stock.", "Use Flag damage: a supervisor, manager or owner decides it.")
 
 **Negative (fears):**
-- ❌ Being blamed for a shortfall someone else caused
-- ❌ Extra steps, typing or forms when his hands are full
-- ❌ Losing counts when the network drops mid-delivery
-- ❌ Recording under someone else's name on a shared phone
-- ❌ Looking foolish on a confusing or English-only screen
+- ❌ Being blamed for a shortfall someone else caused (answered by the named, permanent record and My record)
+- ❌ Slow paperwork (answered by one form with whole-number quantities and a saved message)
 
 ## Illustrative Quote
 
-> "If it shows I counted 92, then 92 is what came. Don't put the 8 on me."
+> "If it shows I recorded 92 in, then 92 is what came. Don't put the 8 on me."
 > *(illustrative, not from an interview)*
 
 ## Design Implications
 
-- Floor screens at 360px, big quantity numbers, fixed bottom Scan bar (DESIGN.md)
-- Defaults pre-filled; ≤ 1 scan + 1 tap per routine line (NFR-2)
-- Instant "Saved" / "Saved on phone, will sync" feedback, then the next task (FR-52, FR-53)
-- Blind screens never show expected quantities (FR-21, FR-27, FR-35)
-- Signed-in name always visible in the app bar on floor screens (shared phones)
-- Never use blame words in copy (EXPERIENCE.md → Voice and Tone)
-- "My record" shows his completed work as proof (FR-51)
+- Phone layout with bottom tab bar; tables become cards on phones (NFR-4)
+- Saved message shows the new balance; green saved toast
+- Refusals explain what to do next, never blame (stock never negative, FR-10; damage goes through Flag damage, FR-23)
+- Flag damage reachable from Stock in / out and from each product row
+- My record shows today, last 7 days and last 30 days: movements and units, counts, flags by outcome (FR-22)
+- Sign-in with phone and password; session ends 12 hours after last use (FR-2)

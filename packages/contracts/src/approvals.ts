@@ -3,7 +3,7 @@ import { NOTE_MAX_LENGTH, QUANTITY_MAX, type Reason } from "./stock.js";
 
 /**
  * Damage flags and reversal requests: anything that needs a second person's
- * decision (PRD FR-15, FR-29, FR-30). The person who asked can never decide.
+ * decision (PRD FR-13 to FR-16). The person who asked can never decide.
  */
 
 /** `POST /api/v1/stock/damage-flags`: anyone flags damaged stock. */
@@ -77,7 +77,7 @@ export const ApprovalQuerySchema = z.object({
   status: z.enum(["pending", "decided"]).default("pending"),
 });
 
-/** One person's work for a period (PRD FR-51, "My record"). */
+/** One person's work for a period (PRD FR-22, "My record"). */
 export interface RecordPeriod {
   /** Stock movements they recorded, in and out (not counts or flags). */
   movements: number;

@@ -4,6 +4,7 @@ phase: WDS Phase 1 — Product Brief
 brief_level: complete
 status: complete
 created: 2026-10-23
+updated: 2026-11-16
 seeded_from:
   - _bmad-output/planning-artifacts/briefs/brief-E2E_IAM-2026-10-22/brief.md
   - _bmad-output/planning-artifacts/briefs/brief-E2E_IAM-2026-10-22/addendum.md
@@ -15,186 +16,211 @@ seeded_from:
 
 # Product Brief: Mojud (working name)
 
+> **Updated 2026-11-16 to match the built app.** This brief now describes only
+> what the app in `apps/` does. Requirement IDs (FR-1 … FR-23) refer to the
+> as-built specification.
+
 > *Mojud* (মজুদ) means "stock" in Bangla. The name is temporary.
 
-This WDS brief builds on the BMAD brief, PRD and UX documents listed above
-rather than replacing them. Where those documents go into more detail, this
-brief links to them instead of repeating it.
+This WDS brief builds on the BMAD brief, PRD and UX documents listed above.
+Where those documents go into more detail, this brief links to them instead of
+repeating it.
 
 ## Strategic Summary
 
-Small Bangladeshi FMCG distributors run their warehouses on Excel, paper khatas
-and WhatsApp. Their "stock" figure is a single number that mixes sellable,
-damaged and already-promised units. Most changes happen outside the system:
-damage is reported verbally and reservations are written in a sales notebook.
-Gaps creep in at every handoff, and the owner only discovers the loss at month
-end, as a shortfall nobody can explain.
+Small Bangladeshi FMCG distributors keep stock in Excel sheets and paper
+khatas. A figure gets changed and nobody knows who changed it or why. Damage is
+written off quietly. The owner finds the loss at month end, as a shortfall in
+taka that nobody can explain.
 
 The root cause is not missing software. **The people who record stock get
-nothing back for doing it.** Effort flows up to managers, so recording is the
-first thing dropped under pressure.
+nothing back for doing it**, and the owner has no trail to follow when a number
+looks wrong.
 
-Mojud is a phone-first, offline-capable stock-control web app that reverses
-this. Every recording takes about one scan and one tap, and it gives the worker
-something straight back: their next task, confirmation that it was saved, and a
-record that protects them from blame for gaps they didn't cause. The owner gets
-promisable stock they can trust and losses in taka, each traceable to a
-transaction, a person and a time.
+Mojud is a phone-friendly stock-control web app that fixes this for a business
+with one stock location and a handful of staff:
+
+- Every stock change is a permanent record with **who, when, why and the value
+  in taka**. Records are never edited or deleted (FR-11), and stock never goes
+  below zero (FR-10).
+- **Every damage write-off and every correction needs a second person.**
+  Workers flag damage; a supervisor, manager or owner who did not raise the flag
+  decides it. Mistakes are fixed with an approved reversal, never by editing
+  history (FR-13 … FR-16, FR-23).
+- The owner gets a **dashboard of stock value and losses in taka**, with each
+  loss figure leading to the movements behind it (FR-18, FR-19), plus a monthly
+  stock report and Excel (CSV) downloads (FR-20, FR-21).
+- Workers get something straight back: a clear "Saved" message with the new
+  balance, and **My record**, a view of their own work that protects them from
+  blame for gaps they did not cause (FR-22).
 
 ## Vision
 
-**"Every handoff counted. Every person protected."**
+**"Every loss traced to a person and a reason."**
 
-If Mojud earns trust with a handful of distributors, it becomes the record that
-small Bangladeshi distributors run their warehouses on. It stays a focused
-stock-control product: no POS, no invoicing, never an ERP.
+Mojud is the one shared stock record a small distributor trusts: quick for the
+person recording, and clear for the owner checking. It stays a focused
+stock-control product.
 
 ## Positioning
 
-- **For** owners of Bangladeshi FMCG distributors and wholesalers with 1–3
-  warehouses and 5–30 staff
+- **For** owners of small Bangladeshi FMCG distributors and wholesalers with
+  one stock location and a handful of staff
 - **who** can't trust their stock numbers from a distance and find losses too late,
-- **Mojud is** a stock-control web app (PWA)
-- **that** shows promisable stock and traces every change to a person and a reason,
-- **unlike** shop-level khata apps (TallyKhata, Hishabee) or brand-side DMS/ERP
-  (Sokrio, TallyPrime, Odoo),
-- **because** it's built for the warehouse floor first (Bangla, offline, one scan
-  and one tap) and its accountability protects honest workers instead of policing them.
+- **Mojud is** a phone-friendly stock-control web app
+- **that** records every stock change permanently and traces every loss to a
+  person, a reason and a value in taka,
+- **unlike** Excel and paper khatas, which hold one bare number with no trail,
+- **because** nothing is ever overwritten, every damage write-off and
+  correction needs a second person's approval, and the same record that holds
+  staff accountable also proves what they did.
 
 ## Client Profile
 
 - **Solo project.** The project owner is also the designer and builder.
-  Decisions are made by their own judgement, informed by feedback from real
-  distributors.
+  Decisions are made by their own judgement.
 - **Internal driver:** learning end-to-end product design and delivery, with the
   intention of building something a real business could actually use.
 - **No external sign-off.** There is no contract, client approval or
-  procurement gate. Validation comes from distributor interviews and a pilot.
+  procurement gate.
 
 ## Target Users
 
-**Paying decision-maker (future):** the **owner**. They are not on the floor
-every day and want *control*: to trust the numbers from a distance and stop
-money leaking away.
+**Decision maker:** the **owner** (persona: Mr. Abdul Haque). They are not on
+the floor every day and want *control*: to trust the numbers from a distance
+and see where money is lost.
 
-**Daily users.** They adopt Mojud only if it gives them *relief*:
+**Daily users** adopt Mojud only if it gives them *relief*. These are the six
+roles in the built app (FR-3, FR-4):
 
-| Role | Surface | What success feels like |
-|---|---|---|
-| Warehouse worker | Floor (phone) | Records in seconds, knows the next task, isn't blamed for others' gaps |
-| Supervisor | Floor (phone) | Clears one prioritised inbox and approves damage in one tap |
-| Inventory manager | Desk + phone | Knows promisable stock per warehouse and resolves discrepancies with evidence |
-| Sales rep | Phone | Promises quantities without having to call the warehouse |
-| Accountant | Desk | Gets a stock value backed by a transaction trail |
-| Owner | Desk + phone | Sees losses in taka and can follow any figure to its evidence |
+| Role | Device | What they do in Mojud | What success feels like |
+|---|---|---|---|
+| Owner (Haque) | Desk + phone | Signs up the business; adds, deactivates and reactivates staff and resets their passwords; manages and imports products; records stock; writes off damage directly; asks for and decides reversals and damage flags (never their own); sees anyone's record | Sees stock value and losses in taka and can follow any loss to its movements |
+| Manager (Rafiq) | Desk + phone | Manages and imports products; records stock and counts; writes off damage directly; asks for and decides reversals and damage flags (never their own); sees anyone's record | Counts are right and mistakes are corrected without editing history |
+| Supervisor (Nasima) | Phone | Records stock in/out and counts; flags damage; approves or rejects other people's damage flags in one tap | Clears the approvals list fast, and nobody can approve their own flag |
+| Warehouse worker (Karim) | Phone | Records stock in/out and counts; flags damage; sees their own record | Records in seconds and has proof of their own work |
+| Sales rep | Phone | Sees products and stock; records stock in/out (for example a sale) and counts; flags damage; sees their own record | Checks what is in stock without calling the warehouse |
+| Accountant | Desk | Sees the dashboard, history and report; downloads CSV files; records stock and counts; flags damage | Gets a stock value backed by a movement-by-movement trail |
 
-Usage context: workers are standing, often one-handed, in dim or bright
-warehouses, sometimes offline, and often on shared low-end Android phones.
-Full journeys are in PRD §2.3 and EXPERIENCE.md → Key Flows (UJ-1 … UJ-9).
+Everyone can see the dashboard, products, history, report and approvals list,
+and everyone can change their own password (FR-5).
+
+Usage context: floor staff are often standing and using a phone with one hand,
+so every screen works from 320 px wide, with a bottom tab bar and cards in
+place of tables on phones. Full journeys are in the UX scenarios S01 … S08.
 
 ## Business Model
 
-**None in v1. This is a free learning project.**
+**None. This is a free learning project.**
 
-- No pricing, billing or subscription features are designed or built in v1.
-- If a real distributor adopts it, a monetisation model gets decided then.
-  Desk research suggests local SaaS pricing of about ৳1,000–3,000/month
-  (`[ASSUMPTION]`, unverified; brief addendum A).
-- **Design implication:** don't spend design effort on onboarding funnels,
-  plans, trials or upgrade prompts. Business setup (UJ-8) only needs to work
-  for a pilot.
+- The app has no pricing, billing or subscription features.
+- **Design implication:** no design effort goes into funnels, plans, trials or
+  upgrade prompts. Sign-up (FR-1) creates a business and its owner in one step.
 
 ## Success Criteria
 
-`[ASSUMPTION]` These targets are provisional until validated with real users.
+`[ASSUMPTION]` Adoption targets are provisional until tested with a real business.
 
 **Primary (product proof):** one real distributor replaces Excel or khata with
 Mojud for **8 consecutive weeks**.
 
-**Secondary:**
-- Inventory record accuracy ≥ 97% of counted lines after 3 months
-- 100% of stock changes record who, when, why and where (enforced by the system)
-- Unexplained loss in taka falls month on month, and ≥ 80% of discrepancy cases are resolved within 7 days
-- ≥ 90% of damage is flagged within the same shift it was found
-- ≥ 80% of floor and sales staff record in the app every working week
-- A routine scan takes ≤ 5 s, and a sales rep finds the promisable quantity in ≤ 10 s
+**Measurable with the built app:**
 
-**Design-specific:** each routine floor action costs **at most one scan and one
-tap** when defaults are accepted (NFR-2).
+- **100% of stock changes record who, when, why and the value in taka.** The
+  system enforces this: every change is a movement, and the database refuses
+  edits and deletes (FR-11).
+- **Stock never goes below zero**, including when two people record the last
+  unit at the same moment (FR-10).
+- **No damage write-off or reversal is decided by the person who asked for
+  it**, enforced by the app and the database (FR-16, FR-23).
+- **Every loss is traceable in taka:** the dashboard's 30-day loss tiles
+  (written off, damage flags, missing in counts) each open the matching
+  filtered history (FR-18, FR-19).
+- **Losses in counts shrink month on month:** the "Missing in counts" figure
+  and the monthly report's "lost" total trend down (FR-18, FR-20).
+- **Damage decisions don't pile up:** the dashboard banner shows how many
+  requests are waiting and the taka held as damaged (FR-18).
+- **Set-up takes one sitting:** a product list of up to 1,000 rows is imported
+  from Excel (CSV), with opening stock, in one step (FR-8).
+- **Floor adoption:** each worker's activity is visible in My record for the
+  last 7 and 30 days (FR-22).
+- **Speed:** first load, sign-up and sign-in each take 2 seconds or less
+  (NFR-6, checked by the browser smoke test).
 
 ## Competitive Landscape
 
 | Alternative | Why it doesn't serve our customer |
 |---|---|
-| Excel / khata / WhatsApp (status quo) | One bare number, no trail, nobody can trace losses |
-| TallyKhata, Hishabee | Built for a single shop; no multi-warehouse, transfers or counts |
-| TallyPrime | Accounting-first desktop tool, with no floor-level capture or Bangla floor UX |
-| Sokrio, Field Buzz | Sold to brands for field sales, not to small distributors for warehouse control |
-| Odoo / local ERPs | Too heavy and too expensive to implement for a 5–30 person business |
+| Excel / khata / WhatsApp (status quo) | One bare number, figures can be changed silently, no trail, nobody can trace losses |
+| TallyKhata, Hishabee | Built for a single shop's sales and dues, not for tracing stock losses to staff |
+| TallyPrime | Accounting-first desktop tool, not built for quick recording on a phone |
+| Sokrio, Field Buzz | Sold to brands for field sales, not to small distributors for stock control |
+| Odoo / local ERPs | Too heavy and too expensive to implement for a small business |
 
-**Why Mojud wins (positioning, not a moat):** floor-first effort budget, Bangla
-and offline, and accountability that protects workers. The market gap is
-`[ASSUMPTION]` until checked with 3–5 distributors. Sources: brief addendum A.
+**Why Mojud wins (positioning, not a moat):** a permanent record that cannot be
+overwritten, second-person approval for every write-off and correction, losses
+shown in taka, and a record that protects honest workers. The market gap is
+`[ASSUMPTION]` until checked with real distributors. Sources: brief addendum A.
 
 ## Constraints & Context
 
-- **Team:** solo. Scope must be buildable by one person in small increments,
-  starting with core stock tracking (PRD §7.2).
-- **Budget:** none. Prefer free, open tooling.
-- **Platform:** responsive web app installable as a PWA. No native apps. Floor
-  screens are designed at 360px and work from 320px.
-- **Offline-first:** scans queue on the device and sync later. Each device needs
-  one online sign-in first.
-- **Devices:** shared, low-end Android phones on Chrome. Camera scanning needs
-  HTTPS and permission.
-- **Scope:** the 18 v1 features in the brief and PRD §7.1. Explicitly out:
-  POS, invoicing, accounting ledger, batch/serial, BOM, bins, multi-company and
-  people risk scores.
-- **Tech stack:** not chosen yet, and no component library. DESIGN.md tokens
-  are the source of visual truth.
-- **Accessibility:** WCAG 2.x AA floor (EXPERIENCE.md → Accessibility Floor).
+- **Team:** solo. Built by one person in small increments.
+- **Budget:** none. Free, open tooling only.
+- **Platform:** responsive web app in the browser, for desktop and phone,
+  working from 320 px wide. No native apps.
+- **One stock location** per business.
+- **Running:** local only, started with Docker Compose (`npm run up`) or in
+  development mode (`npm run dev`). No cloud deployment (NFR-8).
+- **Tech stack:** TypeScript throughout; React 18 + Vite frontend, Express 5 +
+  PostgreSQL 16 backend, shared zod schemas. DESIGN.md tokens are the source
+  of visual truth.
+- **Security:** Argon2id passwords, HttpOnly session cookie that ends 12 hours
+  after last use, CSRF protection on every change, and every query limited to
+  the caller's business (NFR-1, NFR-2).
+- **Accessibility:** WCAG 2.1 AA target, checked automatically in light and
+  dark themes (NFR-5).
 
 ## Platform Strategy
 
-| Surface | Devices | Users |
+| Surface | Devices | Navigation |
 |---|---|---|
-| **Floor** | Phone only, bottom tab bar, fixed Scan bar | Worker, Supervisor |
-| **Desk** | Desktop and phone; side nav at ≥ 1024px, list + detail layouts | Owner, Manager, Accountant, Sales rep |
+| **Phone** | Phones from 320 px | Bottom tab bar; tables shown as cards |
+| **Desktop** | Laptop and desktop browsers | Side menu with icons; full tables |
 
-Light and dark modes both ship in v1. Details: EXPERIENCE.md → Responsive & Platform.
+All roles use the same app; the menu shows only what a role may use (the Staff
+page appears for the Owner only). Light, dark and device-setting themes are
+available. Menu order: Dashboard, Products, Stock in / out, Stock count,
+History, Approvals, Report, My record, Staff (Owner), My password.
 
 ## Tone of Voice
 
 **Short, plain, calm, and on the worker's side.**
 
-| Attribute | Means | Example |
+| Attribute | Means | Example from the app |
 |---|---|---|
-| Plain | Say what happened and what to do next | "Saved on phone, will sync" (not "Network error") |
-| Calm | No alarm, no exclamation marks | "Saved" (not "Success!") |
-| Protective | No blame words, ever | "Not applied – sent to supervisor" (not "Sync failed") |
-| Precise | Limits are stated in the user's own units | "Only 32 ctn available. Max 32 ctn." |
-| Bilingual-equal | Bangla is written from the meaning, never as a smaller afterthought | Scan bar and floor primary buttons show Bangla first, then English |
+| Plain | Say what happened and the result | "Saved. Stock in 20 bag of Miniket Rice. Now 64 bag in stock." |
+| Calm | No alarm, no exclamation marks | "Nothing is waiting for a decision." |
+| Protective | No blame words; say who decides next | "Flagged 2 bag of Miniket Rice (৳2,400). Waiting for a decision." |
+| Precise | Limits stated in the product's own unit | "Only 3 bag in stock." |
+| Fair | Say why an action isn't available | "Use Flag damage: a supervisor, manager or owner decides it." |
 
-Language rules: the whole UI uses the language the user chose; Western digits
-in both languages; taka with lakh grouping (৳12,45,000); product and party
-names exactly as entered. Full rules and glossary: EXPERIENCE.md → Voice and
-Tone. Brand style ("Jamdani Teal", Calm Professional with a Big & Bold floor):
-DESIGN.md → Brand & Style.
+Language rules: the interface is in English; Western digits; taka with lakh
+grouping (৳12,45,000); product names exactly as entered; dates in Bangladesh
+time in downloads (NFR-9). Brand style: DESIGN.md → Brand & Style.
 
 ## Not Applicable to This Product
 
-- **SEO and keyword map:** the app sits behind a login, with no public marketing site in v1.
-- **Contact strategy:** none in v1. Revisit if a public site is added.
+- **SEO and keyword map:** the app sits behind a sign-in, with no public marketing site.
+- **Contact strategy:** none.
 
-## Open Questions (carried from the BMAD brief and PRD)
+## Open Questions
 
-- Do staff have, or share, smartphones good enough for camera scanning? (PRD §9 Q2, shared phones)
-- Will staff accept more accountability if it visibly protects them too?
+- Will staff accept more accountability when it visibly protects them too?
 - What security and backup promises do owners need before trusting a new web app?
-- Is the market gap real? Needs 3–5 distributor interviews.
+- Is the market gap real? Needs conversations with real distributors.
 
 ---
 
-**Status:** Product Brief Complete
+**Status:** Product Brief Complete (updated to match the built app)
 **Next Phase:** Trigger Mapping (Phase 2)
-**Last Updated:** 2026-10-23
+**Last Updated:** 2026-11-16

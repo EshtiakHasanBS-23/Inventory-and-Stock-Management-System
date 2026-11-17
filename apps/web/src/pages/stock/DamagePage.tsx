@@ -1,5 +1,5 @@
 /**
- * Flag damage (PRD FR-29): the units leave sellable stock now and wait,
+ * Flag damage (PRD FR-13): the units leave sellable stock now and wait,
  * as damaged, for a supervisor, manager or owner to approve or reject.
  */
 import type { Approval } from "@mojud/contracts";

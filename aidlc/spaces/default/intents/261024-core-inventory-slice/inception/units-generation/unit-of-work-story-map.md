@@ -1,38 +1,38 @@
-# Story-to-Unit Map — Mojud core slice
+# Unit of Work Story Map — Mojud core slice
 
-Maps every story in `inception/user-stories/stories.md` to the unit in `unit-of-work.md` where it becomes complete and usable. Stories beyond the skeleton are cross-cutting: their backend is built in U2 and their screens in U3. Requirements trace through the stories (`requirements.md`); components per `components.md`.
+Updated 2026-11-16. Maps the sixteen stories in `inception/user-stories/stories.md` to the units in `unit-of-work.md`. Where a story grew over several units, the first unit delivered its core and later units extended it; the story was complete after the last unit listed.
 
-## Story Map
+| Story | Requirements | Unit(s) | What each unit added |
+|---|---|---|---|
+| US-01 Sign up a business | FR-1 | U1 | Sign-up form, business and Owner, session |
+| US-02 Sign in and out | FR-2 | U1, U4 | U1: sign in, sign out, sessions, CSRF; U4: phone layout of the shell (deactivated sign-in refusal came with U3) |
+| US-03 Manage staff | FR-3, FR-4 | U3 | Staff page and endpoints, deactivate and reactivate |
+| US-04 Passwords | FR-5 | U4 | My password; Owner reset on Staff |
+| US-05 Manage and find products | FR-6, FR-7, FR-17 | U2, U3 | U2: create, edit, search, status; U3: unit cost and stock value (U6 added the damaged column) |
+| US-06 Import products from Excel | FR-8 | U5 | Template, browser checks, all-or-nothing import, opening stock |
+| US-07 Record stock in and out | FR-9, FR-10, FR-11, FR-23 | U2, U6 | U2: stock in and out, never negative, append-only ledger; U6: direct damage only for Owner and Manager |
+| US-08 Count stock | FR-12 | U3 | Stock count page and `count` movements |
+| US-09 Flag damage | FR-13 | U6 | Flag damage page, damaged hold |
+| US-10 Decide damage flags | FR-14, FR-16, FR-23 | U6 | Approvals inbox, approve and reject |
+| US-11 Reverse a mistake | FR-15, FR-16 | U6 | Reverse… on History, reversal approvals |
+| US-12 See the dashboard and trace losses | FR-18, FR-17 | U2, U3, U6 | U2: totals and recent movements; U3: value and 30-day losses; U6: loss split, links, banner |
+| US-13 Search the history | FR-19 | U2, U4, U6 | U2: list; U4: filters in the address, Load more; U6: Reverse… action |
+| US-14 Monthly stock report | FR-20 | U5 | Report page and endpoint |
+| US-15 Download CSV | FR-21 | U5 | Products, history and report CSV |
+| US-16 My record | FR-22 | U6 | My record page and endpoint |
 
-| Story | Title | Completing unit | Directory | Also built in | Components |
-|---|---|---|---|---|---|
-| US1.1 | Sign up a business | U1 | u1-walking-skeleton | — | IdentityAccess, WebApp |
-| US1.2 | Sign in, sign out and land on my home | U1 | u1-walking-skeleton | — | IdentityAccess, WebApp |
-| US1.3 | Manage warehouses and users | U3 | u3-frontend | U2 (backend) | IdentityAccess, StockLedger, WebApp |
-| US1.4 | Manage products and suppliers | U3 | u3-frontend | U2 (backend) | Catalogue, WebApp |
-| US2.1 | Enter opening stock | U3 | u3-frontend | U2 (backend) | Catalogue, StockLedger, WebApp |
-| US2.2 | Create and manage purchase orders | U3 | u3-frontend | U2 (backend) | Purchasing, Catalogue, WebApp |
-| US3.1 | See my tasks | U3 | u3-frontend | U2 (backend) | MyTasks, Purchasing, Dispatch, WebApp |
-| US3.2 | Receive a delivery without seeing the order | U3 | u3-frontend | U2 (backend) | Purchasing, StockLedger, Issues, WebApp |
-| US4.1 | Create, change and cancel a dispatch order | U3 | u3-frontend | U2 (backend) | Dispatch, StockLedger, WebApp |
-| US5.1 | Pick an order and confirm dispatch | U3 | u3-frontend | U2 (backend) | Dispatch, StockLedger, WebApp |
-| US5.2 | Flag a damaged carton while picking | U3 | u3-frontend | U2 (backend) | Dispatch, Damage, StockLedger, Issues, WebApp |
-| US5.3 | See the Issues list | U3 | u3-frontend | U2 (backend) | Issues, WebApp |
+## By unit
 
-## Cross-cutting Rows
+| Unit | Stories |
+|---|---|
+| U1 Walking skeleton | US-01, US-02 |
+| U2 Stock core | US-05, US-07, US-12, US-13 |
+| U3 Value, count, staff | US-03, US-05, US-08, US-12 |
+| U4 Phone layout, passwords, history filters | US-02, US-04, US-13 |
+| U5 Import, export, report | US-06, US-14, US-15 |
+| U6 UI refresh and accountability | US-07, US-09, US-10, US-11, US-12, US-13, US-16 |
 
-US1.3 to US5.3 span two units: U2 builds and tests their backend acceptance criteria through the API; U3 builds their screens and is where each story becomes usable.
-
-## Implementation Order Within Each Unit
-
-- **U1:** project setup and Docker Compose → database and migrations → Business and User tables → sign-up → sign-in, sessions and sign-out → app shell, theme and role landing → end-to-end check.
-- **U2:** remaining IdentityAccess (warehouses, users, permissions) → Catalogue → StockLedger and opening stock → Issues creation → Purchasing and receiving → Dispatch and picking → Damage → Issues list → MyTasks.
-- **U3:** Setup home and settings screens → purchase orders → dispatch orders → My tasks → receiving → picking and Flag damage → Issues list.
-
-## Coverage Check
-
-- All 12 stories are assigned to a unit.
-- Every unit has rows: U1 completes 2 stories; U2 contributes to 10; U3 completes 10.
+Every story US-01 to US-16 is mapped to at least one unit. The machine-readable form is `traceability.json`.
 
 ## Assumptions & Open Questions
 

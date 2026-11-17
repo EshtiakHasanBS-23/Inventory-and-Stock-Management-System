@@ -144,7 +144,7 @@ describe("database schema (0001_identity)", () => {
     expect(remaining).toHaveLength(0);
   });
 
-  it("has the indexes the U1 lookups need (NFR8.3)", async () => {
+  it("has the indexes the identity lookups need (NFR8.3)", async () => {
     const result = await sql<{ indexname: string }>`
       SELECT indexname FROM pg_indexes
       WHERE tablename IN ('users', 'sessions', 'businesses')`.execute(db);

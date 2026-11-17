@@ -1,482 +1,384 @@
 # Business Rules — backend
 
-Rules for the backend unit (U2 in `unit-of-work.md`), from `requirements.md` (FR2–FR17, NFR2–NFR4), `stories.md` (US1.3–US5.3), the components in `components.md`, the contract in `contract-summary.md` and this stage's answers Q1–Q7. Rules BR1–BR5 belong to the walking skeleton and still apply (`construction/walking-skeleton/functional-design/rules.md`). Error codes and statuses are in `functional-spec.md` > Error Catalogue.
+Rules of the stock module as built (`apps/api/src/modules/stock/internal/service.ts`, `approvals.ts`, `routes.ts`; shared schemas in `packages/contracts/src/stock.ts`, `approvals.ts`, `importReport.ts`; database rules in `apps/api/migrations/0002`–`0005`). Rule IDs continue after the identity rules BR1–BR5 (`construction/walking-skeleton/functional-design/rules.md`). Requirement IDs are FR-n / NFR-n from `requirements.md`.
 
 ```yaml
 rules:
-  # ---------- Permissions (IdentityAccess) ----------
+  # ---- BR6 Business scoping and permissions ----
   - id: BR6.1
-    statement: Every change is checked against the FR2.2 role table on the server
+    statement: Every stock read and write is scoped to the caller's business
     category: authorization
-    applies_to: every non-GET endpoint
-    trigger: request authenticated
-    logic: authorize(caller, action, warehouseId) with action one of manage_org, manage_catalogue, floor, manage_dispatch; IF the role is not allowed for the action THEN refuse
-    violation: 403 FORBIDDEN
-    source: FR2.2
+    applies_to: products, stock_movements, approvals, users (record lookup)
+    trigger: any stock-module request
+    logic: every query filters by caller.businessId; an id from another business is treated as not existing (product id in a body → VALIDATION_FAILED "Choose a product."; product, approval or person id in the path → 404 NOT_FOUND; movement id for a reversal → VALIDATION_FAILED "Choose a movement from the history."). An id that is not a UUID is NOT_FOUND
+    violation: 404 NOT_FOUND or 400 VALIDATION_FAILED as listed
+    source: FR-4, NFR-2
   - id: BR6.2
-    statement: Floor work is limited to assigned warehouses for Supervisors and Warehouse workers
+    statement: Every stock operation first checks the caller is signed in and active
     category: authorization
-    applies_to: receiving, picking, damage, My tasks
-    trigger: floor action on a warehouse
-    logic: Owners and Managers may act in every warehouse of the business; IF a Supervisor or Warehouse worker is not assigned to the order's warehouse THEN refuse
-    violation: 403 FORBIDDEN
-    source: FR2.2
+    applies_to: all stock endpoints
+    trigger: request
+    logic: each service function calls authorize(caller, action), which refuses a missing or inactive caller; the routes are mounted behind authentication and the CSRF check
+    violation: 401 NOT_SIGNED_IN / SESSION_ENDED, 403 FORBIDDEN
+    source: FR-4
   - id: BR6.3
-    statement: Reads are limited by role (Q5)
+    statement: Only an Owner or Manager creates, edits or imports products
     category: authorization
-    applies_to: every GET endpoint
-    trigger: read request
-    logic: >
-      Owner, Manager: every list and detail. Sales rep: products, suppliers none, warehouses (all active),
-      Available stock in any warehouse, all dispatch orders (list and detail). Supervisor, Warehouse worker:
-      products, warehouses they are assigned to, Available stock in assigned warehouses, the receiving view
-      and picking view of orders in assigned warehouses, My tasks. Accountant: nothing beyond /auth/me.
-      Everything else is refused
-    violation: 403 FORBIDDEN
-    source: Q5, FR2.2
+    applies_to: POST /products, PATCH /products/:id, POST /products/import
+    trigger: request
+    logic: IF caller.role is not owner or manager THEN refuse
+    violation: 403 FORBIDDEN "Only an owner or manager can do this."
+    source: FR-4, FR-6, FR-8
   - id: BR6.4
-    statement: A Sales rep edits and cancels only dispatch orders they created
+    statement: Every active person in the business may read products, history, the dashboard, the report, approvals and CSV downloads, and may record stock in/out, counts and damage flags
     category: authorization
-    applies_to: dispatch order edit and cancel
-    trigger: edit or cancel by a Sales rep
-    logic: IF caller.role is sales_rep AND order.createdBy is not caller.userId THEN refuse
-    violation: 403 FORBIDDEN
-    source: FR14.2
-  - id: BR6.5
-    statement: Records of another business do not exist for the caller
-    category: authorization
-    applies_to: every endpoint with an ID
-    trigger: record looked up by ID
-    logic: every lookup includes businessId; IF not found in the caller's business THEN not found (this proves AC1.1.4, deferred from the skeleton)
-    violation: 404 NOT_FOUND
-    source: FR1.3, NFR2, BR3.1
+    applies_to: stock module
+    trigger: request
+    logic: no role check beyond BR6.2 for these operations; role limits are BR6.3, BR8.2, BR12.1, BR13.1 and BR19.1
+    violation: not applicable
+    source: FR-4
 
-  # ---------- Warehouses ----------
+  # ---- BR7 Products ----
   - id: BR7.1
-    statement: At most 3 active warehouses per business
-    category: constraint
-    applies_to: warehouse create and reactivate
-    trigger: a warehouse would become active
-    logic: lock the business's warehouse rows; IF 3 are already active THEN refuse
-    violation: 422 LIMIT_REACHED "You can have at most 3 active warehouses."
-    source: FR4.1
-  - id: BR7.2
-    statement: Active warehouse names are unique in the business, ignoring case
-    category: constraint
-    applies_to: Warehouse.name
-    trigger: create, rename, reactivate
-    logic: IF another active warehouse has the same trimmed name ignoring case THEN refuse
-    violation: 409 DUPLICATE field name
-    source: FR4.1 (two active warehouses with the same name could not be told apart in any list or task)
-  - id: BR7.3
-    statement: A warehouse in use cannot be deactivated (Q7)
-    category: constraint
-    applies_to: warehouse deactivate
-    trigger: deactivate
-    logic: lock the warehouse row FOR UPDATE (BR10.4); IF StockLedger.warehouseHoldsStock OR Purchasing.hasOpenOrders (draft, sent, partly_received) OR Dispatch.hasOpenOrders (open, part_dispatched) OR an active Supervisor, Warehouse worker or Sales rep would be left with no active warehouse THEN refuse, naming which; ELSE deactivate and remove the warehouse from users' assignments (reactivation does not restore them). The checks run through the module interfaces in functional-spec.md > Module Interfaces
-    violation: 409 STATE_CONFLICT "This warehouse still holds stock.", "This warehouse has open orders." or "Move these users to another warehouse first."
-    source: FR4.1, Q7
-  - id: BR7.4
-    statement: Inactive warehouses cannot be used for new work
-    category: constraint
-    applies_to: opening stock, new purchase orders, new dispatch orders, user assignment
-    trigger: warehouse chosen
-    logic: IF the warehouse is inactive THEN refuse
-    violation: 422 RULE_REFUSED field warehouseId "This warehouse is deactivated."
-    source: FR4.1
-
-  # ---------- Users ----------
-  - id: BR8.1
-    statement: Users are added with name, phone, role, warehouses and a password
-    category: validation
-    applies_to: user create
-    trigger: create
-    logic: name 1–100; phone per BR1.2 and unique across all businesses (BR1.3); password 8–128 (BR1.4); role one of six; Supervisor, Warehouse worker and Sales rep need at least one active assigned warehouse, on create and on every change (a change of role to one of these, or of warehouseIds, that leaves none is refused); Owner, Manager and Accountant get none (they cover all)
-    violation: 400 VALIDATION_FAILED with field; 409 DUPLICATE field phone
-    source: FR3.1, FR2.1
-  - id: BR8.2
-    statement: Managers cannot manage Owners
-    category: authorization
-    applies_to: user create and change
-    trigger: a Manager acts
-    logic: IF the target user is an Owner, OR the new role is owner THEN refuse
-    violation: 403 FORBIDDEN
-    source: FR3.2
-  - id: BR8.3
-    statement: The last active Owner is protected
-    category: constraint
-    applies_to: user change
-    trigger: deactivate or change role of an Owner
-    logic: lock the business's owner rows; IF the target is the only active Owner THEN refuse
-    violation: 422 RULE_REFUSED "A business needs at least one active Owner."
-    source: FR3.2, FR3.3
-  - id: BR8.4
-    statement: Deactivating a user ends their sessions at once
-    category: policy
-    applies_to: user deactivate
-    trigger: active set to false
-    logic: delete all the user's sessions in the same transaction; their next request gets SESSION_ENDED (BR2.6); their past movements keep their name
-    violation: not applicable
-    source: FR3.3, AC1.3.6
-  - id: BR8.5
-    statement: Changing a password keeps the user signed in only on the session that made the change
-    category: policy
-    applies_to: user change with a new password
-    trigger: password changed
-    logic: hash the new password (BR1.5); delete the target user's sessions except the caller's own current session
-    violation: not applicable
-    source: NFR1
-
-  # ---------- Catalogue ----------
-  - id: BR9.1
-    statement: SKU is unique in the business, ignoring case
+    statement: A product has a SKU unique in the business
     category: constraint
     applies_to: Product.sku
-    trigger: create, edit
-    logic: unique index on (businessId, lower(sku)); a violation is mapped to the error
-    violation: 409 DUPLICATE field sku
-    source: FR5.1
-  - id: BR9.2
-    statement: A barcode belongs to at most one product
-    category: constraint
-    applies_to: Product.baseBarcode, Product.packBarcode
-    trigger: create, edit
-    logic: IF the value is already any product's base or pack barcode in the business, or the same product uses it for both THEN refuse
-    violation: 409 DUPLICATE field baseBarcode or packBarcode
-    source: FR5.1
-  - id: BR9.3
-    statement: Pack size is a whole number of 2 or more, given together with a pack unit
+    trigger: create, import
+    logic: SKU trimmed, 1–40 characters; unique (business_id, sku) in the database; a clash on create → DUPLICATE
+    violation: 409 DUPLICATE field sku "A product with this SKU already exists."
+    source: FR-6
+  - id: BR7.2
+    statement: Product fields are checked on the server with the shared schema
     category: validation
-    applies_to: Product.packSize
-    trigger: create, edit
-    logic: IF packUnitName is given without packSize, or packSize without packUnitName, or packSize < 2 or not whole THEN refuse
-    violation: 400 VALIDATION_FAILED field packSize "Must be a whole number of 2 or more."
-    source: FR5.1, AC1.4.4
-  - id: BR9.4
-    statement: Units cannot change once the product has stock movements
-    category: constraint
-    applies_to: product edit
-    trigger: baseUnitName, packUnitName or packSize changed
-    logic: IF StockLedger.productHasMovements(productId) THEN refuse (stored base quantities would change meaning)
-    violation: 409 STATE_CONFLICT "Units can't change after stock is recorded."
-    source: FR9.1, FR8.3
-  - id: BR9.5
-    statement: Product search matches name, SKU or barcode, ignoring case
+    applies_to: create, edit, import rows
+    trigger: request
+    logic: name 1–100 trimmed; unit 1–20 trimmed; minStock whole number 0–1,000,000; unitCost taka 0–10,000,000 with at most 2 decimals, stored as poisha (round(taka × 100)); unknown fields refused (strict object)
+    violation: 400 VALIDATION_FAILED with the field's message (e.g. "Enter a cost in taka, 0 or more, with up to 2 decimals.")
+    source: FR-6, NFR-1
+  - id: BR7.3
+    statement: Editing changes name, unit, minimum stock or unit cost; the SKU and quantities never change by edit
     category: policy
-    applies_to: GET /products?search=
-    trigger: search text of 1 or more characters
-    logic: name contains the text OR sku starts with it OR a barcode starts with it, ignoring case; at most 20 results, exact SKU or barcode matches first, then by name
+    applies_to: PATCH /products/:id
+    trigger: request
+    logic: body holds at least one of name, unit, minStock, unitCost; sku, onHand and damaged are not accepted; the row must belong to the caller's business
+    violation: 400 VALIDATION_FAILED; 404 NOT_FOUND for another business or an unknown id
+    source: FR-6
+  - id: BR7.4
+    statement: A product's status follows its quantity
+    category: calculation
+    applies_to: Product
+    trigger: every product read
+    logic: out when onHand = 0; low when onHand <= minStock; otherwise ok
     violation: not applicable
-    source: FR5.2, FR13.1
-  - id: BR9.6
-    statement: Archived suppliers cannot be used on new purchase orders
-    category: constraint
-    applies_to: purchase order create and supplier change on edit
-    trigger: supplier chosen
-    logic: IF supplier.archived THEN refuse; archiving does not change existing orders; a supplier can be unarchived
-    violation: 422 RULE_REFUSED field supplierId "This supplier is archived."
-    source: FR6.1, AC1.4.6
-  - id: BR9.7
-    statement: Opening stock is entered once per product and warehouse
-    category: constraint
-    applies_to: opening stock
-    trigger: opening stock submitted
-    logic: quantity > 0 (BR18.1); unitCost decimal 0 or more with at most 4 places; Catalogue calls StockLedger.recordOpeningStock, which refuses IF a movement with reason opening_balance exists for the product and warehouse (also a unique partial index on stock_movements), ELSE moves external → available with reason opening_balance and sets StockCost; the product's opening-stock list comes from StockLedger.openingStockFor(productId)
-    violation: 409 STATE_CONFLICT "Opening stock is already recorded for this warehouse."
-    source: FR7.1
+    source: FR-7
+  - id: BR7.5
+    statement: Product search matches name or SKU, ignoring case, with wildcards treated as text
+    category: calculation
+    applies_to: GET /products?q=
+    trigger: request
+    logic: trim the text and keep the first 100 characters; escape \, % and _; match name ILIKE or sku ILIKE '%text%'; order by name, then SKU
+    violation: not applicable
+    source: FR-7
 
-  # ---------- Stock ledger ----------
+  # ---- BR8 Stock in / out and the ledger ----
+  - id: BR8.1
+    statement: A movement's reason must fit its direction, and its quantity is a whole number from 1 to 1,000,000
+    category: validation
+    applies_to: POST /stock/movements
+    trigger: request
+    logic: in allows purchase, return, adjustment; out allows sale, damage, adjustment; count, opening, damage_flagged, damage_rejected and reversal are written only by their own operations and cannot be chosen by hand; note trimmed, at most 200 characters, empty saved as null
+    violation: 400 VALIDATION_FAILED "Choose a reason that fits the direction." / "Enter a whole number, 1 or more."
+    source: FR-9
+  - id: BR8.2
+    statement: Only an Owner or Manager writes stock off directly as damaged
+    category: authorization
+    applies_to: POST /stock/movements with reason damage
+    trigger: request
+    logic: IF reason = damage AND caller.role is not owner or manager THEN refuse; everyone else uses Flag damage (BR11)
+    violation: 400 VALIDATION_FAILED field reason "Use Flag damage: a supervisor, manager or owner decides it."
+    source: FR-9, FR-23
+  - id: BR8.3
+    statement: Stock never goes below zero
+    category: constraint
+    applies_to: products.on_hand
+    trigger: any movement (stock in/out, count, flag, rejection, reversal)
+    logic: UPDATE products SET on_hand = on_hand + delta WHERE id = ? AND business_id = ? AND on_hand + delta >= 0; IF no row is updated AND the product exists THEN refuse. The database also checks on_hand >= 0 and balance_after >= 0. Because the check and the change are one statement, two simultaneous requests for the last unit cannot both succeed
+    violation: 409 INSUFFICIENT_STOCK field quantity "Only N <unit> in stock."; nothing saved
+    source: FR-10, NFR-3
+  - id: BR8.4
+    statement: Every stock change is one movement written with the quantity change, in one transaction
+    category: policy
+    applies_to: stock_movements
+    trigger: any movement
+    logic: in the same transaction as the quantity update, insert a movement with product, direction, reason, quantity, balance after (the new on_hand), the product's unit cost at that moment, note, caller as user and the time; product quantity therefore always equals the sum of its movements
+    violation: any failure rolls the whole transaction back (BR2.8)
+    source: FR-11, FR-17
+  - id: BR8.5
+    statement: Movements are permanent
+    category: constraint
+    applies_to: stock_movements
+    trigger: UPDATE or DELETE on stock_movements
+    logic: the trigger stock_movements_no_update_or_delete raises 'stock movements cannot be changed or deleted'; mistakes are corrected with a reversal (BR13) or a stock count (BR9)
+    violation: database error restrict_violation (no endpoint issues an update or delete)
+    source: FR-11, NFR-3
+
+  # ---- BR9 Stock count ----
+  - id: BR9.1
+    statement: A stock count records only the difference, with the product row locked
+    category: calculation
+    applies_to: POST /stock/counts
+    trigger: request
+    logic: countedQuantity whole number 0–1,000,000; in one transaction SELECT the product FOR UPDATE; difference = counted − on_hand; IF difference = 0 THEN save nothing; ELSE write a count movement (in for extra, out for missing) for |difference| with note "Counted X, system had Y." plus the optional note; return previous, counted, difference and the movement
+    violation: 400 VALIDATION_FAILED "Choose a product." for an unknown product
+    source: FR-12
+
+  # ---- BR10 Product import ----
   - id: BR10.1
-    statement: Movements are insert-only
-    category: constraint
-    applies_to: StockMovement
-    trigger: always
-    logic: no update or delete exists in code or API; the database role used by the app has no UPDATE or DELETE grant on stock_movements, and a trigger rejects both
-    violation: not applicable (operation does not exist)
-    source: FR8.2, AC2.1.3
+    statement: An import holds 1 to 1000 rows, each checked with the product rules plus an opening quantity
+    category: validation
+    applies_to: POST /products/import
+    trigger: request
+    logic: each row is sku, name, unit, unitCost, minStock, openingStock (whole number 0–1,000,000); the first problem is reported with its spreadsheet row number (array index + 2, row 1 being the header); the web app parses and checks the same rows in the browser first (comma or semicolon, UTF-8 BOM, loose headers, Excel-style numbers)
+    violation: 400 VALIDATION_FAILED field rows "Row N: <field message>" or "The file has no product rows, or more than 1000."
+    source: FR-8
   - id: BR10.2
-    statement: Balances always equal the sum of movements
+    statement: An import never creates a duplicate SKU
     category: constraint
-    applies_to: StockBalance
-    trigger: every move
-    logic: in the same transaction as each movement, subtract from the from-state balance and add to the to-state balance (external has no balance); a test recomputes balances from movements. The app's runtime database role has no UPDATE or DELETE on stock_movements (BR10.1); tests reset data with TRUNCATE as the table owner (the migration role), which the trigger does not block
-    violation: not applicable
-    source: FR8.3, AC2.1.4
+    applies_to: POST /products/import
+    trigger: request
+    logic: a SKU repeated in the file → "Row N: SKU X is also on row M."; a SKU that already exists in the business → "Row N: a product with SKU X already exists."
+    violation: 400 VALIDATION_FAILED field rows; nothing saved
+    source: FR-8
   - id: BR10.3
-    statement: No balance ever goes below zero, and the refusal states the maximum
-    category: constraint
-    applies_to: every move out of available, reserved or damaged
-    trigger: move
-    logic: lock the balance row (SELECT … FOR UPDATE); IF quantity > balance THEN refuse with max = balance shown in the entry's units; a database check (quantity >= 0) is the last line of defence
-    violation: 409 INSUFFICIENT_STOCK "Only {max} available. Max {max}." with max
-    source: FR8.4, FR8.6, AC4.1.2, AC4.1.3
-  - id: BR10.4
-    statement: Concurrent requests lock in one fixed order
+    statement: An import creates all rows or none, and records opening quantities as movements
     category: policy
-    applies_to: every stock-changing request
-    trigger: transaction start
-    logic: >
-      Each workflow first computes the full set of balance rows it may touch (for damage: the line's product at the
-      warehouse in available, reserved and damaged). Then, in this order: (1) insert the idempotency record (BR11.1);
-      (2) lock the warehouse row, FOR SHARE when creating or changing orders or stock there, FOR UPDATE when
-      deactivating it; (3) lock the parent order row FOR UPDATE if any; (4) INSERT the needed balance rows with
-      quantity 0 ON CONFLICT DO NOTHING, sorted by productId, then warehouseId, then state in the order available,
-      reserved, damaged; (5) SELECT those rows FOR UPDATE in the same sorted order; only then move. Nothing is locked
-      in any other order, so simultaneous requests wait instead of deadlocking
-    violation: not applicable
-    source: FR8.6, NFR3
-  - id: BR10.5
-    statement: Every movement carries a unit cost (Q6)
-    category: policy
-    applies_to: StockMovement.unitCost
-    trigger: move
-    logic: opening stock uses the entered cost; receiving uses the purchase order line's cost; both update StockCost for the product and warehouse; all other moves use the StockCost value
-    violation: not applicable
-    source: FR8.1, Q6
-  - id: BR10.6
-    statement: Every movement records who, when, why and from what
-    category: policy
-    applies_to: StockMovement
-    trigger: move
-    logic: userId, serverTime (database now()), reason and source type and ID are required columns
-    violation: not applicable
-    source: FR8.1, NFR4
+    applies_to: POST /products/import
+    trigger: valid import
+    logic: in one transaction insert every product with on_hand = openingStock; for each product with openingStock > 0 insert an in movement with reason opening, note "Imported opening stock", the row's unit cost and the caller; return created and openingUnits
+    violation: any failure rolls back everything
+    source: FR-8, FR-11
 
-  # ---------- Apply once ----------
+  # ---- BR11 Flag damage ----
   - id: BR11.1
-    statement: Every stock-changing request needs an Idempotency-Key and is applied once
+    statement: Anyone may flag damaged stock; the units move into the Damaged hold and wait for a decision
     category: policy
-    applies_to: endpoints marked x-idempotent in contract C1
-    trigger: request received
-    logic: >
-      missing or non-UUID key → 400. The key belongs to (businessId, userId): another user's identical key is a
-      different action. First statement in the transaction: INSERT the record (response columns empty) ON CONFLICT
-      DO NOTHING RETURNING. If a row came back, this request is first: do the work, then UPDATE the record with the
-      response status and body, then commit. If no row came back, SELECT the record FOR UPDATE (this waits until a
-      running first request commits or rolls back): if it is now absent (the first rolled back), retry the INSERT
-      once; if its hash differs, refuse; otherwise return its stored status and body with header
-      Idempotent-Replay: true and change nothing. A request that fails rolls back and stores nothing, so the same
-      key can be retried
-    violation: 400 VALIDATION_FAILED field Idempotency-Key; 409 IDEMPOTENCY_KEY_REUSED
-    source: FR8.5, AC3.2.4, AC5.1.5
+    applies_to: POST /stock/damage-flags
+    trigger: request
+    logic: quantity whole number 1–1,000,000, optional note ≤200; in one transaction write an out movement with reason damage_flagged (BR8.3 applies, so no more than in stock can be flagged), add the quantity to products.damaged, and insert a pending approval of kind damage with the product's unit cost and the flagged movement's id
+    violation: 409 INSUFFICIENT_STOCK "Only N <unit> in stock."
+    source: FR-13
 
-  # ---------- Quantities ----------
-  - id: BR18.1
-    statement: Quantities are entered as cartons and pieces and stored in base units
-    category: validation
-    applies_to: every quantity input
-    trigger: quantity received
-    logic: cartons and pieces are whole numbers 0 or more, at most 1,000,000 each; IF the product has no pack unit AND cartons > 0 THEN refuse; base = cartons × packSize + pieces; IF base = 0 THEN refuse
-    violation: 400 VALIDATION_FAILED field quantity
-    source: FR9.1
-  - id: BR18.2
-    statement: Quantities are shown as cartons plus leftover pieces
-    category: policy
-    applies_to: every QuantityView
-    trigger: response built
-    logic: cartons = floor(base / packSize), pieces = base mod packSize; display "{c} {packUnit} + {p} {baseUnit}", dropping a zero part ("3 ctn", "5 pcs"), "0 {baseUnit}" for zero; no pack unit → "{base} {baseUnit}"
-    violation: not applicable
-    source: FR9.2
-
-  # ---------- Purchasing ----------
+  # ---- BR12 Deciding approvals ----
   - id: BR12.1
-    statement: A purchase order has one supplier, one warehouse and one line per product
-    category: validation
-    applies_to: purchase order create and edit
-    trigger: save
-    logic: supplier not archived (BR9.6); warehouse active (BR7.4); expectedDate required; 1–100 lines; each product once; quantity per BR18.1; cost entered per carton or per piece, stored per piece = per-carton cost ÷ packSize rounded to 4 places
-    violation: 400 VALIDATION_FAILED; 422 RULE_REFUSED
-    source: FR10.1, AC2.2.2
+    statement: Each kind of approval has its own deciders
+    category: authorization
+    applies_to: POST /approvals/:id/approve, /approvals/:id/reject
+    trigger: request
+    logic: damage → owner, manager or supervisor; reversal → owner or manager
+    violation: 403 FORBIDDEN "A supervisor, manager or owner decides damage." / "An owner or manager decides reversals."
+    source: FR-14, FR-15, FR-16
   - id: BR12.2
-    statement: Status flow is Draft → Sent → Partly received → Received, or Cancelled
-    category: state
-    applies_to: PurchaseOrder.status
-    trigger: send, receive, complete, close short, cancel
-    logic: send only from draft; receiving only on sent or partly_received; cancel only from draft or sent with no saved receipt line; close short only from partly_received with no open receipt
-    violation: 409 STATE_CONFLICT
-    source: FR10.2
+    statement: Nobody decides their own request
+    category: authorization
+    applies_to: approvals
+    trigger: decision
+    logic: IF approval.requested_by = caller THEN refuse; the database check approvals_decided_by_someone_else (decided_by <> requested_by) backs it
+    violation: 403 FORBIDDEN "Someone else must decide your own request."
+    source: FR-16, FR-23, NFR-3
   - id: BR12.3
-    statement: Orders can be edited or cancelled only before receiving starts
-    category: state
-    applies_to: purchase order edit and cancel
-    trigger: edit or cancel
-    logic: IF status is not draft or sent, OR any receipt line exists THEN refuse
-    violation: 409 STATE_CONFLICT "Receiving has started on this order."
-    source: FR10.3, AC2.2.4
+    statement: An approval is decided once
+    category: constraint
+    applies_to: approvals
+    trigger: decision
+    logic: in one transaction SELECT the approval FOR UPDATE (scoped to the business); IF status is not pending THEN refuse; of two simultaneous decisions only the first wins. The check approvals_decision_complete keeps status, decided_by and decided_at consistent
+    violation: 409 DUPLICATE "This was already decided."; 404 NOT_FOUND for an unknown id
+    source: FR-16, NFR-3
   - id: BR12.4
-    statement: Close short ends a Partly received order (Q2)
-    category: state
-    applies_to: POST /purchase-orders/{id}/close-short
-    trigger: Owner or Manager closes
-    logic: status partly_received and no open receipt → status received, closedShort true, finishedAt now; no movements; existing Issues stay
-    violation: 409 STATE_CONFLICT
-    source: Q2
+    statement: Deciding a damage flag empties the hold; rejecting returns the units to stock
+    category: calculation
+    applies_to: approvals of kind damage
+    trigger: decision
+    logic: subtract the quantity from products.damaged; approve writes no movement (the units already left with damage_flagged and stay written off); reject writes an in movement with reason damage_rejected and note "Damage flag rejected: back in stock"
+    violation: not applicable
+    source: FR-14
+  - id: BR12.5
+    statement: Approving a reversal records the opposite movement, linked to the original
+    category: calculation
+    applies_to: approvals of kind reversal
+    trigger: approve
+    logic: write a movement with the opposite direction, reason reversal, the original quantity, reverses_movement_id = the original, note "Reverses <reason>: <request note>"; BR8.3 applies, so a reversal that would take stock below zero is refused, the transaction rolls back and the request stays pending; reject writes nothing
+    violation: 409 INSUFFICIENT_STOCK
+    source: FR-15
+  - id: BR12.6
+    statement: A decision records who, when, the outcome and the movement it wrote
+    category: policy
+    applies_to: approvals
+    trigger: decision
+    logic: set status approved or rejected, decided_by, decided_at = now() and result_movement_id (the damage_rejected or reversal movement, or null)
+    violation: not applicable
+    source: FR-16
+  - id: BR12.7
+    statement: The approvals list shows, per card, whether the caller may decide it
+    category: calculation
+    applies_to: GET /approvals?status=pending|decided
+    trigger: request
+    logic: status pending (default) lists open requests newest requested first; decided lists approved and rejected, newest decided first; at most 200; each card carries kind, product, quantity, value (quantity × unit cost at the request), note, the linked movement, who asked and when, who decided and when, and canDecide = pending AND caller's role may decide this kind AND caller did not ask
+    violation: 400 VALIDATION_FAILED "Choose pending or decided."
+    source: FR-16
 
-  # ---------- Receiving ----------
+  # ---- BR13 Reversal requests ----
   - id: BR13.1
-    statement: The receiving view never contains ordered, remaining or expected quantities
-    category: policy
-    applies_to: GET /receiving/{id} and every receiving response
-    trigger: response built
-    logic: build the response from a dedicated type with only product, product name, counted-this-delivery and status; a test asserts the serialized body contains none of the ordered numbers or field names
-    violation: not applicable
-    source: FR12.1, AC3.2.1
+    statement: Only an Owner or Manager asks for a reversal
+    category: authorization
+    applies_to: POST /approvals/reversals
+    trigger: request
+    logic: IF caller.role is not owner or manager THEN refuse
+    violation: 403 FORBIDDEN "Only an owner or manager can ask for a reversal."
+    source: FR-15
   - id: BR13.2
-    statement: Saving a counted line records it into Available at once and is final
-    category: policy
-    applies_to: POST /receiving/{id}/lines
-    trigger: save line
-    logic: order sent or partly_received and caller may work there (BR6.2); open the delivery's receipt if none is open; product must be on the order; one line per product per delivery; quantity per BR18.1; move external → available, reason received, cost = line's unitCostBase; add to line.receivedQtyBase; update StockCost
-    violation: 422 NOT_ON_ORDER "Not on this order"; 422 ALREADY_COUNTED "Already counted in this delivery."
-    source: FR12.2, FR12.3, AC3.2.2, AC3.2.3
+    statement: A reversal request names a movement of the business and gives a reason
+    category: validation
+    applies_to: POST /approvals/reversals
+    trigger: request
+    logic: movementId a UUID of a movement in the caller's business; note required, 1–200 characters; the approval copies the movement's quantity and the product's current unit cost
+    violation: 400 VALIDATION_FAILED "Choose a movement from the history." / "Say why it should be reversed."
+    source: FR-15
   - id: BR13.3
-    statement: Each delivery is counted blind from zero
-    category: policy
-    applies_to: receiving view
-    trigger: view built
-    logic: countedThisDelivery shows only lines saved in the open receipt; earlier deliveries are not shown
-    violation: not applicable
-    source: FR12.1, contract C1 open question
+    statement: Only purchase, return, sale, damage, adjustment and opening movements can be reversed
+    category: constraint
+    applies_to: POST /approvals/reversals
+    trigger: request
+    logic: count → refuse with "A stock count cannot be reversed. Count the product again."; damage_flagged, damage_rejected and reversal → "This movement cannot be reversed."
+    violation: 400 VALIDATION_FAILED field movementId
+    source: FR-15
   - id: BR13.4
-    statement: Mark delivery complete compares running totals with ordered, per line (Q1)
-    category: policy
-    applies_to: POST /receiving/{id}/complete
-    trigger: complete
-    logic: >
-      an open receipt with at least one saved line must exist; close it; for each order line:
-      missing = max(0, ordered − received); newShortfall = missing − shortfallRaised; IF > 0 raise a Shortfall
-      Issue for it and add to shortfallRaised (because received only grows, a line's Shortfall is raised once, at
-      its first short completion, and is not reduced when later deliveries close the gap: it stays as history);
-      over = max(0, received − ordered); newOver = over − overRaised;
-      IF > 0 raise an Over-delivery Issue and add to overRaised; then status = received IF every line has
-      received ≥ ordered ELSE partly_received; no movement is recorded again; the response is "Receipt saved"
-      with no quantities
-    violation: 409 STATE_CONFLICT "Count at least one line first."
-    source: FR12.4, Q1, AC3.2.5–AC3.2.7
+    statement: A movement has at most one open or approved reversal
+    category: constraint
+    applies_to: approvals
+    trigger: request
+    logic: unique partial index approvals_one_reversal_per_movement on movement_id WHERE kind = 'reversal' AND status IN ('pending', 'approved'); a rejected reversal does not block a new request
+    violation: 409 DUPLICATE field movementId "This movement already has a reversal, asked for or approved."
+    source: FR-15
 
-  # ---------- Dispatch orders ----------
+  # ---- BR14 Money ----
   - id: BR14.1
-    statement: Saving a dispatch order reserves every line, never more than Available
-    category: constraint
-    applies_to: POST /dispatch-orders
-    trigger: create
-    logic: customerName 1–100; warehouse active, and for a Sales rep one of their assigned warehouses; neededBy required; 1–100 lines, each product once, quantity per BR18.1; move available → reserved per line (reason reserved, source dispatch_order) in lock order (BR10.4); IF any line exceeds Available the whole order is refused with that line's max and nothing is reserved
-    violation: 409 INSUFFICIENT_STOCK field lines[i].quantity with max
-    source: FR14.1, AC4.1.1–AC4.1.3
-  - id: BR14.2
-    statement: Editing a line sets its reservation to what is still needed
-    category: constraint
-    applies_to: PATCH /dispatch-orders/{id}
-    trigger: edit (status open or part_dispatched)
-    logic: >
-      Every field is optional: customer name and needed-by can change alone. `lines` lists only the lines to change,
-      add or remove; a line not sent keeps its quantities, including its short quantity. For a line sent with a new
-      quantity n: n ≥ picked, else refuse; target reserved = n − picked; short becomes 0;
-      IF target > reserved move the difference available → reserved (max n = picked + reserved + Available);
-      IF target < reserved move the difference reserved → available (reason released); new lines reserve as in
-      BR14.1; a line sent with remove must have picked 0, and it releases its reservation
-    violation: 422 RULE_REFUSED "Already picked {picked}. Min {picked}."; 409 INSUFFICIENT_STOCK with max
-    source: FR14.2, AC4.1.5, AC4.1.6
-  - id: BR14.3
-    statement: Cancelling releases all Reserved stock
-    category: state
-    applies_to: POST /dispatch-orders/{id}/cancel
-    trigger: cancel (status open or part_dispatched) by creator, Manager or Owner
-    logic: for each line, move reserved → available (reason released); cancelled += reserved + short; reserved = 0; short = 0, so the line invariant holds and the original ordered quantity stays visible; status = cancelled IF the sum of picked over all lines is 0 ELSE dispatched (the rest is cancelled, Q3)
-    violation: 409 STATE_CONFLICT
-    source: FR14.2, AC4.1.4, Q3
-
-  # ---------- Picking ----------
-  - id: BR15.1
-    statement: Confirming a pick line moves stock out of Reserved as dispatched
-    category: constraint
-    applies_to: POST /picking/{id}/lines/{lineId}/confirm
-    trigger: confirm line (status open or part_dispatched; BR6.2)
-    logic: quantity per BR18.1; IF quantity > line.reserved THEN refuse with max = reserved; move reserved → external reason dispatched; picked += q; reserved −= q; order.pickedSinceConfirm = true
-    violation: 409 INSUFFICIENT_STOCK "Max {reserved}" with max
-    source: FR15.2, AC5.1.2, AC5.1.3
-  - id: BR15.2
-    statement: Confirm dispatch closes the pick
-    category: state
-    applies_to: POST /picking/{id}/confirm-dispatch
-    trigger: confirm dispatch
-    logic: >
-      The result is dispatched IF every line has reserved = 0 and short = 0, ELSE part_dispatched. A Reserved
-      remainder (not yet picked) stays Reserved for a later pick; a short quantity (no stock could be reserved after
-      damage) stays short, with no reservation, until the order is edited or cancelled. Refuse IF the sum of picked
-      over all lines is 0, OR IF nothing was picked since the last confirm (pickedSinceConfirm false) and the result
-      equals the current status (nothing would change); so a part-dispatched order that an edit or cancel has fully
-      settled can still be confirmed to dispatched. Then pickedSinceConfirm = false. shortLines in the response =
-      number of lines with reserved > 0 or short > 0
-    violation: 409 STATE_CONFLICT "Pick at least one line first."
-    source: FR15.3, AC5.1.4, Q3
-
-  # ---------- Damage ----------
-  - id: BR16.1
-    statement: Damage is flagged on a pick line, up to what is reserved on it
-    category: constraint
-    applies_to: POST /picking/{id}/lines/{lineId}/damage
-    trigger: flag (status open or part_dispatched; BR6.2)
-    logic: product is the line's product (not an input); quantity per BR18.1; reason damaged, expired or other; note up to 500; IF quantity > line.reserved THEN refuse with max = reserved
-    violation: 409 INSUFFICIENT_STOCK "Max {reserved}" with max
-    source: FR16.1, FR16.2, FR16.5, AC5.2.5
-  - id: BR16.2
-    statement: Flagged stock moves to Damaged, and a replacement is reserved for the same line
-    category: policy
-    applies_to: damage flag
-    trigger: valid flag
-    logic: >
-      one transaction: move q reserved → damaged with the chosen reason; create DamageFlag and a Damage flag Issue;
-      replacement = min(q, Available); IF replacement > 0 move it available → reserved for the line (reason reserved,
-      source damage_flag with the new flag's ID);
-      line.reserved = reserved − q + replacement; line.damaged += q; IF replacement < q THEN line.short += q − replacement
-      and raise a Dispatch short Issue for q − replacement
+    statement: Money is kept in whole poisha and each movement keeps the cost of its moment
+    category: calculation
+    applies_to: products.unit_cost, stock_movements.unit_cost, approvals.unit_cost
+    trigger: every write and every sum
+    logic: store integers in poisha; sum in poisha and convert to taka once; stock value = on_hand × unit_cost; movement value = quantity × the movement's unit_cost, so changing a product's cost later does not change past values
     violation: not applicable
-    source: FR16.3, FR16.4, AC5.2.3, AC5.2.4
+    source: FR-17
 
-  # ---------- Issues and My tasks ----------
+  # ---- BR15 Dashboard ----
+  - id: BR15.1
+    statement: The dashboard summarises stock, value, losses and waiting approvals for the business
+    category: calculation
+    applies_to: GET /dashboard
+    trigger: request
+    logic: productCount; totalUnits (sum of onHand); stockValue; lossValue30d = lossBreakdown.damage (damage movements) + damageFlagged (damage_flagged less damage_rejected) + missing (count movements out), all from movements in the last 30 days at their own unit cost; pendingApprovals (pending approvals); damagedValue (sum of damaged × unit cost); lowStockCount; outOfStockCount; lowStock (products not ok, lowest onHand first, at most 10); recentMovements (newest 10)
+    violation: not applicable
+    source: FR-18, FR-17
+
+  # ---- BR16 History ----
+  - id: BR16.1
+    statement: The movement history is filtered, newest first and paged
+    category: calculation
+    applies_to: GET /stock/movements
+    trigger: request
+    logic: optional productId, userId, reason (any of the ten reasons), from (ISO date-time, inclusive), to (exclusive); empty values ignored; limit 1–200 (default 100; the web app asks for 50 per page), offset 0–1,000,000; order created_at desc, id desc; each row carries product, SKU, unit, direction, reason, quantity, balance after, value, reversesMovementId, note, person's name and time
+    violation: 400 VALIDATION_FAILED with the filter's message
+    source: FR-19
+
+  # ---- BR17 Stock report ----
   - id: BR17.1
-    statement: Issues are raised only inside the transaction that caused them, and listed read-only
+    statement: The stock report shows what happened to each product in a date range, consistent with the ledger
+    category: calculation
+    applies_to: GET /reports/stock
+    trigger: request
+    logic: from and to are required ISO date-times, from inclusive, to exclusive, to after from; per product, opening = on_hand − net movements since from; closing = on_hand − net movements since to; within the range received = purchase + return + opening, sold = sale, damaged = damage + damage_flagged − damage_rejected, countDifference = count in − count out, adjusted = adjustment + reversal (in − out); values receivedValue, soldValue, damagedValue, missingValue (count out only) at each movement's cost; products with no movement in the range and zero opening and closing are left out; a totals line sums every line
+    violation: 400 VALIDATION_FAILED "Enter a valid start date." / "The end date must be on or after the start date."
+    source: FR-20
+
+  # ---- BR18 CSV downloads ----
+  - id: BR18.1
+    statement: CSV files open safely and correctly in Excel
     category: policy
-    applies_to: Issues
-    trigger: shortfall, over-delivery, damage flag, dispatch short
-    logic: raise() takes the caller's transaction; the list (Owner, Manager) is newest first with type, product, warehouse, quantity view, raised-by name and raisedAt; no update endpoint exists
-    violation: 403 FORBIDDEN for other roles
-    source: FR17.1, FR17.2, AC5.3.1–AC5.3.3
-  - id: BR17.2
-    statement: My tasks lists open receiving and picking work in the caller's warehouses (Q4)
+    applies_to: GET /products/export.csv, /stock/movements/export.csv, /reports/stock.csv
+    trigger: download
+    logic: UTF-8 byte order mark, comma separated, CRLF line ends, quotes where needed; a text cell starting with = + - @ tab or carriage return gets a leading apostrophe (formula-injection guard); numbers written as numbers; sent as an attachment with Cache-Control no-store
+    violation: not applicable
+    source: FR-21, NFR-1
+  - id: BR18.2
+    statement: Each download has fixed contents
     category: policy
-    applies_to: GET /my-tasks
-    trigger: request by a role with floor rights
-    logic: >
-      MyTasks owns no tables and reads only through Purchasing.receivingWork(businessId, warehouseIds, today) and
-      Dispatch.pickingWork(businessId, warehouseIds, today);
-      receive tasks: purchase orders sent or partly_received; pick tasks: dispatch orders open or part_dispatched;
-      warehouses: assigned (Supervisor, Warehouse worker) or all (Owner, Manager); status new = nothing saved or
-      picked yet, in_progress = any receipt line or pick exists, done = finished (received, dispatched) today in
-      the business time zone (APP_TIMEZONE, default Asia/Dhaka); order: in_progress, then new, each by expected
-      or needed-by date ascending then number, then done (most recent first)
-    violation: 403 FORBIDDEN for Sales rep and Accountant
-    source: FR11.1, FR11.2, AC3.1.1–AC3.1.4, Q4
+    applies_to: CSV downloads
+    trigger: download
+    logic: products.csv — SKU, name, unit, in stock, minimum stock, status, unit cost, stock value; stock-history.csv — the same filters as the history page without paging, at most 10,000 rows, date in Dhaka time ("YYYY-MM-DD HH:mm"), SKU, product, direction, reason, quantity, unit, balance after, value, by, note; stock-report.csv — the report lines plus a Total line
+    violation: 400 VALIDATION_FAILED for invalid filters or dates
+    source: FR-21
+
+  # ---- BR19 My record ----
+  - id: BR19.1
+    statement: Everyone sees their own record; an Owner or Manager may see anyone's in the business
+    category: authorization
+    applies_to: GET /me/record?userId=
+    trigger: request
+    logic: no userId or own id → own record; another id → only owner or manager; the person must be in the caller's business
+    violation: 403 FORBIDDEN "You can see only your own record."; 404 NOT_FOUND for an unknown person
+    source: FR-22
+  - id: BR19.2
+    statement: My record counts one person's work for today, the last 7 days and the last 30 days
+    category: calculation
+    applies_to: GET /me/record
+    trigger: request
+    logic: today starts at midnight Bangladesh time (UTC+6); per period count stock movements and units in/out they recorded (excluding counts, damage_flagged and damage_rejected), counts with units missing and extra, damage flags they raised by outcome (approved, rejected, waiting), and approvals they decided for others
+    violation: not applicable
+    source: FR-22
 ```
 
 ## Rules Summary
 
 | ID | Rule | Category | Source |
 |---|---|---|---|
-| BR6.1–BR6.5 | Role table, warehouse scope, read limits, own dispatch orders, other businesses are 404 | authorization | FR2.2, Q5, FR1.3 |
-| BR7.1–BR7.4 | 3 active warehouses, unique names, in-use warehouses stay active, inactive not usable | constraint | FR4.1, Q7 |
-| BR8.1–BR8.5 | User fields, Managers vs Owners, last Owner, deactivation and password change end sessions | validation, authorization | FR3 |
-| BR9.1–BR9.7 | SKU, barcode, pack size, unit lock, search, archived suppliers, opening stock once | constraint | FR5–FR7 |
-| BR10.1–BR10.6 | Insert-only, balances = sum, never negative with max, lock order, cost, audit fields | constraint | FR8, NFR3, NFR4, Q6 |
-| BR11.1 | Apply each action once | policy | FR8.5 |
-| BR18.1–BR18.2 | Cartons and pieces in, base units stored, display form | validation | FR9 |
-| BR12.1–BR12.4 | Purchase order fields, status flow, edit before receiving, close short | state | FR10, Q2 |
-| BR13.1–BR13.4 | Blind view, final saved lines, blind per delivery, running-total completion | policy | FR12, Q1 |
-| BR14.1–BR14.3 | Reserve on create, edit sets reservation, cancel releases | constraint | FR14, Q3 |
-| BR15.1–BR15.2 | Confirm line, confirm dispatch | state | FR15, Q3 |
-| BR16.1–BR16.2 | Flag up to reserved, replacement or short | policy | FR16 |
-| BR17.1–BR17.2 | Issues in the same transaction, My tasks | policy | FR11, FR17, Q4 |
+| BR6.1 | Business scoping | authorization | FR-4, NFR-2 |
+| BR6.2 | Signed-in active caller | authorization | FR-4 |
+| BR6.3 | Products: Owner or Manager | authorization | FR-4, FR-6, FR-8 |
+| BR6.4 | Reads and recording open to every role | authorization | FR-4 |
+| BR7.1 | SKU unique per business | constraint | FR-6 |
+| BR7.2 | Product field limits, money in poisha | validation | FR-6 |
+| BR7.3 | Edit: name, unit, minimum, cost only | policy | FR-6 |
+| BR7.4 | OK / Low / Out status | calculation | FR-7 |
+| BR7.5 | Search name or SKU | calculation | FR-7 |
+| BR8.1 | Reason fits direction; quantity 1–1,000,000 | validation | FR-9 |
+| BR8.2 | Direct damage: Owner or Manager only | authorization | FR-9, FR-23 |
+| BR8.3 | Never negative (conditional update + checks) | constraint | FR-10, NFR-3 |
+| BR8.4 | Movement and quantity in one transaction | policy | FR-11, FR-17 |
+| BR8.5 | Append-only trigger | constraint | FR-11, NFR-3 |
+| BR9.1 | Count records the difference under a row lock | calculation | FR-12 |
+| BR10.1 | Import rows checked, row numbers | validation | FR-8 |
+| BR10.2 | No duplicate SKU on import | constraint | FR-8 |
+| BR10.3 | All or nothing; opening movements | policy | FR-8, FR-11 |
+| BR11.1 | Flag damage into the hold, approval opens | policy | FR-13 |
+| BR12.1 | Deciders per kind | authorization | FR-14, FR-15, FR-16 |
+| BR12.2 | Never decide your own | authorization | FR-16, FR-23 |
+| BR12.3 | Decided once (row lock) | constraint | FR-16 |
+| BR12.4 | Damage decision effects | calculation | FR-14 |
+| BR12.5 | Reversal movement on approve | calculation | FR-15 |
+| BR12.6 | Decision recorded | policy | FR-16 |
+| BR12.7 | Approvals list and canDecide | calculation | FR-16 |
+| BR13.1 | Reversal request: Owner or Manager | authorization | FR-15 |
+| BR13.2 | Reversal request fields | validation | FR-15 |
+| BR13.3 | Reversible reasons | constraint | FR-15 |
+| BR13.4 | One open or approved reversal per movement | constraint | FR-15 |
+| BR14.1 | Poisha and cost at the moment | calculation | FR-17 |
+| BR15.1 | Dashboard figures | calculation | FR-18 |
+| BR16.1 | History filters and paging | calculation | FR-19 |
+| BR17.1 | Stock report | calculation | FR-20 |
+| BR18.1 | CSV: BOM and formula guard | policy | FR-21 |
+| BR18.2 | CSV contents | policy | FR-21 |
+| BR19.1 | My record access | authorization | FR-22 |
+| BR19.2 | My record periods and counts | calculation | FR-22 |
 
 ## Assumptions & Open Questions
 

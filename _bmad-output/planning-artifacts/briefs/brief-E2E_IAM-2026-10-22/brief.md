@@ -2,7 +2,7 @@
 title: "Product Brief: Mojud (working name)"
 status: final
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-11-16
 inputs:
   - _bmad-output/brainstorming/brainstorm-inventory-stock-management-2026-10-22/brainstorm-intent.md
   - idea.md
@@ -10,131 +10,185 @@ inputs:
 
 # Product Brief: Mojud (working name)
 
+> **Updated 2026-11-16 to match the built app.** This brief describes only what
+> the app in `apps/` does. Requirement IDs (FR-1 … FR-23) refer to the as-built
+> specification.
+
 > *Mojud* (মজুদ) means "stock" in Bangla. The name is temporary.
 
 ## Executive Summary
 
-Mojud is a simple, reliable stock-control web app for small and mid-sized **FMCG distributors and wholesalers in Bangladesh** with 1–3 warehouses and 5–30 staff. It replaces Excel sheets, paper khatas and WhatsApp messages with one shared record. That record shows what stock is **really available**, who moved it and why, and where taka is being lost.
+Mojud is a simple, reliable stock-control web app for small **FMCG distributors
+and wholesalers in Bangladesh** with one stock location and a handful of staff.
+It replaces Excel sheets and paper khatas with one shared record. That record
+shows what is in stock, who changed it and why, and where taka is being lost.
 
-The core idea is **trust through transparent, effortless accountability**. Most inventory tools are built for the manager's reports, so recording feels like extra work to the people on the floor and gets skipped. Mojud turns that around. Every record takes about one scan and one tap, works offline, and gives the person recording it something back: their next task, confirmation that the work was saved, and proof that protects them from blame for gaps they didn't cause.
+The core idea is **trust through transparent accountability**. Every stock
+change is kept permanently with who, when, why and its value in taka. Every
+damage write-off and every correction needs a second person. And the same
+record that holds people accountable also proves what honest workers did.
 
-This is a personal learning project, built with the intention of becoming usable by real businesses. It is **a stock-control system, not an ERP**.
+It is a phone-friendly web app in English that runs in the browser on desktop
+and phone. This is a personal learning project, built with the intention of
+becoming usable by a real business.
 
-Working positioning line: *"Every handoff counted. Every person protected."*
+Working positioning line: *"Every loss traced to a person and a reason."*
 
 ## The Problem
 
-A typical scenario: the system says 60 cartons are in stock, so a manager promises 50 to a customer. Only 32 can actually be sold, because some were crushed during picking and others were already promised by a colleague. The manager has to explain the shortfall to the customer and to the owner.
+A typical scenario: the sheet says 60 bags of rice are in stock. At month end
+only 52 are on the shelf. Two bags got wet last week and someone wrote them off;
+someone else changed the figure after a delivery. Nobody remembers who did what,
+and the owner is left with ৳9,600 of loss and no explanation.
 
 The underlying causes:
 
-- **"Stock" is one number that hides three.** Recorded stock includes damaged and reserved units, so nobody knows what can actually be promised.
-- **Events happen outside the system.** Damage is reported to a supervisor verbally, reservations sit in a sales notebook or on WhatsApp, and nobody updates the record. Later, nobody remembers who found the damage or when.
-- **Gaps enter at handoffs**, where one side trusts the other's number: supplier to receiver, warehouse to warehouse, worker to supervisor. Short deliveries marked as "fully received" and transfers confirmed without counting are easy ways for stock to disappear.
-- **Owners find losses too late.** Damaged, missing and expired stock shows up as an unexplained shortfall at month end, with nothing to trace it back to.
+- **Figures change without a trail.** In a sheet or khata, a number can be
+  overwritten and the old value, the person and the reason are gone.
+- **Write-offs happen quietly.** Damage is reported verbally and written off by
+  the same person who found it, with no second check.
+- **Owners find losses too late.** Damaged and missing stock shows up as an
+  unexplained shortfall at month end, with nothing to trace it back to.
+- **Honest workers get blamed.** When a gap appears, there is no record to show
+  who did the work correctly.
 
-**Root cause:** the people who record stock get no immediate benefit from doing it. Effort flows up to managers and value never flows back down, so under time pressure recording is the first thing skipped.
+**Root cause:** the people who record stock get no immediate benefit from doing
+it, so under time pressure recording is the first thing skipped.
 
 ## The Solution
 
-A responsive web app, **installable as a PWA** so it works on phones and keeps recording offline. It does a small number of things reliably:
+A responsive web app that works on desktop and phone (from 320 px wide). It
+does a small number of things reliably:
 
-- **Promisable stock, not just on-hand stock.** Every product shows on hand, damaged, reserved, in transit and promisable quantities, per warehouse.
-- **Every change goes into an append-only record:** who, what, when, where, why and value. Nothing is silently overwritten. Count shortages are kept as *unexplained* until someone resolves them, never deleted.
-- **Recording happens inside the work.** Receiving, picking, transfers and damage take about one scan and one tap with the phone camera. Fields are pre-filled, and offline scans sync later.
-- **Controls at every handoff.** Blind receiving against purchase orders, a count at the receiving end of transfers, and nobody can approve their own records.
-- **Damage reporting in one tap.** "Flag it" moves stock out of sale straight away. The supervisor approves or rejects it from one prioritised issues inbox, not a stream of separate alerts.
-- **Evidence for the owner, not scores.** Losses are shown in taka by reason (damaged, expired, unexplained), and each figure can be followed down to a case with a transaction, a person and a timestamp, assigned to someone to resolve.
-- **Something back for workers.** A simple "My record" view shows picks completed, damage flags and confirmed discrepancies, which serves as their proof of work.
+- **A permanent stock record.** Every change is a movement with product,
+  direction, reason, quantity, balance after, unit cost at that moment, note,
+  person and time. The database refuses any edit or delete (FR-11).
+- **Stock never goes below zero.** A change that would do so is refused with
+  "Only N unit in stock.", even when two people record the last unit at once (FR-10).
+- **Quick recording.** Stock in (purchase, customer return, count adjustment)
+  and stock out (sale, count adjustment) on one screen, with a saved message
+  showing the new balance (FR-9).
+- **Stock counts.** Enter what is on the shelf; the difference is saved as a
+  stock count movement and shown as units and taka missing or extra (FR-12).
+- **Damage needs a second person.** Anyone can flag damage; the units leave
+  sellable stock straight away and a supervisor, manager or owner who did not
+  raise the flag approves or rejects it in one tap. Only an owner or manager can
+  write off damage directly (FR-13, FR-14, FR-23).
+- **Mistakes are reversed, not edited.** An owner or manager asks to reverse a
+  movement with a reason; a different owner or manager approves it, and an
+  opposite movement is recorded and linked to the original (FR-15).
+- **One approvals list.** Waiting and decided damage flags and reversals, each
+  with product, quantity, value in taka, who asked and when. Nobody decides
+  their own request (FR-16).
+- **Losses in taka for the owner.** A dashboard with stock value, losses in the
+  last 30 days split into written off, damage flags and missing in counts (each
+  opening the matching history), low and out-of-stock products, and the latest
+  movements (FR-17, FR-18).
+- **History, report and Excel files.** A filterable movement history (FR-19), a
+  monthly stock report per product (FR-20), and CSV downloads of products,
+  history and report that open in Excel (FR-21).
+- **Quick set-up.** Products are created by hand or imported from Excel (CSV)
+  with opening stock, all rows or none (FR-6, FR-8).
+- **Something back for workers.** "My record" shows a person's own stock
+  movements, counts, damage flags and decisions for today, the last 7 days and
+  the last 30 days (FR-22).
+- **Staff and roles.** The owner signs up the business, adds staff with one of
+  five roles, deactivates or reactivates them and resets their passwords (FR-1
+  … FR-5).
 
 ## What Makes This Different
 
 These points are honest positioning claims. None of them is a technical moat.
 
-- **Built for the floor first.** Bangla and English, phone-first, offline-capable, and designed to an effort budget of roughly one scan and one tap.
-- **Accountability that protects.** The same record that holds people accountable also clears honest workers.
-- **Focused scope.** It does warehouse stock control for small distributors well and stops there: no POS, no invoicing, no ERP.
-- `[ASSUMPTION]` **There is a market gap.** Desk research suggests local tools are either single-shop khata apps (TallyKhata, Hishabee) or brand-side distribution and ERP systems (Sokrio, TallyPrime, Odoo implementations). None of the tools found is a Bangla, offline, warehouse-control tool for small distributors. This must be checked with real distributors (addendum A).
+- **Nothing is overwritten.** Every change stays in the record, with its value
+  in taka at the time.
+- **Second-person approval.** Every damage write-off by floor staff and every
+  correction is decided by someone other than the person who asked.
+- **Accountability that protects.** The same record that holds people
+  accountable also clears honest workers, and each worker can see their own.
+- **Phone-friendly and simple.** One screen per job, cards on phones, plain
+  English messages.
+- `[ASSUMPTION]` **There is a market gap.** Desk research suggests local tools
+  are either single-shop khata apps or brand-side distribution and ERP systems.
+  This must be checked with real distributors (addendum A).
 
 ## Who This Serves
 
-**Primary customer:** the **owner** of a Bangladeshi FMCG distributor or wholesaler with 1–3 warehouses and 5–30 staff. Today they run on Excel, khata and WhatsApp, and they aren't on the floor every day. They pay for the product because they want **control**: to trust the numbers from a distance and stop money leaking away.
+**Primary customer:** the **owner** of a small Bangladeshi FMCG distributor or
+wholesaler with one stock location and a handful of staff. Today they run on
+Excel and khata, and they aren't on the floor every day. They want **control**:
+to trust the numbers from a distance and see where money is lost.
 
-**Daily users** adopt it only if it gives them **relief**.
+**Daily users** adopt it only if it gives them **relief**. The built roles:
 
-| Role | What success looks like |
-|---|---|
-| Warehouse worker | Records work in seconds, knows the next task, and isn't blamed for others' gaps |
-| Supervisor | Clears one prioritised inbox and approves damage in one tap |
-| Inventory manager | Knows the promisable quantity per warehouse and resolves discrepancies with evidence |
-| Sales rep | Promises quantities and dates without having to check with the warehouse first |
-| Accountant | Gets a stock value backed by a transaction-level trail |
+| Role | What they do in Mojud | What success looks like |
+|---|---|---|
+| Owner | Manages staff, products and imports; records stock; writes off damage; asks for and decides reversals and damage flags (not their own); sees anyone's record | Sees losses in taka and can follow each one to its movements |
+| Manager | Manages products and imports; records stock and counts; writes off damage; asks for and decides reversals and damage flags (not their own); sees anyone's record | Counts are right and mistakes are corrected without editing history |
+| Supervisor | Records stock and counts; flags damage; decides other people's damage flags | Clears the approvals list in one tap per card |
+| Warehouse worker | Records stock in/out and counts; flags damage | Records in seconds and has proof of their own work |
+| Sales rep | Checks stock; records stock in/out and counts; flags damage | Knows what is in stock without calling the warehouse |
+| Accountant | Reads the history and report; downloads CSV; records stock and counts; flags damage | Gets a stock value backed by a movement-level trail |
 
 ## Success Criteria
 
-`[ASSUMPTION]` **These targets are provisional.** They are working assumptions, not commitments, and stay that way until they have been validated with real users.
+`[ASSUMPTION]` Adoption targets are provisional until tested with a real business.
 
-- **Inventory record accuracy:** at least 97% of counted lines match the system after 3 months of use, up from a baseline measured at the first count.
-- **Complete audit information:** 100% of stock changes record user, time, reason and location. The system enforces this rather than relying on discipline.
-- **Unexplained loss falls:** unexplained shortfall in taka goes down month on month, and at least 80% of discrepancy cases are resolved within 7 days.
-- **Damage captured on the same day:** at least 90% of damage is flagged within the same shift it was found.
-- **Floor adoption:** at least 80% of warehouse and sales staff record in the app every working week.
-- **Speed:** a routine scan takes 5 seconds or less, and a sales rep can find the promisable quantity in 10 seconds or less.
-- **Product proof:** one real distributor replaces Excel or khata with Mojud for 8 consecutive weeks.
+- **Product proof:** one real distributor replaces Excel or khata with Mojud for
+  8 consecutive weeks.
+- **Complete audit information:** 100% of stock changes record person, time,
+  reason and value. The system enforces this (FR-11).
+- **No negative stock:** stock never goes below zero (FR-10).
+- **No self-approval:** no damage flag or reversal is decided by the person who
+  raised it (FR-16, FR-23).
+- **Losses traceable in taka:** every loss figure on the dashboard opens the
+  movements behind it (FR-18, FR-19).
+- **Count losses fall:** "Missing in counts" and the report's lost total go down
+  month on month (FR-18, FR-20).
+- **Floor adoption:** each staff member's weekly activity is visible in My
+  record (FR-22).
+- **Speed:** first load, sign-up and sign-in each take 2 seconds or less (NFR-6).
 
 ## Scope
 
-**In v1 (MUST).** v1 is limited to these 18 features, built in small increments starting with **core stock tracking** (items 1–7). Accountability and advanced features follow in later increments; the exact order is decided in planning.
+The built app delivers these features (requirement IDs in brackets):
 
-1. Product catalogue with carton ↔ piece units
-2. 1–3 warehouses
-3. Append-only stock ledger
-4. Stock states and promisable quantity
-5. Suppliers and simple purchase orders with blind receiving
-6. Dispatch with reservation (no invoicing)
-7. Transfers with a count at the receiving end
-8. Damage flag (photo optional) with one-tap supervisor approval
-9. Prioritised issues inbox
-10. Stock counts and reconciliation into discrepancy cases
-11. Roles and segregation of duties
-12. Phone-camera barcode scanning
-13. Bangla and English interface
-14. Excel import
-15. Low-stock list and owner view of losses in taka
-16. Offline scan queue (PWA)
-17. Simple worker "My record" view
-18. Basic stock value tracking
+1. Business sign-up, sign-in and sign-out (FR-1, FR-2)
+2. Staff management with six roles and role permissions (FR-3, FR-4)
+3. Passwords: change own, owner reset for staff (FR-5)
+4. Products with SKU, unit, minimum stock and unit cost in taka (FR-6)
+5. Product list with search and OK / Low / Out status (FR-7)
+6. Product import from Excel (CSV) with opening stock (FR-8)
+7. Stock in / out with reasons (FR-9)
+8. Never-negative stock (FR-10)
+9. Permanent, append-only stock ledger (FR-11)
+10. Stock counts (FR-12)
+11. Damage flags with second-person decision (FR-13, FR-14)
+12. Reversals with second-person approval (FR-15)
+13. Approvals list (FR-16)
+14. Stock value in taka (FR-17)
+15. Owner dashboard with losses in taka and drill-down (FR-18)
+16. Filterable movement history (FR-19)
+17. Monthly stock report (FR-20)
+18. CSV downloads for Excel (FR-21)
+19. My record (FR-22)
+20. Segregation of duties (FR-23)
 
-**Explicitly out of v1:**
-
-- POS and invoicing
-- Full accounting ledger
-- Batch and serial tracking
-- Kitting and bill of materials (BOM)
-- Bin-level locations
-- Risk scores for individual people
-- Multi-company
-- Native mobile apps
-
-Next priorities (SHOULD) and later ideas are listed in addendum B.
+It runs locally with Docker Compose, in English, with light and dark themes.
 
 ## Open Questions
 
-`[ASSUMPTION]` Each of these needs to be validated, ideally by interviewing 3–5 distributors before or during the build.
+`[ASSUMPTION]` Each of these needs to be checked with real distributors.
 
-- **Willingness to pay:** will owners pay a monthly fee, and how much? Local tool pricing suggests about ৳1,000–3,000/month, but that is unverified.
-- **Switching:** why would an owner leave an Excel sheet that works "well enough"? Is the loss in taka large enough to justify it?
-- **Staff acceptance:** will staff accept more accountability if the product clearly protects them too?
-- **Devices:** do warehouse staff have, or share, smartphones good enough for camera scanning? Research suggests many share low-end phones.
-- **Data trust:** what security and backup promises do owners need before trusting a new web app with stock and money data?
+- **Switching:** why would an owner leave an Excel sheet that works "well
+  enough"? Is the loss in taka large enough to justify it?
+- **Staff acceptance:** will staff accept more accountability if the product
+  clearly protects them too?
+- **Data trust:** what security and backup promises do owners need before
+  trusting a new web app with stock and money data?
 
 ## Vision
 
-If v1 earns trust with a handful of distributors, Mojud becomes the record that small Bangladeshi distributors run their warehouses on. Possible next steps:
-
-- Smarter controls that tighten and relax with risk
-- Expiry and valuation for the accountant
-- Supplier performance insights
-- Optional links to accounting tools such as Tally
-
-Throughout, it stays a focused stock-control product and does not grow into an ERP.
+Mojud becomes the stock record a small distributor trusts: quick to record,
+impossible to rewrite quietly, and clear about where every taka of loss came
+from. It stays a focused stock-control product.

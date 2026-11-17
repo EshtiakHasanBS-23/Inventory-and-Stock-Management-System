@@ -2,13 +2,13 @@
 
 ## Summary
 
-- Builds: the walking skeleton — npm-workspaces monorepo with a contracts package, the Express API (identity module: sign-up, sign-in, sign-out, sessions, CSRF, caller context), the React web app (sign up, sign in, app shell, role homes, theme), Docker Compose stack and `npm run verify`.
+- Builds: the walking skeleton — npm-workspaces monorepo with a contracts package, the Express API (identity module: sign-up, sign-in, sign-out, sessions, CSRF, caller context), the React web app (sign up, sign in, app shell, signed-in landing page, theme), Docker Compose stack and `npm run verify`.
 - Touches: repository root config, `packages/contracts/`, `apps/api/`, `apps/web/`, `docker-compose.yml`, `scripts/`, `.env.example`, `.gitignore`, `README.md`.
-- Tests: about 75 tests — API unit tests (~30), API integration tests against PostgreSQL with Supertest (~25), contracts tests (~6), web component tests with React Testing Library and jest-axe (~12), and one Playwright smoke test inside `npm run verify`; 80% line coverage enforced.
+- Tests: about 75 tests planned for the skeleton — API unit tests (~30), API integration tests against PostgreSQL with Supertest (~25), contracts tests (~6), web component tests with React Testing Library and jest-axe (~12), and Playwright smoke tests inside `npm run verify`; 80% line coverage enforced. The skeleton finished with 130 tests and 4 smoke tests; the suite now holds 272 tests (about 98% line coverage) and 9 smoke tests after the stock work (`code-summary.md`).
 
 ## Inputs
 
-Unit U1 walking-skeleton (`unit-of-work.md`; stories US1.1, US1.2). Design sources: `functional-design/` (functional-spec, rules BR1.1–BR5.2, entities, frontend-components), `nfr-requirements/` (NFR1.x–NFR9.1, tech-stack-decisions), `nfr-design/` (security, performance, scalability, reliability, observability, logical-components), `infrastructure-design/` (infrastructure-specification, monitoring-design, cicd-pipeline), contract C1/C2 (`contract-summary.md`), design tokens (`design-process/D-Design-System/design-tokens.md`, `refined-mockups/design-system-mapping.md`). All application code goes to the workspace root, never to the record directory.
+Unit walking-skeleton (stories US-01 Sign up a business and US-02 Sign in and out; FR-1, FR-2). Design sources: `functional-design/` (functional-spec, rules BR1.1–BR5.2, entities, frontend-components), `nfr-requirements/` (NFR1.x–NFR9.1, tech-stack-decisions), `nfr-design/` (security, performance, scalability, reliability, observability, logical-components), `infrastructure-design/` (infrastructure-specification, monitoring-design, cicd-pipeline), contract C1/C2 (`contract-summary.md`), design tokens (`design-process/D-Design-System/design-tokens.md`, `refined-mockups/design-system-mapping.md`). All application code goes to the workspace root, never to the record directory.
 
 ## Testing Contract
 
@@ -77,11 +77,11 @@ Unit U1 walking-skeleton (`unit-of-work.md`; stories US1.1, US1.2). Design sourc
 }
 ```
 
-Note on "CI execution before merge": no CI exists this round (infrastructure-design Q3; team Testing Posture "Before merge"), so the selected tests run through `npm run verify` locally before each merge; CI is added in a later round.
+Note on "CI execution before merge": no CI exists (infrastructure-design Q3; team Testing Posture "Before merge"), so the selected tests run through `npm run verify` locally before each merge.
 
 ## Steps
 
-### Step 1 — Project structure and production configuration skeleton (US1.1, US1.2; NFR9.1)
+### Step 1 — Project structure and production configuration skeleton (US-01, US-02; NFR9.1)
 
 - [x] Root `package.json` with npm workspaces (`packages/*`, `apps/*`), Node 22 engines field, and scripts: `dev`, `up`, `down`, `db:reset`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:coverage`, `test:smoke`, `verify`, `logs:errors`.
 - [x] `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, ES2022, NodeNext for api, Bundler for web) and project references.
@@ -93,7 +93,7 @@ Note on "CI execution before merge": no CI exists this round (infrastructure-des
 ### Step 2 — Test runner bootstrap and exact unit-scoped commands (NFR7.1, NFR7.2)
 
 - [x] Install Vitest, `@vitest/coverage-v8`, Supertest, React Testing Library, `@testing-library/user-event`, jsdom, jest-axe, Playwright.
-- [x] `vitest.workspace.ts` with projects `contracts`, `api`, `web`; each project config sets `coverage.provider: 'v8'` and `coverage.thresholds.lines: 80`.
+- [x] Root `vitest.config.ts` with `test.projects` `contracts`, `api`, `web` (Vitest 3.2 replaced `vitest.workspace.ts`); coverage `provider: 'v8'` with an 80% line threshold for each source folder, set at the root because Vitest ignores per-project coverage options (code-summary Deviation 1).
 - [x] `apps/api/test/globalSetup.ts`: connects to the `postgres` maintenance database, creates `mojud_test` if missing, runs the migrator against it; `apps/api/test/helpers/db.ts` truncates identity tables between tests.
 - [x] Add `packages/contracts/test/runner.test.ts` (asserts that `normalizePhone('01-234 5678')` returns `'012345678'`, so it tests real code) and run the runner-check command from `unit-test-instructions.md` to prove the runner works before the first layer's tests.
 
@@ -120,12 +120,12 @@ Note on "CI execution before merge": no CI exists this round (infrastructure-des
 - [x] `apps/api/test/identity/cleanup.test.ts` (~3 tests): deletes only sessions expired more than 7 days; second concurrent run skips while the lock is held; a failing run logs an error and keeps the timer.
 - [x] Run `npx vitest run --project api apps/api/test/identity/repository.test.ts apps/api/test/identity/cleanup.test.ts`.
 
-### Step 7 — Business logic: implement (US1.1, US1.2; BR1.1–BR2.8; NFR1.1–NFR1.6, NFR1.9)
+### Step 7 — Business logic: implement (US-01, US-02; BR1.1–BR2.8; NFR1.1–NFR1.6, NFR1.9)
 
 - [x] `internal/password.ts`: Argon2id hash/verify with config parameters; `DUMMY_HASH` built once at start.
 - [x] `internal/tokens.ts`: `newSessionId()`, `newCsrfToken()` (32 random bytes, base64url), `hashSessionId()` (sha256 hex), `safeEqual()` (length check, then `timingSafeEqual`).
-- [x] `internal/service.ts`: `signUp` (validate, normalize phone, duplicate check, transaction, map 23505 on `users_phone_key` to DUPLICATE, create session), `signIn` (uniform path with exactly one verify, INVALID_CREDENTIALS / ACCOUNT_DEACTIVATED), `signOut`, `resolveSession` (NOT_SIGNED_IN / SESSION_ENDED for expired or inactive, with delete), `authorize(caller, action, warehouseId?)` (signed in and active only in U1; BR2.7).
-- [x] `modules/identity/index.ts`: exports `identityRouter`, `resolveCaller`, `authorize`, `Caller` type, `startSessionCleanup` only.
+- [x] `internal/service.ts`: `signUp` (validate, normalize phone, duplicate check, transaction, map 23505 on `users_phone_key` to DUPLICATE, create session), `signIn` (uniform path with exactly one verify, INVALID_CREDENTIALS / ACCOUNT_DEACTIVATED), `signOut`, `resolveSession` (NOT_SIGNED_IN / SESSION_ENDED for expired or inactive, with delete), `authorize(caller, action)` (refuses a missing or inactive caller; BR2.7).
+- [x] `modules/identity/index.ts`: exports `createIdentityRouters` (public and protected routers), `resolveCaller`, `authorize`, `equalizeSignInFailure`, `Caller` type and `startSessionCleanup` (code-summary Deviation 6).
 - [x] `apps/api/src/platform/errors.ts`: `AppError(code, field?)` with status map from the Error Catalogue.
 
 ### Step 8 — Business logic: write and run tests
@@ -150,21 +150,21 @@ Note on "CI execution before merge": no CI exists this round (infrastructure-des
 - [x] `apps/api/test/api/platform.test.ts` (~8): security headers present (NFR1.14); `X-Request-Id` echoed or generated, included in 500 body; log line fields and redaction (captured stream: no password, cookie, CSRF token; NFR1.2, NFR1.18, NFR8.9–NFR8.11); health 200, and 503 when the pool is pointed at a dead database; route-inventory test (NFR1.8); pool `error` event does not crash (NFR8.6); `shutdown()` order with fakes (NFR8.8); config exits on missing variable (NFR1.12).
 - [x] Run `npx vitest run --project api apps/api/test/api`.
 
-### Step 11 — Frontend behavior: implement (FR1, FR2.3, FR18; BR4.1, BR5.1, BR5.2; M1, M2, M15)
+### Step 11 — Frontend behavior: implement (FR-1, FR-2, NFR-4, NFR-9; BR4.1, BR5.1, BR5.2; M1, M2)
 
 - [x] `apps/web/` Vite + React 18 + TypeScript strict; `index.html` loading `/theme-init.js` (blocking, in `<head>`); `public/theme-init.js` (applies saved theme or device setting before first paint).
 - [x] `src/styles/tokens.css` (design tokens as CSS variables for light and dark, from `design-tokens.md`), `src/styles/base.css` (system font stack, focus ring, skip link).
 - [x] `src/i18n/en.json` + i18next setup; every screen string comes from keys (BR5.2).
 - [x] `src/api/client.ts` (fetch with `credentials: 'include'`, `X-CSRF-Token` on non-GET, maps the Error shape to field/form errors), `src/session/SessionProvider.tsx` (TanStack Query `/auth/me`, `staleTime: Infinity`, reset on sign-in/out, 401 handling per `frontend-components.md`).
 - [x] Components: `InputField`, `PasswordField` (Show/Hide), `ButtonPrimary`, `ButtonSecondary`, `FormErrorSummary` (takes focus), `ThemeSwitch` (Light/Dark/Device), `SkipLink`, `AppBar`, `SideNav` (items per role, `aria-current`), with `data-testid` on every interactive element.
-- [x] Pages: `SignUpPage` (M1), `SignInPage` (M2), `SetupHomePlaceholder`, `DispatchOrdersPlaceholder`, `MyTasksPlaceholder`, `ComingLaterPage` (M15); router per the Routes table with `React.lazy` per route, redirects, "return to the page first asked for".
+- [x] Pages: `SignUpPage` (M1), `SignInPage` (M2) and a signed-in landing page; router with `React.lazy` per route, redirects, "return to the page first asked for". The landing page was replaced by the Dashboard when the stock pages were built; every role now lands on `/dashboard` (BR4.1).
 - [x] `vite.config.ts` dev proxy `/api` → `http://localhost:3000`.
 
 ### Step 12 — Frontend behavior: write and run tests
 
-- [x] `apps/web/test/SignUpPage.test.tsx` (~5): field validation on blur with messages from `frontend-components.md`; server field error shown under field; typed values kept on error; button busy while saving; success navigates to Setup home.
+- [x] `apps/web/test/SignUpPage.test.tsx` (~5): field validation on blur with messages from `frontend-components.md`; server field error shown under field; typed values kept on error; button busy while saving; success navigates to the signed-in landing page (now the Dashboard).
 - [x] `apps/web/test/SignInPage.test.tsx` (~4): INVALID_CREDENTIALS and ACCOUNT_DEACTIVATED shown in the summary, which takes focus; success goes to the remembered page; password Show/Hide.
-- [x] `apps/web/test/shell.test.tsx` (~5): role landing per BR4.1 for all six roles (mocked caller); side-nav items per role; SESSION_ENDED shows the "session ended" message, NOT_SIGNED_IN shows none, first `/auth/me` 401 shows none; signed-in user opening `/signin` goes to role home.
+- [x] `apps/web/test/shell.test.tsx` (~5): landing per BR4.1 for all six roles (mocked caller); side-nav items per role; SESSION_ENDED shows the "session ended" message, NOT_SIGNED_IN shows none, first `/auth/me` 401 shows none; signed-in user opening `/signin` goes to the landing page.
 - [x] `apps/web/test/theme.test.tsx` (~3): saved choice applied; Device removes saved choice; `theme-init.js` sets the attribute from storage.
 - [x] `apps/web/test/a11y.test.tsx` (~3): jest-axe has no violations on Sign up, Sign in and the shell in both themes (NFR6.1); token contrast ≥ 4.5:1 for text pairs (NFR6.2).
 - [x] Run `npx vitest run --project web`.
@@ -175,24 +175,24 @@ Note on "CI execution before merge": no CI exists this round (infrastructure-des
 - [x] `docker-compose.yml`: `db`, `migrate`, `api`, `web` with health checks and timings, `depends_on` conditions, ports `127.0.0.1:8080:80` and `127.0.0.1:5433:5432`, named volume `pgdata`, memory limits, `restart` policies, `stop_grace_period`, json-file log rotation, `env_file: .env`.
 - [x] `.env.example` with the local-only placeholder values and comments from `infrastructure-specification.md`.
 - [x] `scripts/preflight.mjs` (Docker running, Compose ≥ v2.24, `.env` present, ports 8080 and 5433 free), `scripts/secret-scan.mjs`, `scripts/verify.mjs` (stages 0–6 with `spawnSync`, project `mojud-verify`, teardown in `finally` and on SIGINT/SIGTERM), `scripts/logs-errors.mjs`.
-- [x] `apps/web/e2e/smoke.spec.ts` + `playwright.config.ts` (Chromium, base URL `http://127.0.0.1:8080`): unique 11-digit phone; sign up → Setup home within 2 s; sign out; sign in within 2 s; first load ≤ 2 s; 20 `/auth/me` calls median from `X-Response-Time` (fail > 200 ms); keyboard-only path with skip link and visible focus; web headers on `/`, an asset and `/theme-init.js`; dark theme applied on first load when saved.
+- [x] `apps/web/e2e/smoke.spec.ts` + `playwright.config.ts` (Chromium, base URL `http://127.0.0.1:8080`): unique 11-digit phone; sign up → landing page (now the Dashboard) within 2 s; sign out; sign in within 2 s; first load ≤ 2 s; 20 `/auth/me` calls median from `X-Response-Time` (fail > 200 ms); keyboard-only path with skip link and visible focus; web headers on `/`, an asset and `/theme-init.js`; dark theme applied on first load when saved.
 - [x] `verification-command`: `npm run verify` → `node scripts/verify.mjs`.
 
 ### Step 14 — Documentation and traceability
 
 - [x] `README.md` (root): prerequisites (Docker Desktop with WSL 2, Node 22), `cp .env.example .env`, `npm ci`, `npm run dev` (db in Docker, API and web with hot reload), `npm run up`, `npm run verify`, `npm run db:reset`, troubleshooting (ports in use, Docker not running).
 - [x] Inline doc comments on the module interface (`modules/identity/index.ts`), the request pipeline (`app.ts`) and the global-lookup exceptions.
-- [ ] `code-summary.md`, `source-manifest.json` and `traceability.json` in this record folder; tick each step's checkboxes here as it finishes.
+- [x] `code-summary.md`, `source-manifest.json` and `traceability.json` in this record folder; tick each step's checkboxes here as it finishes.
 
 ## Story-to-Step Traceability
 
-| Story / AC | Steps |
+| Story / requirement | Steps |
 |---|---|
-| US1.1 Sign up a business (AC1.1.1, AC1.1.2, AC1.1.3, AC1.1.5) | 1, 3–4, 5–6, 7–8, 9–10, 11–12, 13 |
-| US1.1 AC1.1.4 business isolation | Foundation in 5–6 and 10 (twoBusinesses helper); record-by-ID check deferred to the backend unit (functional-design traceability) |
-| US1.2 Sign in and out (AC1.2.1, AC1.2.2, AC1.2.4, AC1.2.5) | 1, 5–6, 7–8, 9–10, 11–12, 13 |
-| US1.2 AC1.2.3 deactivated user | Rule built in 7–8 (tested at service level); end-to-end check deferred to the backend unit |
-| US1.2 AC1.2.6 accessibility | Skeleton screens in 12 and 13; full pass deferred to the frontend unit |
+| US-01 Sign up a business (FR-1) | 1, 3–4, 5–6, 7–8, 9–10, 11–12, 13 |
+| US-02 Sign in and out (FR-2) | 1, 5–6, 7–8, 9–10, 11–12, 13 |
+| Business isolation (FR-4, NFR-2) | Foundation in 5–6 and 10 (twoBusinesses helper); the per-record not-found checks were added with the staff and stock endpoints |
+| Deactivated user (FR-2, FR-3) | Rule built in 7–8 (tested at service level); the end-to-end check was added with staff management |
+| Accessibility (NFR-5) | Skeleton screens in 12 and 13; the stock pages added their own axe and keyboard checks |
 
 ## Assumptions & Open Questions
 

@@ -1,57 +1,36 @@
-# Unit Dependencies — Mojud core slice
+# Unit of Work Dependencies — Mojud core slice
 
-Topology between the units in `unit-of-work.md`, derived from the component dependencies in `inception/domain-design/components.md` and covering `requirements.md` and `stories.md`. This file describes what depends on what; the build sequence is chosen in Delivery Planning.
+Updated 2026-11-16 to match the units built (`unit-of-work.md`, `simplified-plan.md`).
 
 ## Dependency Graph
 
-```yaml
-units:
-  - name: walking-skeleton
-    depends_on: []
-  - name: backend
-    kind: service
-    depends_on: [walking-skeleton]
-  - name: frontend
-    kind: ui
-    depends_on: [backend, walking-skeleton]
-```
-
 ```mermaid
-graph LR
-  backend -->|"extends service, schema, auth"| walking-skeleton
-  frontend -->|"calls API"| backend
-  frontend -->|"extends web app shell"| walking-skeleton
+flowchart LR
+  U1["U1 Walking skeleton"] --> U2["U2 Stock core"]
+  U2 --> U3["U3 Value, count, staff"]
+  U3 --> U4["U4 Phone layout, passwords, history filters"]
+  U3 --> U5["U5 Import, export, report"]
+  U4 --> U6["U6 UI refresh and accountability"]
+  U5 --> U6
 ```
 
-<!-- Text fallback: backend depends on walking-skeleton. frontend depends on backend and on walking-skeleton. walking-skeleton depends on nothing. There are no cycles. -->
+Text fallback: U1 → U2 → U3; U3 → U4 and U3 → U5; U4 and U5 → U6. They were built in the order U1, U2, U3, U4, U5, U6.
 
-## Edges
+## Dependency Matrix
 
 | Unit | Depends on | Why |
 |---|---|---|
-| U2 backend | U1 walking-skeleton | Adds modules to U1's backend service, migrations to its database, and builds on its sign-in, sessions and caller context |
-| U3 frontend | U2 backend | Every remaining screen calls U2's API |
-| U3 frontend | U1 walking-skeleton | Adds screens to U1's app shell, theme and translation file |
+| U1 | — | First unit: repository, Compose stack, platform pipeline, identity tables |
+| U2 | U1 | Needs businesses, users, sessions, `authorize` and the app shell |
+| U3 | U2 | Unit cost and counts extend `products` and `stock_movements`; staff extends identity and needs roles enforced by U2's products rules |
+| U4 | U3 | Password reset sits on the Staff page; history filters extend U2's history; the phone layout reworks the shell from U1 |
+| U5 | U3 | Import and the report use unit cost and value (U3); history export reuses the filters' query shape |
+| U6 | U4, U5 | Reversals start from the filtered History (U4); the loss split and report damage figures extend U3 and U5; the refresh restyles every page built so far |
 
-## Integration Points
+## Shared Contracts
 
-| Between | Mechanism | What crosses |
-|---|---|---|
-| U1 web app ↔ U1 backend | HTTP JSON API | Sign-up, sign-in, sign-out, session cookie |
-| U2 modules ↔ U1 IdentityAccess | In-process function calls | Caller context (business, user, role, warehouses); authorization checks |
-| U2 modules ↔ each other | In-process function calls inside one database transaction | Stock movements, Issues, damage flags (ADR-002, ADR-003, ADR-007) |
-| U3 ↔ U2 | HTTP JSON API | Settings, orders, receiving, picking, damage, Issues, My tasks; action IDs on stock changes |
-| All ↔ PostgreSQL | Shared database, one schema per module's tables | Data owned per the component catalogue |
-
-The API contracts between U3 and U2 (and U1's endpoints) are defined in Contract Design.
-
-## Walking Skeleton
-
-U1 is first in every valid order: it depends on nothing and everything depends on it. It runs on its own: Docker Compose starts the web app, backend and database; a person signs up a business in the browser, the backend writes the Business and Owner to PostgreSQL, and signing in again reads them back. This exercises every integration path the later units use (browser → API → module → database, sessions, migrations).
-
-## Parallel Development Opportunities
-
-None with this split: U1 → U2 → U3 is the only valid order, because U3 depends on U2 and U2 on U1 (Q4 allows parallel work, but no two units are independent).
+- `@mojud/contracts` grows with each unit: identity schemas (U1), stock schemas (U2), staff and count schemas (U3), password schemas and movement query (U4), import and report (U5), approvals and work record (U6).
+- The `stock_movements` reason check is replaced in migrations 0003, 0004 and 0005; each adds reasons and keeps the old ones.
 
 ## Assumptions & Open Questions
 

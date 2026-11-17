@@ -2,85 +2,230 @@
   "stage": "functional-design",
   "unit": "backend",
   "upstream_ids": [
-    "AC1.1.4", "AC1.2.3",
-    "AC1.3.1", "AC1.3.2", "AC1.3.3", "AC1.3.4", "AC1.3.5", "AC1.3.6", "AC1.3.7",
-    "AC1.4.1", "AC1.4.2", "AC1.4.3", "AC1.4.4", "AC1.4.5", "AC1.4.6",
-    "AC2.1.1", "AC2.1.2", "AC2.1.3", "AC2.1.4",
-    "AC2.2.1", "AC2.2.2", "AC2.2.3", "AC2.2.4",
-    "AC3.1.1", "AC3.1.2", "AC3.1.3", "AC3.1.4",
-    "AC3.2.1", "AC3.2.2", "AC3.2.3", "AC3.2.4", "AC3.2.5", "AC3.2.6", "AC3.2.7", "AC3.2.8",
-    "AC4.1.1", "AC4.1.2", "AC4.1.3", "AC4.1.4", "AC4.1.5", "AC4.1.6",
-    "AC5.1.1", "AC5.1.2", "AC5.1.3", "AC5.1.4", "AC5.1.5",
-    "AC5.2.1", "AC5.2.2", "AC5.2.3", "AC5.2.4", "AC5.2.5",
-    "AC5.3.1", "AC5.3.2", "AC5.3.3"
+    "FR-1",
+    "FR-2",
+    "FR-3",
+    "FR-4",
+    "FR-5",
+    "FR-6",
+    "FR-7",
+    "FR-8",
+    "FR-9",
+    "FR-10",
+    "FR-11",
+    "FR-12",
+    "FR-13",
+    "FR-14",
+    "FR-15",
+    "FR-16",
+    "FR-17",
+    "FR-18",
+    "FR-19",
+    "FR-20",
+    "FR-21",
+    "FR-22",
+    "FR-23",
+    "NFR-2",
+    "NFR-3",
+    "US-05",
+    "US-06",
+    "US-07",
+    "US-08",
+    "US-09",
+    "US-10",
+    "US-11",
+    "US-12",
+    "US-13",
+    "US-14",
+    "US-15",
+    "US-16"
   ],
   "coverage": [
-    { "id": "AC1.1.4", "status": "OK", "target": "BR6.5" },
-    { "id": "AC1.2.3", "status": "OK", "target": "BR8.4, BR2.2" },
-    { "id": "AC1.3.1", "status": "OK", "target": "BR7.1" },
-    { "id": "AC1.3.2", "status": "OK", "target": "BR7.3" },
-    { "id": "AC1.3.3", "status": "OK", "target": "BR8.1, BR4.1" },
-    { "id": "AC1.3.4", "status": "OK", "target": "BR8.2 (server refusal; hiding the controls is checked in the frontend unit)" },
-    { "id": "AC1.3.5", "status": "OK", "target": "BR8.3" },
-    { "id": "AC1.3.6", "status": "OK", "target": "BR8.4, BR2.6" },
-    { "id": "AC1.3.7", "status": "OK", "target": "BR6.1" },
-    { "id": "AC1.4.1", "status": "OK", "target": "BR9.3, WF8" },
-    { "id": "AC1.4.2", "status": "OK", "target": "BR9.1" },
-    { "id": "AC1.4.3", "status": "OK", "target": "BR9.2" },
-    { "id": "AC1.4.4", "status": "OK", "target": "BR9.3" },
-    { "id": "AC1.4.5", "status": "OK", "target": "BR9.5" },
-    { "id": "AC1.4.6", "status": "OK", "target": "BR9.6" },
-    { "id": "AC2.1.1", "status": "OK", "target": "BR9.7, BR18.1, BR10.6" },
-    { "id": "AC2.1.2", "status": "OK", "target": "BR9.7" },
-    { "id": "AC2.1.3", "status": "OK", "target": "BR10.1" },
-    { "id": "AC2.1.4", "status": "OK", "target": "BR10.2" },
-    { "id": "AC2.2.1", "status": "OK", "target": "BR12.1, BR12.2, BR17.2" },
-    { "id": "AC2.2.2", "status": "OK", "target": "BR12.1" },
-    { "id": "AC2.2.3", "status": "OK", "target": "BR12.3, BR17.2" },
-    { "id": "AC2.2.4", "status": "OK", "target": "BR12.3" },
-    { "id": "AC3.1.1", "status": "OK", "target": "BR17.2" },
-    { "id": "AC3.1.2", "status": "OK", "target": "BR17.2, BR6.2" },
-    { "id": "AC3.1.3", "status": "OK", "target": "BR17.2 (empty list; the message text is shown by the frontend)" },
-    { "id": "AC3.1.4", "status": "OK", "target": "BR17.2" },
-    { "id": "AC3.2.1", "status": "OK", "target": "BR13.1" },
-    { "id": "AC3.2.2", "status": "OK", "target": "BR13.2" },
-    { "id": "AC3.2.3", "status": "OK", "target": "BR13.2" },
-    { "id": "AC3.2.4", "status": "OK", "target": "BR11.1" },
-    { "id": "AC3.2.5", "status": "OK", "target": "BR13.4" },
-    { "id": "AC3.2.6", "status": "OK", "target": "BR13.4" },
-    { "id": "AC3.2.7", "status": "OK", "target": "BR13.4, BR17.2" },
-    { "id": "AC3.2.8", "status": "OK", "target": "BR6.2" },
-    { "id": "AC4.1.1", "status": "OK", "target": "BR14.1" },
-    { "id": "AC4.1.2", "status": "OK", "target": "BR10.3, BR18.2 (the Use max button is checked in the frontend unit)" },
-    { "id": "AC4.1.3", "status": "OK", "target": "BR10.3, BR10.4" },
-    { "id": "AC4.1.4", "status": "OK", "target": "BR14.3" },
-    { "id": "AC4.1.5", "status": "OK", "target": "BR14.2" },
-    { "id": "AC4.1.6", "status": "OK", "target": "BR14.2" },
-    { "id": "AC5.1.1", "status": "OK", "target": "WF13 leftToPick (pre-filling the field is checked in the frontend unit)" },
-    { "id": "AC5.1.2", "status": "OK", "target": "BR15.1" },
-    { "id": "AC5.1.3", "status": "OK", "target": "BR15.1" },
-    { "id": "AC5.1.4", "status": "OK", "target": "BR15.2 (the confirm prompt is shown by the frontend)" },
-    { "id": "AC5.1.5", "status": "OK", "target": "BR11.1" },
-    { "id": "AC5.2.1", "status": "Deferred", "target": "frontend unit: the disabled Flag damage button is screen-only; the API needs a line ID by design (WF14)" },
-    { "id": "AC5.2.2", "status": "OK", "target": "BR16.1 (product fixed by the line; form defaults are checked in the frontend unit)" },
-    { "id": "AC5.2.3", "status": "OK", "target": "BR16.2" },
-    { "id": "AC5.2.4", "status": "OK", "target": "BR16.2" },
-    { "id": "AC5.2.5", "status": "OK", "target": "BR16.1" },
-    { "id": "AC5.3.1", "status": "OK", "target": "BR17.1" },
-    { "id": "AC5.3.2", "status": "OK", "target": "BR17.1 (empty list; the message text is shown by the frontend)" },
-    { "id": "AC5.3.3", "status": "OK", "target": "BR17.1, BR6.3" }
+    {
+      "id": "FR-1",
+      "status": "N/A",
+      "target": "identity module: walking-skeleton functional design"
+    },
+    {
+      "id": "FR-2",
+      "status": "N/A",
+      "target": "identity module: walking-skeleton functional design"
+    },
+    {
+      "id": "FR-3",
+      "status": "N/A",
+      "target": "identity module: walking-skeleton functional design"
+    },
+    {
+      "id": "FR-4",
+      "status": "OK",
+      "target": "BR6.1, BR6.2, BR6.3, BR6.4, BR8.2, BR12.1, BR13.1, BR19.1"
+    },
+    {
+      "id": "FR-5",
+      "status": "N/A",
+      "target": "identity module: walking-skeleton functional design"
+    },
+    {
+      "id": "FR-6",
+      "status": "OK",
+      "target": "BR7.1, BR7.2, BR7.3, BR6.3, WF6"
+    },
+    {
+      "id": "FR-7",
+      "status": "OK",
+      "target": "BR7.4, BR7.5, WF6"
+    },
+    {
+      "id": "FR-8",
+      "status": "OK",
+      "target": "BR10.1, BR10.2, BR10.3, WF7"
+    },
+    {
+      "id": "FR-9",
+      "status": "OK",
+      "target": "BR8.1, BR8.2, WF8"
+    },
+    {
+      "id": "FR-10",
+      "status": "OK",
+      "target": "BR8.3"
+    },
+    {
+      "id": "FR-11",
+      "status": "OK",
+      "target": "BR8.4, BR8.5, BR10.3"
+    },
+    {
+      "id": "FR-12",
+      "status": "OK",
+      "target": "BR9.1, WF9"
+    },
+    {
+      "id": "FR-13",
+      "status": "OK",
+      "target": "BR11.1, WF10"
+    },
+    {
+      "id": "FR-14",
+      "status": "OK",
+      "target": "BR12.1, BR12.4, WF11"
+    },
+    {
+      "id": "FR-15",
+      "status": "OK",
+      "target": "BR13.1, BR13.2, BR13.3, BR13.4, BR12.5, WF12"
+    },
+    {
+      "id": "FR-16",
+      "status": "OK",
+      "target": "BR12.1, BR12.2, BR12.3, BR12.6, BR12.7, WF11"
+    },
+    {
+      "id": "FR-17",
+      "status": "OK",
+      "target": "BR14.1, BR8.4"
+    },
+    {
+      "id": "FR-18",
+      "status": "OK",
+      "target": "BR15.1, WF13"
+    },
+    {
+      "id": "FR-19",
+      "status": "OK",
+      "target": "BR16.1, WF14"
+    },
+    {
+      "id": "FR-20",
+      "status": "OK",
+      "target": "BR17.1, WF15"
+    },
+    {
+      "id": "FR-21",
+      "status": "OK",
+      "target": "BR18.1, BR18.2, WF16"
+    },
+    {
+      "id": "FR-22",
+      "status": "OK",
+      "target": "BR19.1, BR19.2, WF17"
+    },
+    {
+      "id": "FR-23",
+      "status": "OK",
+      "target": "BR8.2, BR12.2"
+    },
+    {
+      "id": "NFR-2",
+      "status": "OK",
+      "target": "BR6.1"
+    },
+    {
+      "id": "NFR-3",
+      "status": "OK",
+      "target": "BR8.3, BR8.5, BR12.2, BR12.3"
+    },
+    {
+      "id": "US-05",
+      "status": "OK",
+      "target": "WF6"
+    },
+    {
+      "id": "US-06",
+      "status": "OK",
+      "target": "WF7"
+    },
+    {
+      "id": "US-07",
+      "status": "OK",
+      "target": "WF8"
+    },
+    {
+      "id": "US-08",
+      "status": "OK",
+      "target": "WF9"
+    },
+    {
+      "id": "US-09",
+      "status": "OK",
+      "target": "WF10"
+    },
+    {
+      "id": "US-10",
+      "status": "OK",
+      "target": "WF11"
+    },
+    {
+      "id": "US-11",
+      "status": "OK",
+      "target": "WF11, WF12"
+    },
+    {
+      "id": "US-12",
+      "status": "OK",
+      "target": "WF13"
+    },
+    {
+      "id": "US-13",
+      "status": "OK",
+      "target": "WF14"
+    },
+    {
+      "id": "US-14",
+      "status": "OK",
+      "target": "WF15"
+    },
+    {
+      "id": "US-15",
+      "status": "OK",
+      "target": "WF16"
+    },
+    {
+      "id": "US-16",
+      "status": "OK",
+      "target": "WF17"
+    }
   ],
-  "reverse": [
-    { "id": "BR6.3", "status": "N/A", "target": "read permissions from Q5; FR2.2 covers changes only" },
-    { "id": "BR6.4", "status": "N/A", "target": "FR14.2 creator rule; no separate acceptance criterion" },
-    { "id": "BR7.2", "status": "N/A", "target": "warehouse name uniqueness supporting FR4.1; no acceptance criterion" },
-    { "id": "BR7.4", "status": "N/A", "target": "inactive warehouses unusable, supporting FR4.1; no acceptance criterion" },
-    { "id": "BR8.5", "status": "N/A", "target": "session hygiene on password change (NFR1); no acceptance criterion" },
-    { "id": "BR9.4", "status": "N/A", "target": "protects FR8.3 base quantities; no acceptance criterion" },
-    { "id": "BR10.5", "status": "N/A", "target": "movement cost from Q6 and FR8.1; no acceptance criterion" },
-    { "id": "BR12.4", "status": "N/A", "target": "close short from Q2; no acceptance criterion" },
-    { "id": "BR13.3", "status": "N/A", "target": "blind count per delivery (FR12.1, contract open question); no separate acceptance criterion" },
-    { "id": "BR14.3", "status": "OK", "target": "AC4.1.4" },
-    { "id": "BR18.2", "status": "N/A", "target": "display form from FR9.2; checked with the quantity views in AC4.1.2" }
-  ]
+  "reverse": []
 }

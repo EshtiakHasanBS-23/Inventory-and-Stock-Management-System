@@ -1,5 +1,5 @@
 /**
- * Approvals inbox (PRD FR-30, FR-15; mockup key-issues-inbox): damage flags
+ * Approvals inbox (PRD FR-14 to FR-16; mockup key-approvals): damage flags
  * and reversal requests, each decided in one tap by a second person.
  */
 import type { Approval } from "@mojud/contracts";

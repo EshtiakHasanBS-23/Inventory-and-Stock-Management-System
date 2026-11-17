@@ -1,5 +1,5 @@
 /**
- * My record (PRD FR-51): a person's own work today, this week and this
+ * My record (PRD FR-22): a person's own work today, this week and this
  * month, as proof of what they did. Owners and Managers can pick anyone.
  */
 import type { RecordPeriod } from "@mojud/contracts";

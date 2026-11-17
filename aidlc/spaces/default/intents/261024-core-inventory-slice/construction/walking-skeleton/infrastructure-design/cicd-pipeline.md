@@ -1,6 +1,6 @@
 # CI/CD Pipeline — walking-skeleton
 
-The delivery pipeline for this round is local (Q3). There is no GitHub Actions workflow. The approved verification command `npm run verify` (`verification-command.txt`) is the pipeline. It runs before every merge to `main` (team Way of Working and Testing Posture). A GitHub CI workflow is added in a later round's CI Pipeline stage. Nothing is deployed to a cloud environment (`project.md` Forbidden).
+The delivery pipeline is local (Q3). There is no GitHub Actions workflow. The approved verification command `npm run verify` (`verification-command.txt`) is the pipeline. It runs before every merge to `main` (team Way of Working and Testing Posture). Nothing is deployed to a cloud environment (`project.md` Forbidden).
 
 ## Branch and Merge Flow
 
@@ -19,9 +19,9 @@ All Docker commands in verify use their own Compose project, `-p mojud-verify`, 
 | 0 | Preflight | `node scripts/preflight.mjs` | Docker is not running; Docker Compose is older than v2.24; `.env` is missing; or host ports 8080 or 5433 are in use. If they are, the message says to stop the dev stack with `npm run down` |
 | 1 | Static checks | `npm run lint` (ESLint), `npm run typecheck` (`tsc -b`), `npm run format:check` (Prettier), `node scripts/secret-scan.mjs` | Any lint, type or format error, or a secret is found (NFR9.1, NFR1.12) |
 | 2 | Start database | `docker compose -p mojud-verify up -d --wait db` | `db` is not healthy |
-| 3 | Unit and integration tests | `npm run test:coverage`. Vitest runs across `apps/api`, `apps/web` and `packages/contracts`. Its global setup creates `mojud_test` if missing and migrates it (`infrastructure-specification.md` Environments) | Any test fails, or line coverage is below 80% (NFR7.1, NFR7.2) |
+| 3 | Unit and integration tests | `npm run test:coverage`. Vitest runs across `apps/api`, `apps/web` and `packages/contracts`. Its global setup creates `mojud_test` if missing and migrates it (`infrastructure-specification.md` Environments) | Any test fails, or line coverage is below 80% for contracts, api or web (NFR7.1, NFR7.2). Latest run: 272 tests, about 98% line coverage |
 | 4 | Build and start full stack | `docker compose -p mojud-verify up -d --build --wait --wait-timeout 60` | An image build fails, `migrate` fails, or a service is not healthy within 60 s (NFR8.4, NFR8.5) |
-| 5 | Smoke test | `npm run test:smoke`: Playwright Chromium against `http://127.0.0.1:8080`. Each run uses a unique phone number (`01` followed by the last 9 digits of `Date.now()`: 11 digits, valid under BR1.2) and a unique business name, so a repeated run never hits DUPLICATE | The sign-up → home → sign-out → sign-in path, the timings, the web headers or the keyboard path fail (NFR5.x, NFR6.2, NFR1.14) |
+| 5 | Smoke test | `npm run test:smoke`: Playwright Chromium against `http://127.0.0.1:8080`. Each run uses a unique phone number (`01` followed by the last 9 digits of `Date.now()`: 11 digits, valid under BR1.2) and a unique business name, so a repeated run never hits DUPLICATE | Any of the 9 smoke tests fails: web security headers; sign-up, sign-out and sign-in within 2 s each plus the `/auth/me` median; products and stock in/out with the never-negative refusal and history; adding a worker who signs in without the Staff page; CSV import, downloads and report; damage flag approved by a supervisor and seen as a loss by the owner; phone layout with the bottom menu and no sideways scroll; keyboard-only sign-in; saved dark theme on first load (NFR5.x, NFR6.2, NFR1.14) |
 | 6 | Tear down | `docker compose -p mojud-verify down -v` | — (always runs, see below) |
 
 `scripts/verify.mjs` runs the stages in order with Node's `child_process.spawnSync`. It uses no shell features, so it runs the same in PowerShell, Git Bash, macOS and Linux.
@@ -46,7 +46,7 @@ Recreate. `docker compose up -d --build --wait` replaces the containers in place
 
 ## Secrets in the Pipeline
 
-The pipeline reads only the local `.env`. No secrets are written in scripts, Dockerfiles or Compose files; Compose uses `env_file`. The secret scan in stage 1 enforces this. When CI is added later, the same variable names will come from GitHub Actions secrets.
+The pipeline reads only the local `.env`. No secrets are written in scripts, Dockerfiles or Compose files; Compose uses `env_file`. The secret scan in stage 1 enforces this.
 
 ## Assumptions & Open Questions
 

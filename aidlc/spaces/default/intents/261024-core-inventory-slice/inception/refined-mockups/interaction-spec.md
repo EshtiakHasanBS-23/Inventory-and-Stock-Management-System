@@ -1,140 +1,97 @@
 # Interaction Specification — Mojud core slice
 
-Behaviour for the screens in `mockups.md`. Existing design-system components keep the behaviour in their own spec files (`design-process/D-Design-System/components/`) and in EXPERIENCE.md; this file specifies only the five **new** components and the round's interaction rules. Format follows the component spec template. Sources: wireframes, user-flow, `stories.md`, `requirements.md`, `team-practices.md`.
+Updated 2026-11-16 to describe the behaviour as built. Screens: `mockups.md`. Endpoints: `inception/contract-design/contract-summary.md`. Requirements: `requirements.md`. Code: `apps/web/src`.
 
-## Round-wide Interaction Rules
+## Global behaviour
 
-| Rule | Behaviour | Source |
-|---|---|---|
-| Save buttons | Disable on click until the server answers; a repeated click never sends a second action; each stock action carries a unique action ID | FR8.5, AC3.2.4 |
-| Refusals | Shown inline under the field with the maximum in the entry's units, plus "Use max" where a maximum exists; Save stays disabled (focusable, reason visible) until valid | FR8.4, EXPERIENCE Refusal message |
-| Confirmations | `confirmation-dialog` only for: Mark delivery complete, Confirm dispatch with short lines, cancel an order, deactivate a warehouse or user, archive a supplier | wireframes, EXPERIENCE Confirm vs undo |
-| Toasts | "Saved" after each save; "Flagged 1 ctn damaged" after Flag damage; 5 seconds or until the next action | FR8, EXPERIENCE Confirmation toast |
-| Loading | Skeleton rows in tables and lists (`aria-busy="true"`); spinner only inside a saving button | EXPERIENCE State Patterns |
-| Server or network error | "Couldn't save. Try again." with Retry; typed values kept | EXPERIENCE State Patterns |
-| Unsaved side-panel changes | Closing a changed panel asks "Discard changes?" | corner checklist (unsaved input) |
-| Permission | Screens and actions outside the role are hidden; a direct link shows "You don't have access to this." | FR2.2 |
-
-## setup-card (new)
-
-| Field | Value |
+| Behaviour | As built |
 |---|---|
-| Component | setup-card |
-| Description | One tile on the Setup home linking to a settings area, with a count |
-| Category | navigation |
+| Loading data | TanStack Query per endpoint; pages show "Loading…" (or skeleton tiles on the Dashboard) with `aria-busy`; a failed load shows "Couldn't load this. Refresh the page to try again." |
+| Saving | The primary button shows "Saving…" and is busy while the request runs; on success a green toast with a check mark (`role="status"`) and the related lists refresh |
+| Field errors | Shown under the field and linked with `aria-describedby`; with two or more errors a `FormErrorSummary` "N fields need fixing:" takes focus and links to each field; server field errors (`field` in the error body) land under the same field; other failures show "Couldn't save. Try again." |
+| Session | On start the app calls `/auth/me`. A 401 on any request returns the person to Sign in, keeping the page they asked for; after an expired session Sign in shows "Your session ended. Sign in again." Sign out goes to Sign in |
+| CSRF | The API client sends `X-CSRF-Token` on every non-GET request |
+| Role-guarded routes | `/staff` is Owner only; `/products/import` is Owner and Manager only; other roles opening them are sent to the Dashboard. Buttons a role may not use are not shown, and the server refuses them anyway |
+| Theme | Theme switch: Light, Dark or Device; the choice is stored in the browser and applied before first paint; Device follows the system setting |
+| Motion | Count-up figures, cards fading up and the toast sliding in run only when reduced motion is not requested |
+| Page title | "{Page} · Mojud" |
 
-States:
+## Per-screen interactions
 
-| State | Description | Trigger |
-|---|---|---|
-| default | Title (`title`) and count line (`meta`) | page load |
-| hover | `surface-alt` background | mouseover |
-| focus | `focus-ring` | Tab |
-| empty | Count reads "None yet" | no records |
+### Sign up and Sign in (`/signup`, `/signin`)
 
-Props: `title` (string, required), `count` (string, required), `href` (string, required).
+- Fields check on leave and on submit with the shared schemas; the phone accepts spaces and dashes.
+- Password fields have Show/Hide.
+- Sign in never says which field was wrong.
 
-Responsive: 3 per row at 1024px and up (only desktop this round).
+### Dashboard (`/dashboard`)
 
-Accessibility: rendered as a link whose name is the title plus count ("Warehouses, 2 active"); Enter follows it; heading level h2 inside the link.
+- Figures count up from 0 to their value.
+- The banner and each loss row are links: banner → `/approvals`; Written off → `/history?reason=damage`; Damage flags → `/history?reason=damage_flagged`; Missing in counts → `/history?reason=count`.
+- "Stock in" on a Needs restocking row → `/stock?productId=…` with the product chosen.
 
-## side-panel (new)
+### Products (`/products`)
 
-| Field | Value |
-|---|---|
-| Component | side-panel |
-| Description | Add/edit form that slides in from the right over a list page (Q4) |
-| Category | layout |
+- Search filters as you type (server search on name or SKU, any case).
+- Edit fills the form with the row; Cancel returns to "Add a product". SKU is read-only while editing.
+- Row links: Stock in / out → `/stock?productId=…`; Flag damage → `/damage?productId=…`; History → `/history?productId=…`.
+- Download CSV fetches `/api/v1/products/export.csv`.
 
-States:
+### Import (`/products/import`)
 
-| State | Description | Trigger |
-|---|---|---|
-| closed | Not rendered | default |
-| open | 400px (560px for products) panel, `scrim` over the list | Add or Edit |
-| saving | Save shows a spinner, fields read-only | Save |
-| error | Field errors under fields, kept values | validation or server refusal |
-| dirty-close | "Discard changes?" confirmation | Close with changes |
+- Choosing a file parses it in the browser at once (BOM, comma or semicolon, loose headers, Excel numbers) and checks every row; up to 20 problems and up to 20 preview rows are shown.
+- Import sends all rows in one request; a server refusal names the row and nothing is saved.
 
-Props: `title` (string, required), `width` (number, optional, default 400), `onSave` (function, required), `onClose` (function, required).
+### Stock in / out (`/stock`)
 
-Accessibility: `role="dialog"` with `aria-labelledby` the panel title; focus moves to the first field on open and is trapped; Escape closes (asking first if dirty); focus returns to the Add/Edit button that opened it.
+- `?productId=` pre-chooses the product.
+- Choosing a direction resets the reason to one that fits; "Damaged" is offered only to Owner and Manager.
+- After saving, the toast shows the new balance and the quantity and note clear; product and direction stay for the next entry.
+- "Flag damage" link carries the chosen product.
 
-## type-code-dialog (new)
+### Stock count (`/count`)
 
-| Field | Value |
-|---|---|
-| Component | type-code-dialog |
-| Description | Desktop replacement for the camera Scan overlay: find a product by SKU, barcode number or name (FR13.1) |
-| Category | input |
+- Shows the recorded quantity for the chosen product; saving shows matched, missing (with ৳ value) or extra.
 
-States:
+### Flag damage (`/damage`)
 
-| State | Description | Trigger |
-|---|---|---|
-| default | Empty search field focused | open |
-| loading | Results area shows skeleton rows | typing pause (300ms) |
-| results | Up to 10 matches: name and SKU | matches found |
-| empty | "No product found for '…'" | no matches |
-| not-on-task | "Not on this order" (receive or pick) or "No open task has this product" (My tasks) | chosen product not applicable |
+- `?productId=` pre-chooses the product; quantity defaults to 1.
+- Saving shows the flagged quantity and its value, and that it waits for a decision.
 
-Props: `context` ("my-tasks" or "task"), `taskProductIds` (array, optional), `onSelect` (function, required).
+### Approvals (`/approvals`)
 
-Accessibility: `role="dialog"` named "Type code"; results are a `listbox` with arrow-key navigation and Enter to choose; result count announced politely; Escape closes and returns focus to the Type code button.
+- Waiting and Decided are toggle buttons (`aria-pressed`) and set `?status=`.
+- Approve or Reject acts at once (one tap) and shows "{Approved|Rejected}: {product}."; the card leaves Waiting. "This was already decided." or a role refusal shows as an alert.
+- Cards whose `canDecide` is false show "Waiting for someone else to decide." instead of buttons.
 
-## theme-switch (new)
+### History (`/history`)
 
-| Field | Value |
-|---|---|
-| Component | theme-switch |
-| Description | Chooses Light, Dark or Device theme (FR18.2) |
-| Category | input |
+- Changing a filter updates the address (`productId`, `reason`, `userId`, `from`, `to`) and reloads from the first page; "Clear filters" empties them.
+- From and To are whole days; To is included.
+- "Load more" asks for the next 50 and appends them.
+- Reverse… (Owner, Manager, reversible rows only) opens an inline form; a reason is required; after sending, the form closes and a status message shows.
+- Download CSV uses the same filters.
 
-Behaviour: three-option select in the app bar. Default "Device" follows the operating system setting; a choice is saved in the browser and applied before first paint on later visits so the page does not flash.
+### Report (`/reports`)
 
-Accessibility: a native select labelled "Theme"; both themes meet WCAG 2.1 AA contrast (accessibility checklist).
+- From and To default to the first and last day of this month and are kept in the address.
+- A backwards range shows a message and does not call the server.
+- Download CSV uses the same range.
 
-## issues-table (new usage of data-table)
+### My record (`/record`)
 
-| Field | Value |
-|---|---|
-| Component | issues-table |
-| Description | Read-only list of Issues for Owner and Manager (FR17.2) |
-| Category | display |
+- Owners and Managers get a Person select (from `/users/names`); everyone else sees only their own record.
 
-Behaviour: `data-table` columns Type (icon + text), Product, Warehouse, Quantity (cartons + pieces), Raised by, Age ("12 min ago"); sorted newest first; no row actions; 50 rows per page with Previous / Next.
+### Staff (`/staff`)
 
-Accessibility: real table with header cells and a caption "Open issues"; type shown by icon and text, never color alone.
+- Adding a person shows "{name} can now sign in." and the team list refreshes.
+- Deactivate and Reactivate act at once on that row.
+- Reset password opens an inline form for that person; Cancel closes it.
 
-## Screen Flows With State Transitions
+### My password (`/account`)
 
-### Receive (M11)
-
-| From | Action | To | Result |
-|---|---|---|---|
-| Line not counted | Select line, enter count, Save line | Line counted (read-only) | Movement to Available, toast "Saved" |
-| Any | Type code, product not on order | Same | "Not on this order", nothing recorded |
-| Some lines counted | Mark delivery complete → Confirm | My tasks | "Receipt saved"; PO Partly received or Received; Issues created in the background |
-| Dialog open | Go back / Escape | Same | Nothing changes |
-
-### Pick (M12, M13)
-
-| From | Action | To | Result |
-|---|---|---|---|
-| Line selected | Confirm line | Line progress updated | Movement out of Reserved, toast "Saved" |
-| No line selected | Flag damage | — | Disabled; reason "Select a line first" |
-| Line selected | Flag damage → Flag damage (form) | Line shows "Damaged, 1 ctn" | Damaged +1; replacement reserved or line marked short |
-| Lines short | Confirm dispatch → Confirm | My tasks | Short quantities stay Reserved; order Part-dispatched |
-| All picked | Confirm dispatch | My tasks | Order Dispatched; leaves My tasks |
-
-### Dispatch order (M9)
-
-| From | Action | To | Result |
-|---|---|---|---|
-| Form | Quantity above Available | Same | Refusal with max and Use max |
-| Form | Save order | List | Stock Reserved, toast "Saved" |
-| Detail, nothing picked | Cancel → Confirm | List | Reserved stock back to Available |
+- Saving shows the toast; this session stays signed in and the other sessions end.
 
 ## Assumptions & Open Questions
 
-- [assumption] An order whose lines are all fully picked becomes Dispatched and leaves My tasks when "Confirm dispatch" is pressed; one with short lines becomes Part-dispatched and stays in My tasks until its remaining quantity is picked or the order is cancelled. This settles the open point from the user-stories review (R-01) at the design level; Functional Design confirms it.
+None.

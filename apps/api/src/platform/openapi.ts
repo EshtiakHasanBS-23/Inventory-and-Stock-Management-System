@@ -34,7 +34,7 @@ function toSchema(schema: z.ZodType): SchemaObject {
 const json = (schema: SchemaObject) => ({ "application/json": { schema } });
 
 /**
- * The OpenAPI 3.1 document for the U1 paths, generated from the shared zod
+ * The OpenAPI 3.1 document for the auth and health paths, generated from the shared zod
  * schemas (contract C1). `/health` and `/openapi.json` are additive under v1.
  */
 export function buildOpenApiDocument(): OpenApiDocument {

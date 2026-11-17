@@ -1,571 +1,150 @@
 # Contract Summary — Mojud core slice
 
-Contracts for the three units in `inception/units-generation/unit-of-work.md`, following the dependency graph in `unit-of-work-dependency.md`, the components in `inception/domain-design/components.md` and the requirements in `requirements.md`. Choices come from `contract-design-questions.md` (Q1–Q6). There are no external consumers this round.
+Updated 2026-11-16 to describe the contracts as built. Sources: `apps/api/src/app.ts`, `apps/api/src/modules/identity/internal/routes.ts`, `apps/api/src/modules/stock/internal/routes.ts`, the service files beside them, `packages/contracts/src/*.ts` and `apps/api/migrations/0001`–`0005`. Requirements: `inception/requirements-analysis/requirements.md` (FR-1 to FR-23, NFR-1 to NFR-9). Stories: `inception/user-stories/stories.md` (US-01 to US-16).
 
 ## Contracts
 
-| # | Provider Unit | Consumer | Mechanism | Owner |
+| ID | Contract | Between | Where it lives |
+|---|---|---|---|
+| C1 | HTTP API `/api/v1` (JSON, plus CSV downloads) | Web app → API | Routes in `apps/api/src/modules/*/internal/routes.ts`; shared request schemas and response types in `packages/contracts` (`@mojud/contracts`) |
+| C2 | Identity module surface: `authorize`, `resolveCaller`, `createIdentityRouters`, `Caller`, `startSessionCleanup`, `equalizeSignInFailure` | API platform and stock module → identity module | `apps/api/src/modules/identity/index.ts` |
+| C3 | Stock module surface: `createStockRouter`, `StockDeps` | API app → stock module | `apps/api/src/modules/stock/index.ts` |
+| C4 | Database schema | API → PostgreSQL 16 | Forward-only SQL migrations `apps/api/migrations/0001`–`0005` |
+
+Modules import each other only through their `index.ts`; ESLint refuses imports of another module's `internal/` folder.
+
+## C1 Conventions
+
+- Base path `/api/v1`. JSON bodies, at most 100 KB; a larger or unreadable body is `400 VALIDATION_FAILED`.
+- Request bodies are strict zod objects: an unknown field is refused with `VALIDATION_FAILED` "This field is not allowed."
+- Session: cookie `mojud_session` (HttpOnly, SameSite=Lax, Path=/, no Max-Age; `Secure` from configuration). The session ends 12 hours after its last use; each signed-in request moves the expiry.
+- CSRF: every non-GET request after sign-in sends header `X-CSRF-Token` with the token returned by sign-up, sign-in and `/auth/me`. Every non-GET request must also come from an allowed `Origin` (or `Referer`).
+- Every response carries `X-Request-Id` (a valid incoming one is kept) and `X-Response-Time`, plus helmet security headers (CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`).
+- Every query is limited to the caller's business. An ID that is not a UUID, or belongs to another business, answers `404 NOT_FOUND` (except where noted).
+- Money in responses is in taka (number with up to 2 decimals); it is stored in poisha. Dates are ISO 8601 strings.
+- CSV downloads: `text/csv; charset=utf-8`, `Content-Disposition: attachment`, `Cache-Control: no-store`, UTF-8 BOM, CRLF line ends; text cells starting with `=`, `+`, `-`, `@`, tab or carriage return get a leading apostrophe.
+
+### Error shape
+
+`{ "code": string, "message": string, "field"?: string, "requestId"?: string }`
+
+| Code | Status | Default message | Used for |
+|---|---|---|---|
+| `VALIDATION_FAILED` | 400 | "Check this field." (each schema field has its own message) | Bad body or query; wrong current password; bad import row; unknown product on a stock change; reason not allowed for the role |
+| `DUPLICATE` | 409 | "This phone number is already registered" | Phone in use; SKU in use; a reversal already open or approved; an approval already decided ("This was already decided.") |
+| `NOT_SIGNED_IN` | 401 | "Sign in to continue." | No or unknown session cookie |
+| `SESSION_ENDED` | 401 | "Your session ended. Sign in again." | Session expired, or the user was deactivated |
+| `INVALID_CREDENTIALS` | 401 | "Sign-in details are not correct." | Any sign-in failure, including a malformed sign-in body |
+| `ACCOUNT_DEACTIVATED` | 401 | "This account is deactivated." | Correct password on a deactivated account |
+| `FORBIDDEN` | 403 | "Couldn't save. Try again." (role refusals carry their own message) | Missing or wrong CSRF token; foreign Origin; role not allowed |
+| `NOT_FOUND` | 404 | "Not found" | Unknown route; record not in the caller's business |
+| `INSUFFICIENT_STOCK` | 409 | "Not enough stock." (sent as "Only N unit in stock.") | A change that would take stock below zero |
+| `INTERNAL_ERROR` | 500 | "Couldn't save. Try again." | Unexpected failure (carries `requestId`) |
+
+## C1 Endpoints
+
+"Roles" lists who may call it; everyone else gets `403 FORBIDDEN`. "All" means any signed-in, active person.
+
+### Platform (public)
+
+| Method and path | Body or query | Success | Errors |
+|---|---|---|---|
+| `GET /health` | — | 200 `{status:"ok", db:"ok"}`; 503 `{status:"error", db:"down"}` | — |
+| `GET /openapi.json` | — | 200 OpenAPI 3.1 document (covers the four `/auth` endpoints below and `/health`) | — |
+
+### Identity: `/auth` (FR-1, FR-2, FR-5)
+
+| Method and path | Access | Body | Success | Errors |
 |---|---|---|---|---|
-| C1 | U1 walking-skeleton + U2 backend (backend service) | U1 + U3 web app | REST/JSON over HTTP, OpenAPI 3.1 | Backend service (U2 owns all paths except `/auth/*`, which U1 owns) |
-| C2 | U1 IdentityAccess module | U2 modules (Catalogue, Purchasing, Dispatch, Issues, MyTasks) | In-process TypeScript interface | U1 |
-| C3 | U2 StockLedger module | U2 Catalogue, Purchasing, Dispatch, Damage; U1 IdentityAccess (warehouse check) | In-process TypeScript interface inside one database transaction | U2 |
-| C4 | U2 Issues module | U2 Purchasing, Dispatch, Damage | In-process TypeScript interface inside the caller's transaction | U2 |
-| C5 | Each backend module | Other backend modules | Shared database: table ownership | Owning module |
+| `POST /auth/signup` | Public | `{businessName, name, phone, password}`: names 1–100 after trim; phone 6–15 digits after removing spaces and dashes; password 8–128 | 201 `SessionResponse` and the session cookie | 400 `VALIDATION_FAILED` (field), 409 `DUPLICATE` (phone) |
+| `POST /auth/signin` | Public | `{phone, password}` | 200 `SessionResponse` and the session cookie | 401 `INVALID_CREDENTIALS`, 401 `ACCOUNT_DEACTIVATED` |
+| `POST /auth/signout` | All | — | 204, cookie cleared, session deleted | 401, 403 (CSRF) |
+| `GET /auth/me` | All | — | 200 `SessionResponse` | 401 `NOT_SIGNED_IN` / `SESSION_ENDED` |
+| `POST /auth/password` | All | `{currentPassword, newPassword}` (new 8–128) | 204; the caller's other sessions end | 400 `VALIDATION_FAILED` ("Your current password is not correct.") |
 
-## Cross-cutting Rules (all contracts)
+`SessionResponse`: `{userId, businessId, businessName, name, role, warehouseIds, csrfToken}`. `warehouseIds` is always an empty array (see Code differences).
 
-- **Base path and versioning (Q6):** every HTTP path is under `/api/v1`. Within v1 only additive changes are allowed; clients ignore unknown fields; removing or renaming a field needs `/api/v2`.
-- **Session (Q2):** `POST /auth/signin` and `/auth/signup` set an HttpOnly, `SameSite=Lax` session cookie. `GET /auth/me` returns the caller and a CSRF token; every non-GET request must send it in `X-CSRF-Token`. A deactivated user's session is refused on its next request (401 `SESSION_ENDED`).
-- **Authorization:** every endpoint resolves the session into a caller context (business, user, role, assigned warehouses) through C2 and applies the FR2.2 role table and warehouse scope before any module does work. This includes stock reads (`GET /stock/available`), which settles the open Domain Design point that Stock ledger reads were unchecked. Records of another business are always reported as 404.
-- **Apply once (Q4):** every stock-changing request (marked `x-idempotent: true` below) requires an `Idempotency-Key` header (a UUID created once per user action). The backend stores the key with the complete response in the same transaction as all rows the request writes (movements, receipt lines, damage flags, Issues, line quantities). A repeat with the same key returns the stored response with header `Idempotent-Replay: true` and changes nothing. The same key with a different body returns 409 `IDEMPOTENCY_KEY_REUSED`.
-- **Errors (Q5):** one shape, `Error`, with standard status codes: 400 validation, 401 not signed in or session ended, 403 not allowed, 404 not found (including other businesses' records), 409 conflict (state no longer allows the action, or not enough stock), 422 business rule refused.
-- **Quantities:** inputs are `{ cartons, pieces }` (either may be 0); the backend converts to base units. Outputs include base units and a display form ("3 ctn + 5 pcs").
-- **Blind receiving:** the receiving view contract has no ordered, remaining or expected quantity field at all (FR12.1).
-- **Shared types (Q3):** the package `@mojud/contracts` holds TypeScript types matching this OpenAPI spec; both the web app and backend import them. The OpenAPI spec is the source of truth; type changes follow it.
+### Identity: `/users` (FR-3, FR-5, FR-19)
 
-## C1 — Backend HTTP API (OpenAPI)
+| Method and path | Roles | Body | Success | Errors |
+|---|---|---|---|---|
+| `GET /users` | Owner | — | 200 `StaffMember[]` `{id, name, phone, role, active, createdAt}`, oldest first | 403 "Only the owner can manage staff." |
+| `GET /users/names` | All | — | 200 `PersonName[]` `{id, name}` for everyone in the business (History and My record pickers) | — |
+| `POST /users` | Owner | `{name, phone, password, role}`; role one of `manager`, `warehouse_worker`, `sales_rep`, `supervisor`, `accountant` | 201 `StaffMember` | 400, 403, 409 `DUPLICATE` (phone) |
+| `PATCH /users/:id` | Owner | `{active: boolean}` | 200 `StaffMember`; a deactivated person's session ends on their next request | 403 "The owner cannot be deactivated.", 404 |
+| `POST /users/:id/password` | Owner | `{newPassword}` | 204; all of that person's sessions end | 403 "Change your own password on the My password page." (for the Owner), 404 |
 
-```yaml
-openapi: 3.1.0
-info:
-  title: Mojud core slice API
-  version: 1.0.0
-servers:
-  - url: /api/v1
-security:
-  - sessionCookie: []
-components:
-  securitySchemes:
-    sessionCookie:
-      type: apiKey
-      in: cookie
-      name: mojud_session
-  parameters:
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      required: true
-      schema: { type: string, format: uuid }
-    CsrfToken:
-      name: X-CSRF-Token
-      in: header
-      required: true
-      schema: { type: string }
-  schemas:
-    Error:
-      type: object
-      required: [code, message]
-      properties:
-        code: { type: string, examples: [VALIDATION_FAILED, NOT_SIGNED_IN, SESSION_ENDED, FORBIDDEN, NOT_FOUND, INSUFFICIENT_STOCK, STATE_CONFLICT, IDEMPOTENCY_KEY_REUSED, LIMIT_REACHED, DUPLICATE] }
-        message: { type: string }
-        field: { type: string }
-        max: { $ref: '#/components/schemas/QuantityView' }
-    QuantityInput:
-      type: object
-      required: [cartons, pieces]
-      properties:
-        cartons: { type: integer, minimum: 0 }
-        pieces: { type: integer, minimum: 0 }
-    QuantityView:
-      type: object
-      required: [base, display]
-      properties:
-        base: { type: integer }
-        cartons: { type: integer }
-        pieces: { type: integer }
-        display: { type: string, examples: ["3 ctn + 5 pcs"] }
-    Role:
-      type: string
-      enum: [owner, manager, supervisor, warehouse_worker, sales_rep, accountant]
-    Caller:
-      type: object
-      required: [userId, businessId, businessName, name, role, warehouseIds, csrfToken]
-      properties:
-        userId: { type: string, format: uuid }
-        businessId: { type: string, format: uuid }
-        businessName: { type: string }
-        name: { type: string }
-        role: { $ref: '#/components/schemas/Role' }
-        warehouseIds: { type: array, items: { type: string, format: uuid } }
-        csrfToken: { type: string }
-    Warehouse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
-        active: { type: boolean }
-    User:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
-        phone: { type: string }
-        role: { $ref: '#/components/schemas/Role' }
-        warehouseIds: { type: array, items: { type: string, format: uuid } }
-        active: { type: boolean }
-    Product:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
-        sku: { type: string }
-        category: { type: string }
-        baseUnitName: { type: string }
-        packUnitName: { type: [string, 'null'] }
-        packSize: { type: [integer, 'null'], minimum: 2 }
-        baseBarcode: { type: [string, 'null'] }
-        packBarcode: { type: [string, 'null'] }
-        openingStock:
-          type: array
-          items:
-            type: object
-            properties:
-              warehouseId: { type: string, format: uuid }
-              quantity: { $ref: '#/components/schemas/QuantityView' }
-              recordedAt: { type: string, format: date-time }
-    Supplier:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
-        contactPerson: { type: string }
-        phone: { type: string }
-        address: { type: string }
-        archived: { type: boolean }
-    PurchaseOrder:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        number: { type: string, examples: [PO-12] }
-        supplierId: { type: string, format: uuid }
-        warehouseId: { type: string, format: uuid }
-        expectedDate: { type: string, format: date }
-        status: { type: string, enum: [draft, sent, partly_received, received, cancelled] }
-        lines:
-          type: array
-          items:
-            type: object
-            properties:
-              id: { type: string, format: uuid }
-              productId: { type: string, format: uuid }
-              ordered: { $ref: '#/components/schemas/QuantityView' }
-              unitCostBase: { type: string, description: decimal string per base unit }
-    ReceivingView:
-      description: Blind view; deliberately has no ordered, remaining or expected quantity.
-      type: object
-      properties:
-        purchaseOrderId: { type: string, format: uuid }
-        number: { type: string }
-        supplierName: { type: string }
-        warehouseName: { type: string }
-        lines:
-          type: array
-          items:
-            type: object
-            properties:
-              productId: { type: string, format: uuid }
-              productName: { type: string }
-              countedThisDelivery: { $ref: '#/components/schemas/QuantityView' }
-              status: { type: string, enum: [not_counted, counted] }
-    DispatchOrder:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        number: { type: string, examples: [DO-31] }
-        customerName: { type: string }
-        warehouseId: { type: string, format: uuid }
-        neededBy: { type: string, format: date }
-        status: { type: string, enum: [open, part_dispatched, dispatched, cancelled] }
-        lines:
-          type: array
-          items:
-            type: object
-            properties:
-              id: { type: string, format: uuid }
-              productId: { type: string, format: uuid }
-              productName: { type: string }
-              ordered: { $ref: '#/components/schemas/QuantityView' }
-              reserved: { $ref: '#/components/schemas/QuantityView' }
-              picked: { $ref: '#/components/schemas/QuantityView' }
-              short: { $ref: '#/components/schemas/QuantityView' }
-              damaged: { $ref: '#/components/schemas/QuantityView' }
-    Issue:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        type: { type: string, enum: [shortfall, over_delivery, damage_flag, dispatch_short] }
-        productName: { type: string }
-        warehouseName: { type: string }
-        quantity: { $ref: '#/components/schemas/QuantityView' }
-        raisedBy: { type: string }
-        raisedAt: { type: string, format: date-time }
-    Task:
-      type: object
-      properties:
-        kind: { type: string, enum: [receive, pick] }
-        id: { type: string, format: uuid }
-        title: { type: string }
-        subtitle: { type: string }
-        status: { type: string, enum: [new, in_progress, done] }
-        neededBy: { type: [string, 'null'], format: date }
-paths:
-  /auth/signup:
-    post:
-      security: []
-      summary: Create a business and its first Owner, and sign in (FR1.1)
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [businessName, name, phone, password]
-              properties:
-                businessName: { type: string }
-                name: { type: string }
-                phone: { type: string }
-                password: { type: string, minLength: 8 }
-      responses:
-        '201': { description: Created and signed in, content: { application/json: { schema: { $ref: '#/components/schemas/Caller' } } } }
-        '400': { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-        '409': { description: Phone already registered (code DUPLICATE, field phone) }
-  /auth/signin:
-    post:
-      security: []
-      summary: Sign in (FR1.2); the error never names which field was wrong
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [phone, password]
-              properties:
-                phone: { type: string }
-                password: { type: string }
-      responses:
-        '200': { description: Signed in, content: { application/json: { schema: { $ref: '#/components/schemas/Caller' } } } }
-        '401': { description: Sign-in details are not correct, or account deactivated }
-  /auth/signout:
-    post:
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '204': { description: Session ended }
-  /auth/me:
-    get:
-      responses:
-        '200': { description: Current caller and CSRF token, content: { application/json: { schema: { $ref: '#/components/schemas/Caller' } } } }
-        '401': { description: Not signed in or session ended }
-  /warehouses:
-    get:
-      responses: { '200': { description: Warehouses of the business } }
-    post:
-      summary: Owner or Manager; at most 3 active (FR4.1)
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '201': { description: Created }
-        '422': { description: LIMIT_REACHED }
-  /warehouses/{id}:
-    patch:
-      summary: Rename or deactivate; deactivation refused while it holds stock
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '200': { description: Updated }
-        '409': { description: STATE_CONFLICT (holds stock) }
-  /users:
-    get:
-      responses: { '200': { description: Users of the business } }
-    post:
-      summary: Owner or Manager (Managers cannot create Owners) (FR3.1, FR3.2)
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '201': { description: Created }
-        '409': { description: DUPLICATE phone }
-  /users/{id}:
-    patch:
-      summary: Change role, warehouses or password; deactivate. Last active Owner protected
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '200': { description: Updated }
-        '422': { description: Refused by rule }
-  /products:
-    get:
-      summary: List or search by name, SKU or barcode, case-insensitive (FR5.2)
-      parameters:
-        - { name: search, in: query, schema: { type: string } }
-      responses: { '200': { description: Products } }
-    post:
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '201': { description: Created }
-        '409': { description: DUPLICATE sku or barcode }
-  /products/{id}:
-    patch:
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses: { '200': { description: Updated } }
-  /products/{id}/opening-stock:
-    post:
-      summary: Once per product and warehouse (FR7.1)
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [warehouseId, quantity, unitCostBase]
-              properties:
-                warehouseId: { type: string, format: uuid }
-                quantity: { $ref: '#/components/schemas/QuantityInput' }
-                unitCostBase: { type: string }
-      responses:
-        '201': { description: Recorded }
-        '409': { description: STATE_CONFLICT (already recorded) }
-  /suppliers:
-    get:
-      responses: { '200': { description: Suppliers } }
-    post:
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses: { '201': { description: Created } }
-  /suppliers/{id}:
-    patch:
-      summary: Edit or archive
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses: { '200': { description: Updated } }
-  /stock/available:
-    get:
-      summary: Available quantity for a product at a warehouse; role and warehouse scope checked
-      parameters:
-        - { name: productId, in: query, required: true, schema: { type: string, format: uuid } }
-        - { name: warehouseId, in: query, required: true, schema: { type: string, format: uuid } }
-      responses:
-        '200': { description: Available, content: { application/json: { schema: { $ref: '#/components/schemas/QuantityView' } } } }
-  /purchase-orders:
-    get:
-      responses: { '200': { description: Purchase orders } }
-    post:
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses: { '201': { description: Created as draft } }
-  /purchase-orders/{id}:
-    get:
-      responses: { '200': { description: Detail, content: { application/json: { schema: { $ref: '#/components/schemas/PurchaseOrder' } } } } }
-    patch:
-      summary: Edit; refused once receiving has started (FR10.3)
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '200': { description: Updated }
-        '409': { description: STATE_CONFLICT }
-  /purchase-orders/{id}/send:
-    post:
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses: { '200': { description: Status sent } }
-  /purchase-orders/{id}/cancel:
-    post:
-      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
-      responses:
-        '200': { description: Cancelled }
-        '409': { description: STATE_CONFLICT }
-  /receiving/{purchaseOrderId}:
-    get:
-      summary: Blind receiving view for a Sent or Partly received order in an assigned warehouse
-      responses:
-        '200': { description: Blind view, content: { application/json: { schema: { $ref: '#/components/schemas/ReceivingView' } } } }
-  /receiving/{purchaseOrderId}/lines:
-    post:
-      summary: Save a counted line; moves stock into Available (FR12.2)
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [productId, quantity]
-              properties:
-                productId: { type: string, format: uuid }
-                quantity: { $ref: '#/components/schemas/QuantityInput' }
-      responses:
-        '201': { description: Saved }
-        '422': { description: NOT_ON_ORDER or line already saved }
-  /receiving/{purchaseOrderId}/complete:
-    post:
-      summary: Mark delivery complete; raises Issues; response never includes ordered quantities
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      responses:
-        '200': { description: Receipt saved }
-  /dispatch-orders:
-    get:
-      responses: { '200': { description: Dispatch orders } }
-    post:
-      summary: Create and reserve; never more than Available (FR14.1)
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      responses:
-        '201': { description: Created and reserved }
-        '409': { description: INSUFFICIENT_STOCK with max }
-  /dispatch-orders/{id}:
-    get:
-      responses: { '200': { description: Detail, content: { application/json: { schema: { $ref: '#/components/schemas/DispatchOrder' } } } } }
-    patch:
-      summary: Edit quantities; never below picked; increases limited by Available
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      responses:
-        '200': { description: Updated }
-        '409': { description: INSUFFICIENT_STOCK or STATE_CONFLICT }
-  /dispatch-orders/{id}/cancel:
-    post:
-      summary: Cancel before dispatch; releases Reserved stock
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      responses:
-        '200': { description: Cancelled }
-        '409': { description: STATE_CONFLICT }
-  /picking/{dispatchOrderId}/lines/{lineId}/confirm:
-    post:
-      summary: Confirm picked quantity; moves it out of Reserved (FR15.2)
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [quantity]
-              properties:
-                quantity: { $ref: '#/components/schemas/QuantityInput' }
-      responses:
-        '200': { description: Line updated }
-        '409': { description: INSUFFICIENT_STOCK with max }
-  /picking/{dispatchOrderId}/lines/{lineId}/damage:
-    post:
-      summary: Flag damage on the line; reserves a replacement or marks the line short (FR16)
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [quantity, reason]
-              properties:
-                quantity: { $ref: '#/components/schemas/QuantityInput' }
-                reason: { type: string, enum: [damaged, expired, other] }
-                note: { type: string }
-      responses:
-        '200': { description: Flagged; returns the updated line }
-        '409': { description: INSUFFICIENT_STOCK with max (more than reserved on the line) }
-  /picking/{dispatchOrderId}/confirm-dispatch:
-    post:
-      summary: Close the pick; Dispatched or Part-dispatched
-      x-idempotent: true
-      parameters:
-        - { $ref: '#/components/parameters/CsrfToken' }
-        - { $ref: '#/components/parameters/IdempotencyKey' }
-      responses:
-        '200': { description: Order status updated }
-  /issues:
-    get:
-      summary: Read-only list, Owner and Manager only (FR17.2)
-      responses:
-        '200': { description: Issues, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Issue' } } } } }
-  /my-tasks:
-    get:
-      summary: Open receiving and picking work in the caller's warehouses (FR11)
-      responses:
-        '200': { description: Tasks, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Task' } } } } }
-```
+### Stock: products (FR-6, FR-7, FR-8, FR-17, FR-21)
 
-## C2–C4 — In-process Module Interfaces (shared schema)
+| Method and path | Roles | Body or query | Success | Errors |
+|---|---|---|---|---|
+| `GET /products` | All | `?q=` text (trimmed, up to 100 characters; matches name or SKU ignoring case; `%` and `_` are plain text) | 200 `Product[]` ordered by name, SKU | — |
+| `POST /products` | Owner, Manager | `{sku (1–40), name (1–100), unit (1–20), minStock (0–1,000,000), unitCost (taka 0–10,000,000, up to 2 decimals)}` | 201 `Product` with `onHand` 0 | 400, 403 "Only an owner or manager can do this.", 409 `DUPLICATE` (sku) |
+| `PATCH /products/:id` | Owner, Manager | Any of `{name, unit, minStock, unitCost}`, at least one; SKU cannot change | 200 `Product` | 400, 403, 404 |
+| `POST /products/import` | Owner, Manager | `{rows: ImportRow[]}`, 1–1000 rows; each row is a product plus `openingStock` (0–1,000,000) | 201 `{created, openingUnits}`; all rows in one transaction, opening stock as `opening` movements | 400 `VALIDATION_FAILED` field `rows`: "Row N: …", "Row N: SKU X is also on row M.", "Row N: a product with SKU X already exists.", "The file has no product rows, or more than 1000."; 403 |
+| `GET /products/export.csv` | All | — | 200 `products.csv` (products with stock and value) | — |
 
-```yaml
-shared-schema: backend-module-interfaces
-version: 1
-interfaces:
-  IdentityAccess:            # C2, owner U1
-    resolveCaller:
-      input: { sessionId: string }
-      output: { userId, businessId, role, warehouseIds }
-      errors: [SESSION_ENDED, NOT_SIGNED_IN]
-    authorize:
-      input: { caller: CallerContext, action: string, warehouseId: string | null }
-      output: void
-      errors: [FORBIDDEN]
-  StockLedger:               # C3, owner U2
-    rule: every call runs inside the caller's database transaction (tx argument); callers authorize first
-    move:
-      input: { tx, caller, productId, warehouseId, fromState: available|reserved|damaged|external, toState: available|reserved|damaged|external, quantityBase: integer > 0, unitCost, reason, source: { type, id } }
-      output: { movementId }
-      errors: [INSUFFICIENT_STOCK (with max)]
-    available:
-      input: { tx?, businessId, productId, warehouseId }
-      output: { quantityBase }
-    warehouseHoldsStock:
-      input: { tx?, businessId, warehouseId }
-      output: boolean
-  Issues:                    # C4, owner U2
-    raise:
-      input: { tx, caller, type: shortfall|over_delivery|damage_flag|dispatch_short, productId, warehouseId, quantityBase, source: { type, id } }
-      output: { issueId }
-  Idempotency:               # owner U2, used by every x-idempotent endpoint
-    rule: key, request hash and full response are stored in the same transaction as all rows the request writes
-    begin:
-      input: { tx, businessId, key, requestHash }
-      output: { replay: storedResponse | null }
-      errors: [IDEMPOTENCY_KEY_REUSED]
-    finish:
-      input: { tx, businessId, key, response }
-      output: void
-```
+`Product`: `{id, sku, name, unit, minStock, onHand, unitCost, stockValue, damaged, status}`; `status` is `out` at 0, `low` at or below `minStock`, otherwise `ok`.
 
-## C5 — Table Ownership (shared database)
+### Stock: movements and counts (FR-9 to FR-12, FR-19, FR-21, FR-23)
 
-```yaml
-shared-schema: database-ownership
-rule: only the owning module writes its tables; other modules read only through the owner's interface
-tables:
-  IdentityAccess: [businesses, warehouses, users, user_warehouses, sessions]
-  Catalogue: [products, suppliers]
-  StockLedger: [stock_movements, stock_balances, idempotency_records]
-  Purchasing: [purchase_orders, purchase_order_lines, receipts, receipt_lines]
-  Dispatch: [dispatch_orders, dispatch_order_lines]
-  Damage: [damage_flags]
-  Issues: [issues]
-notes:
-  - user_warehouses is created in U2's migration; in U1 the caller's warehouseIds is an empty list
-  - stock_movements is insert-only; no update or delete statement exists in the code
-```
+| Method and path | Roles | Body or query | Success | Errors |
+|---|---|---|---|---|
+| `POST /stock/movements` | All; reason `damage` only Owner, Manager | `{productId, direction: in\|out, reason, quantity (1–1,000,000), note? (≤200)}`; in: `purchase`, `return`, `adjustment`; out: `sale`, `damage`, `adjustment` | 201 `Movement` | 400 (reason must fit the direction; unknown product: field `productId`; `damage` by other roles: "Use Flag damage: a supervisor, manager or owner decides it."), 409 `INSUFFICIENT_STOCK` "Only N unit in stock." |
+| `POST /stock/counts` | All | `{productId, countedQuantity (0–1,000,000), note?}` | 201 `CountResult {previous, counted, difference, movement}`; `movement` is null when the count matched | 400 |
+| `GET /stock/movements` | All | `?productId&userId&reason&from&to&limit&offset`; `from` inclusive, `to` exclusive (ISO date-times); `limit` 1–200 (default 100; the web app asks for 50); empty values ignored | 200 `Movement[]`, newest first | 400 naming the field |
+| `GET /stock/movements/export.csv` | All | Same filters, no paging, up to 10,000 rows | 200 `stock-history.csv`, times in Dhaka time | 400 |
 
-## Contract Ownership Rules
+`Movement`: `{id, productId, productName, sku, unit, direction, reason, quantity, balanceAfter, value, reversesMovementId, note, userName, createdAt}`. Reasons: `purchase`, `return`, `sale`, `damage`, `adjustment`, `count`, `opening`, `damage_flagged`, `damage_rejected`, `reversal`. `count`, `opening`, `damage_flagged`, `damage_rejected` and `reversal` are written only by their own operations.
 
-- The backend service owns the OpenAPI spec (C1): U1 owns `/auth/*`, U2 owns every other path. The web app consumes it.
-- Each module owns its interface (C2–C4) and its tables (C5); no module reads another's tables directly.
-- Breaking changes need a new API version (`/api/v2`) or, for in-process interfaces, a change to every caller in the same commit with the owner's tests updated.
-- Additive changes are safe: new optional fields and new endpoints; consumers ignore unknown fields.
-- `@mojud/contracts` types are updated in the same commit as the OpenAPI spec.
+### Stock: approvals (FR-13 to FR-16, FR-23)
 
-## Open Questions
+| Method and path | Roles | Body or query | Success | Errors |
+|---|---|---|---|---|
+| `POST /stock/damage-flags` | All | `{productId, quantity (1–1,000,000), note?}` | 201 `Approval` (kind `damage`, status `pending`); writes a `damage_flagged` movement and adds the quantity to the product's damaged hold | 400, 409 `INSUFFICIENT_STOCK` |
+| `POST /approvals/reversals` | Owner, Manager | `{movementId, note (1–200, required)}` | 201 `Approval` (kind `reversal`, status `pending`) | 400 (unknown movement; "A stock count cannot be reversed. Count the product again."; "This movement cannot be reversed."), 403 "Only an owner or manager can ask for a reversal.", 409 "This movement already has a reversal, asked for or approved." |
+| `GET /approvals` | All | `?status=pending` (default) or `decided` | 200 `Approval[]`, newest first, at most 200 | 400 |
+| `POST /approvals/:id/approve` | Damage: Owner, Manager, Supervisor; reversal: Owner, Manager; never the requester | — | 200 `Approval`. Damage: units leave the hold. Reversal: writes the opposite `reversal` movement linked to the original | 403 "Someone else must decide your own request." / "A supervisor, manager or owner decides damage." / "An owner or manager decides reversals.", 404, 409 "This was already decided.", 409 `INSUFFICIENT_STOCK` (reversal stays pending) |
+| `POST /approvals/:id/reject` | As approve | — | 200 `Approval`. Damage: units leave the hold and a `damage_rejected` movement returns them to stock. Reversal: nothing changes | As approve |
 
-| Contract | Question | Blocks |
+`Approval`: `{id, kind, status, productId, productName, sku, unit, quantity, value, note, movement {id, direction, reason, createdAt}, requestedBy, requestedAt, decidedBy, decidedAt, canDecide}`.
+
+### Stock: insight (FR-18, FR-20, FR-21, FR-22)
+
+| Method and path | Roles | Query | Success | Errors |
+|---|---|---|---|---|
+| `GET /dashboard` | All | — | 200 `Dashboard {productCount, totalUnits, stockValue, lossValue30d, lossBreakdown {damage, damageFlagged, missing}, pendingApprovals, damagedValue, lowStockCount, outOfStockCount, lowStock: Product[], recentMovements: Movement[10]}` | — |
+| `GET /reports/stock` | All | `?from&to` (ISO date-times, required; `to` exclusive) | 200 `StockReport {from, to, lines: ReportLine[], totals}`; each line: `opening, received, sold, damaged, countDifference, adjusted, closing, receivedValue, soldValue, damagedValue, missingValue` | 400 "The end date must be on or after the start date." |
+| `GET /reports/stock.csv` | All | Same | 200 `stock-report.csv` with a total line | 400 |
+| `GET /me/record` | All for self; Owner, Manager for anyone (`?userId=`) | `?userId` optional | 200 `WorkRecord {userId, name, today, week, month}`; each period: `movements, unitsIn, unitsOut, counts, countMissing, countExtra, flagsRaised, flagsApproved, flagsRejected, flagsPending, decisions`. Today is the Dhaka day; week and month are the last 7 and 30 days | 403 "You can see only your own record.", 404 |
+
+## C2 Identity module surface
+
+- `resolveCaller(sessionId)` turns the cookie into `{caller, csrfToken, checkCsrf, extend}` or throws `NOT_SIGNED_IN` / `SESSION_ENDED`. Only the identity module touches the `sessions` table.
+- `authorize(caller, action)` refuses a missing caller (`NOT_SIGNED_IN`) or an inactive one (`FORBIDDEN`). Role rules are checked by each operation after it (Owner-only staff operations in identity; Owner/Manager and decider rules in stock).
+- `Caller`: `{userId, businessId, businessName, name, role, active, warehouseIds}` (read-only).
+- `startSessionCleanup` deletes expired sessions at start and every 24 hours, under an advisory lock.
+
+## C4 Database schema
+
+| Table | Migration | Columns and rules |
 |---|---|---|
-| C1 `/receiving/{id}` | What a second delivery on a Partly received order shows: `countedThisDelivery` starts at zero per delivery (assumed), with no earlier counts shown, to keep the count blind | U2, U3 |
-| C1 `/picking/.../confirm-dispatch` | Confirming dispatch with nothing picked: refused with STATE_CONFLICT (assumed) or allowed as a no-op | U2 |
+| `businesses` | 0001 | `id` uuid, `name` (1–100), `created_at` |
+| `users` | 0001 | `id`, `business_id` → businesses, `name`, `phone` (unique across all businesses, `^[0-9]{6,15}$`), `role` (six roles), `password_hash` (Argon2id), `active`, `created_at` |
+| `sessions` | 0001 | `id_hash` (SHA-256 of the cookie value, primary key), `user_id` → users (cascade), `csrf_token`, `created_at`, `last_used_at`, `expires_at` |
+| `products` | 0002, 0003, 0005 | `id`, `business_id`, `sku` (1–40, unique per business), `name`, `unit` (1–20), `min_stock` ≥ 0, `on_hand` ≥ 0 (check `products_on_hand_not_negative`), `unit_cost` poisha ≥ 0 (0003), `damaged` ≥ 0 (0005), `created_at` |
+| `stock_movements` | 0002–0005 | `id`, `business_id`, `product_id`, `direction` in/out, `reason` (ten values after 0005), `quantity` > 0, `balance_after` ≥ 0, `note` ≤ 200, `user_id`, `unit_cost` poisha (0003), `reverses_movement_id` → stock_movements (0005), `created_at`. Trigger `stock_movements_no_update_or_delete` refuses every update and delete |
+| `approvals` | 0005 | `id`, `business_id`, `kind` damage/reversal, `product_id`, `quantity` > 0, `unit_cost`, `note`, `movement_id`, `status` pending/approved/rejected, `requested_by`, `requested_at`, `decided_by`, `decided_at`, `result_movement_id`. Checks: `approvals_decided_by_someone_else`, `approvals_decision_complete`. Partial unique index `approvals_one_reversal_per_movement` (kind reversal, status pending or approved) |
+
+Indexes: `users(business_id)`, `sessions(expires_at)`, `sessions(user_id)`, `stock_movements(business_id, created_at DESC)`, `stock_movements(product_id, created_at DESC)`, `approvals(business_id, status, requested_at DESC)`.
+
+## Code differences found while writing this summary
+
+- `SessionResponse` and `Caller` still carry `warehouseIds`, always an empty array. It is a leftover field from the walking skeleton and nothing reads it.
+- `GET /openapi.json` documents only `/auth/signup`, `/auth/signin`, `/auth/signout`, `/auth/me` and `/health`, not the other endpoints.
+- "This was already decided." uses code `DUPLICATE` (409), whose default message is about phone numbers; the message is always overridden.
+- `FORBIDDEN` without its own message (CSRF and Origin failures) says "Couldn't save. Try again."
 
 ## Assumptions & Open Questions
 
-- [assumption] Session lifetime is 12 hours of inactivity; the cookie is not `Secure` on `localhost` (no HTTPS this round, per the requirements assumption) and becomes `Secure` when deployed.
+None.

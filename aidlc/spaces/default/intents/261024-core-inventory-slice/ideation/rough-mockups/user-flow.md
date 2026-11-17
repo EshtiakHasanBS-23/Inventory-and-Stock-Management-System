@@ -1,121 +1,152 @@
 # User Flows — Mojud core slice
 
-Inputs: the intent statement ("intent-statement"), the scope document ("scope-document") and the intent backlog ("intent-backlog"). Screen codes W1–W14 refer to `wireframes.md`; S-numbers refer to the existing `EXPERIENCE.md`.
+Updated 2026-11-16 to match the built app.
+
+Inputs: the intent statement ("intent-statement"), the scope document ("scope-document") and the intent backlog ("intent-backlog"). Screen codes W1–W14 refer to `wireframes.md`; scenario numbers S01–S08 refer to `design-process/C-UX-Scenarios/`.
 
 ## Core Flow (happy path, end to end)
 
 ```
-[Owner] W1 Sign up --> W3 Setup home
-            |
-            v
-   W4 Warehouses --> W6 Products + opening stock --> W7 Suppliers
-            |
-            v
-   W5 Users (adds Manager, Sales rep, Warehouse worker; sets passwords)
-            |
-            v
-[Manager] W2 Sign in --> W8 New purchase order --> Send
-                                                     |
-                                                     v
-[Worker]  W2 Sign in --> W10 My tasks --> W11 Receive (blind) --> Mark delivery complete
-                                                     |                       |
-                                                     |          (shortfall Issue created)
-                                                     v
-[Sales rep] W2 Sign in --> W9 New dispatch order (stock reserved)
-                                                     |
-                                                     v
-[Worker]  W10 My tasks --> W12 Pick --> W13 Flag damage --> W12 --> Confirm dispatch
-                                             |
-                                (damage Issue created; replacement reserved)
+[Owner]   W1 Sign up --> W3 Dashboard
+              |
+              v
+          W5 Import from Excel --> W4 Products --> W13 Staff (adds Karim, Nasima, Rafiq)
+              |
+              v
+[Worker]  W2 Sign in --> W3 Dashboard --> W6 Stock in / out (Purchase 40) --> "Saved. Now 52 in stock."
+              |
+              v
+[Worker]  W8 Flag damage (1 bag) --> units move to the Damaged hold; approval waiting
+              |
+              v
+[Supervisor] W10 Approvals --> Approve: write off
+              |
+              v
+[Manager] W7 Stock count (counted 50, record had 52) --> 2 missing, saved
+              |
+              v
+[Owner]   W3 Dashboard --> loss tile --> W9 History (filtered) --> Reverse... --> approval waiting
+              |
+              v
+[Manager] W10 Approvals --> Approve --> opposite Reversal movement recorded
+              |
+              v
+[Owner]   W11 Report --> Download CSV
 ```
 
-<!-- Text fallback: The Owner signs up and lands on the Setup home, then adds warehouses, products with opening stock, suppliers and users. The Manager signs in and sends a purchase order. The Warehouse worker signs in, opens My tasks, receives the delivery blind and marks it complete, which may create a shortfall Issue. The Sales rep signs in and creates a dispatch order, reserving stock. The worker picks the order from My tasks, flags a damaged carton (a replacement is reserved and a damage Issue is created), and confirms dispatch. -->
+<!-- Text fallback: The Owner signs up and lands on the Dashboard, imports products from Excel, checks the Products list and adds staff. Karim signs in and records a purchase on Stock in / out, then flags a damaged bag. Nasima approves the flag in Approvals and the bag is written off. Rafiq counts the shelf and the missing units are saved. The Owner opens a loss tile on the Dashboard, lands on the filtered History, and asks to reverse a mistaken movement; Rafiq approves it in Approvals. The Owner closes the month with the Report and a CSV download. -->
 
-## Flow 1: Owner sets up the business (scenario 09)
+## Flow 1: Owner sets up the business (S01)
 
-Persona: Mr. Haque, Owner. Trigger: wants to start using Mojud.
+Persona: Mr. Abdul Haque, Owner. Trigger: wants to start using Mojud.
 
-1. W1 Sign up → enters business name, name, phone, password → business and Owner account created; lands on W3 Setup home.
-2. W3 → Warehouses (W4) → adds Narayanganj and Gazipur.
-3. W3 → Products (W6) → adds products with units, barcodes and opening stock per warehouse.
-4. W3 → Suppliers (W7) → adds suppliers.
-5. W3 → Users (W5) → adds Manager, Sales rep and Warehouse worker with roles, warehouses and passwords.
+1. W1 Sign up → enters business name, his name, phone number, password → business and Owner account created; lands on W3 Dashboard.
+2. W4 Products → Import from Excel (W5) → Download template → fills it in Excel with opening stock → saves as CSV → chooses the file.
+3. W5 checks every row and lists problems by row; once clean, "Import 24 products" → "Imported 24 products with 1,250 units of opening stock." → See products.
+4. W13 Staff → adds Karim (Warehouse worker), Nasima (Supervisor) and Rafiq (Manager) with phone numbers and passwords → "Karim can now sign in."
 
-Success: the Setup home shows warehouses, products, suppliers and users in place.
-
-Error paths:
-- Phone number already registered → message on the field → use another number or sign in.
-- Fourth active warehouse → "You can have at most 3 active warehouses."
-- Duplicate SKU or barcode → message names the field → change it.
-
-## Flow 2: Worker receives a delivery blind (scenario 01)
-
-Persona: Karim, Warehouse worker. Trigger: a supplier delivery arrives for a sent purchase order.
-
-1. W2 Sign in → lands on W10 My tasks with "Receive · PO-12" on top.
-2. Opens the task → W11 Receive, showing products but no ordered amounts.
-3. Selects a line (tap, or Type code) → enters cartons and bags counted → Save line → "Saved"; stock is now Available.
-4. Repeats for each line.
-5. Mark delivery complete → dialog "3 of 5 lines counted…" → confirms → "Receipt saved" → back to W10 with the next task.
-
-Success: received quantities are Available; if fewer arrived than ordered, a shortfall Issue exists (decided in a later round).
+Success: products and staff are in place, and opening stock shows on the Dashboard.
 
 Error paths:
-- Typed product not on the purchase order → "Not on this order"; nothing recorded.
-- Save without a quantity → Save disabled with "Enter a quantity" shown.
+- Phone number already registered → "This phone number is already registered" → use another number or sign in.
+- Import file with problems → "products.csv has 2 problems. Fix them in Excel and choose the file again." with "Row 7: …" lines; nothing is imported.
+- SKU already exists → the import is refused with its row number; nothing is imported.
+
+## Flow 2: Worker records the morning delivery (S02)
+
+Persona: Karim, Warehouse worker. Trigger: a delivery of rice arrives.
+
+1. W2 Sign in → lands on W3 Dashboard.
+2. W6 Stock in / out → chooses "Rice 25 kg" ("In stock now: 12 bag") → Stock in → reason Purchase → quantity 40 → Save.
+3. Green message: "Saved. Stock in 40 bag of Rice 25 kg. Now 52 bag in stock."
+
+Success: the purchase is a permanent movement with Karim's name, and the Dashboard and History show it.
+
+Error paths:
+- Sale of 60 when 52 are in stock → "Only 52 bag in stock."; nothing saved.
+- Stock out with reason Damaged by a worker → "Use Flag damage: a supervisor, manager or owner decides it."
 - Server error → "Couldn't save. Try again." with what was typed kept.
 
-## Flow 3: Sales rep creates a dispatch order
+## Flow 3: Worker flags damage, Supervisor decides (S03)
 
-Persona: Tanvir, Sales rep. Trigger: a customer orders stock.
+Personas: Karim, Warehouse worker; Nasima, Supervisor. Trigger: a wet bag of flour is found.
 
-1. W2 Sign in → lands on W9 Dispatch orders.
-2. New dispatch order → customer name, warehouse, needed-by date.
-3. Adds products; sees Available for each; enters quantities → Save order → stock moves to Reserved.
+1. Karim: W6 "Found damaged stock? Flag damage" (or Flag damage on the product's row in W4) → W8 with the product chosen, quantity 1 → Flag damage.
+2. "Flagged 1 bag of Flour 2 kg (৳120). Waiting for a decision." The bag leaves sellable stock.
+3. Nasima: W10 Approvals → Waiting → card "Damage flag · Flour 2 kg · 1 bag · ৳120 · Asked by Karim" → Approve: write off.
+4. "Approved: Flour 2 kg." The card moves to Decided.
 
-Success: the order appears in the worker's My tasks.
-
-Error paths:
-- Quantity above Available → "Only 32 ctn available. Max 32 ctn." with "Use max"; save blocked until fixed.
-
-## Flow 4: Worker picks and flags damage (scenario 02)
-
-Persona: Karim, Warehouse worker. Trigger: a dispatch order is in My tasks.
-
-1. W10 → opens "Pick · DO-31" → W12 with the remaining quantity pre-filled on the current line.
-2. Confirm line → that quantity leaves stock as dispatched.
-3. Finds a crushed carton → Flag damage → W13 pre-filled (Rice 25 kg, 1 ctn, damaged) → Flag damage → carton moves to Damaged, a replacement is reserved, "Flagged 1 ctn damaged".
-4. Continues picking → Confirm dispatch → back to W10.
-
-Success: the order is dispatched in full, the damaged carton is recorded with who, when and where, and a damage Issue exists (decided in a later round).
+Success: the write-off is recorded with who flagged it and who approved it.
 
 Error paths:
-- No Available stock for the replacement → the line is marked short; Confirm dispatch then says "1 line is short. Short quantities stay Reserved."
-- Quantity above what is left on the line → "Max 12 ctn" with "Use max".
+- Karim opens his own flag → "Waiting for someone else to decide." and no buttons.
+- Two people decide at once → the second sees "This was already decided."
+- Reject: back to stock → the bag returns to sellable stock.
 
-## Information Architecture (this round)
+## Flow 4: Manager counts the shelf (S04)
+
+Persona: Rafiq, Manager. Trigger: routine shelf count.
+
+1. W7 Stock count → chooses "Rice 25 kg" ("Recorded now: 52 bag") → counted quantity 50 → Save count.
+2. "Counted 50, record had 52: 2 bag missing (৳4,800). Stock adjusted."
+
+Success: a "Stock count" movement removes 2 bags with Rafiq's name and the note "Counted 50, system had 52."
+
+Error paths:
+- Count matches → "Count matches: 52 bag. Nothing changed."
+
+## Flow 5: Owner traces a loss and fixes a mistake (S05)
+
+Personas: Mr. Haque, Owner; Rafiq, Manager.
+
+1. W3 Dashboard → "Losses, last 30 days" → Missing in counts → W9 History filtered to stock counts.
+2. In W9 he spots a purchase of 400 that should have been 40 → Reverse… → "Why should it be reversed?" → Ask for reversal.
+3. "Reversal asked for. Another owner or manager must approve it."
+4. Rafiq: W10 Approvals → Reversal card ("Undo Purchase of …") → Approve.
+
+Success: an opposite "Reversal" movement is recorded and linked to the original; both stay in the history.
+
+Error paths:
+- Approving would take stock below zero → refused; the request stays open.
+- Stock count and damage-flag rows have no Reverse… action.
+
+## Flow 6: Worker proves his week (S06)
+
+Persona: Karim. W12 My record → Today / Last 7 days / Last 30 days: stock in and out, stock counts with missing and extra, damage flags by outcome, decisions for others. Owners and Managers can choose any person.
+
+## Flow 7: Owner closes the month (S07)
+
+Persona: Mr. Haque. W11 Report → this month by default → per-product start, in, sold, damaged, count +/−, adjusted, end, with taka values and a total line → Download CSV. W4 and W9 also have Download CSV.
+
+Error path: start date after end date → "Choose a start date on or before the end date."
+
+## Flow 8: Worker forgets his password (S08)
+
+1. Karim tells Mr. Haque. Haque: W13 Staff → Reset password for Karim → new password → Set password → "Karim's password is changed. Tell them the new one." Karim is signed out everywhere.
+2. Karim: W2 Sign in with the new password → W14 My password → current and new password → Change password → "Password changed. Other phones signed in as you are signed out."
+
+Error path: wrong current password → "Your current password is not correct."
+
+## Information Architecture
 
 ```
 Public
   +-- W1 Sign up
   +-- W2 Sign in
-Owner / Manager
-  +-- W3 Setup home
-       +-- W4 Warehouses
-       +-- W5 Users
-       +-- W6 Products (+ opening stock)
-       +-- W7 Suppliers
-       +-- W8 Purchase orders
-       +-- W9 Dispatch orders
-Sales rep
-  +-- W9 Dispatch orders
-Warehouse worker
-  +-- W10 My tasks
-       +-- W11 Receive PO (blind)
-       +-- W12 Pick dispatch order
-            +-- W13 Flag damage
-Supervisor / Accountant
-  +-- W14 Coming in a later round
+Signed in (menu order)
+  +-- W3 Dashboard (home for every role)
+  +-- W4 Products
+  |    +-- W5 Import from Excel (Owner, Manager)
+  |    +-- W8 Flag damage (from a product row)
+  +-- W6 Stock in / out
+  |    +-- W8 Flag damage
+  +-- W7 Stock count
+  +-- W9 History (Reverse... for Owner, Manager)
+  +-- W10 Approvals
+  +-- W11 Report
+  +-- W12 My record
+  +-- W13 Staff (Owner only)
+  +-- W14 My password
 ```
 
 ## Assumptions & Open Questions

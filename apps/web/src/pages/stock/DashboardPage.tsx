@@ -1,5 +1,5 @@
 /**
- * Dashboard (Owner view, mockup key-owner-view): big metric tiles for stock
+ * Dashboard (Owner view, mockup key-dashboard): big metric tiles for stock
  * value, losses and low stock, the products that need restocking as rows
  * with a chevron, and recent movements. Figures count up when they load.
  */

@@ -1,18 +1,103 @@
 {
   "stage": "domain-design",
-  "upstream_ids": ["US1.1", "US1.2", "US1.3", "US1.4", "US2.1", "US2.2", "US3.1", "US3.2", "US4.1", "US5.1", "US5.2", "US5.3"],
+  "upstream_ids": [
+    "US-01",
+    "US-02",
+    "US-03",
+    "US-04",
+    "US-05",
+    "US-06",
+    "US-07",
+    "US-08",
+    "US-09",
+    "US-10",
+    "US-11",
+    "US-12",
+    "US-13",
+    "US-14",
+    "US-15",
+    "US-16"
+  ],
   "coverage": [
-    { "id": "US1.1", "status": "OK", "target": "IdentityAccess, Business, User" },
-    { "id": "US1.2", "status": "OK", "target": "IdentityAccess, Session, WebApp" },
-    { "id": "US1.3", "status": "OK", "target": "IdentityAccess, Warehouse, User" },
-    { "id": "US1.4", "status": "OK", "target": "Catalogue, Product, Supplier" },
-    { "id": "US2.1", "status": "OK", "target": "Catalogue, StockLedger, StockMovement" },
-    { "id": "US2.2", "status": "OK", "target": "Purchasing, PurchaseOrder, PurchaseOrderLine" },
-    { "id": "US3.1", "status": "OK", "target": "MyTasks" },
-    { "id": "US3.2", "status": "OK", "target": "Purchasing, Receipt, ReceiptLine, StockLedger, Issues" },
-    { "id": "US4.1", "status": "OK", "target": "Dispatch, DispatchOrder, DispatchOrderLine, StockLedger" },
-    { "id": "US5.1", "status": "OK", "target": "Dispatch, DispatchOrderLine, StockLedger" },
-    { "id": "US5.2", "status": "OK", "target": "Damage, DamageFlag, Dispatch, Issues" },
-    { "id": "US5.3", "status": "OK", "target": "Issues, Issue" }
+    {
+      "id": "US-01",
+      "status": "OK",
+      "target": "identity (signup), Business, User, Session, web SignUpPage"
+    },
+    {
+      "id": "US-02",
+      "status": "OK",
+      "target": "identity (signin, signout, sessions), platform middleware (authenticate, csrfCheck, originCheck), web SignInPage, Layouts"
+    },
+    {
+      "id": "US-03",
+      "status": "OK",
+      "target": "identity (staff), User, web StaffPage"
+    },
+    {
+      "id": "US-04",
+      "status": "OK",
+      "target": "identity (staff password reset, change own password), Session, web AccountPage, StaffPage"
+    },
+    {
+      "id": "US-05",
+      "status": "OK",
+      "target": "stock (products), Product, contracts stock.ts, web ProductsPage"
+    },
+    {
+      "id": "US-06",
+      "status": "OK",
+      "target": "stock (importProducts), contracts importReport.ts, web ImportPage, csvImport.ts"
+    },
+    {
+      "id": "US-07",
+      "status": "OK",
+      "target": "stock (applyMovement, recordMovement), Product, StockMovement, web StockPage"
+    },
+    {
+      "id": "US-08",
+      "status": "OK",
+      "target": "stock (recordCount), StockMovement, web CountPage"
+    },
+    {
+      "id": "US-09",
+      "status": "OK",
+      "target": "stock approvals (flagDamage), Approval, StockMovement, web DamagePage"
+    },
+    {
+      "id": "US-10",
+      "status": "OK",
+      "target": "stock approvals (decideApproval), Approval, web ApprovalsPage"
+    },
+    {
+      "id": "US-11",
+      "status": "OK",
+      "target": "stock approvals (requestReversal, decideApproval), Approval, StockMovement, web HistoryPage, ApprovalsPage"
+    },
+    {
+      "id": "US-12",
+      "status": "OK",
+      "target": "stock (getDashboard), web DashboardPage"
+    },
+    {
+      "id": "US-13",
+      "status": "OK",
+      "target": "stock (listMovements), identity (names list), web HistoryPage, MovementTable"
+    },
+    {
+      "id": "US-14",
+      "status": "OK",
+      "target": "stock (getStockReport), contracts importReport.ts, web ReportPage"
+    },
+    {
+      "id": "US-15",
+      "status": "OK",
+      "target": "stock (CSV exports), platform csv.ts, web DownloadLink"
+    },
+    {
+      "id": "US-16",
+      "status": "OK",
+      "target": "stock approvals (getWorkRecord), web RecordPage"
+    }
   ]
 }

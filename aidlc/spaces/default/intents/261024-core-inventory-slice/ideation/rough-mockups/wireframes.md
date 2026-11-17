@@ -1,65 +1,49 @@
 # Wireframes — Mojud core slice (rough)
 
+Updated 2026-11-16 to match the built app.
+
 Inputs: the intent statement (`ideation/intent-capture/intent-statement.md`, "intent-statement"), the scope document (`ideation/scope-definition/scope-document.md`, "scope-document") and the intent backlog (`ideation/scope-definition/intent-backlog.md`, "intent-backlog"), plus the answers in `rough-mockups-questions.md`.
 
 ## How to Read This
 
-Your existing UX design stays the source of truth (Q1):
+These rough wireframes show the real screens of the built app, one per address, using the words the screens actually show. Look and feel come from the design system (`design-process/D-Design-System/`); page-level detail comes from the UX scenarios (`design-process/C-UX-Scenarios/`, S01–S08).
 
-- Behaviour: `_bmad-output/planning-artifacts/ux-designs/ux-E2E_IAM-2026-10-22/EXPERIENCE.md` (screen numbers S1–S27 below come from it)
-- Look and feel: `DESIGN.md` in the same folder, and `design-process/D-Design-System/`
-- Page-level detail: `design-process/C-UX-Scenarios/` (pages 01.1, 01.2, 01.3, 02.1, 02.2, 09.1, 09.2, 09.4–09.7)
-- HTML mockups: `mockups/key-receiving.html` and `mockups/key-picking.html`
+Common to every screen:
 
-These rough wireframes list only this round's screens and show **what is different** from that design because of this round's choices. Anything not mentioned here follows the existing design unchanged.
-
-## What Changes From the Existing Design
-
-| Change | Why | Screens affected |
-|---|---|---|
-| Desktop layout only; no phone layouts this round | Q2 | All |
-| No camera: the Scan bar and Scan overlay become **Type code**, which takes a product code (SKU), barcode number or name search | Feasibility Q6 | S3, S4, S7, S8 |
-| Flag damage on the pick screen opens the Flag damage sheet pre-filled with the selected line's product, 1 carton, reason "damaged"; one tap on Save | Q6 | S8, S9 |
-| English only; every screen string still comes from a translation file so Bangla can be added later | Intent capture Q10 | All |
-| Light and dark themes both ship, with a theme switch | Q5 | All |
-| No offline banner, sync chips or offline queue; the status shows "Online" only | Intent capture Q10 | All floor screens |
-| No recovery-code step at sign-up and no "Forgot password / Owner recovery" link | Scope Q3 | S1, S2 |
-| No temporary password or shared-phone hint at sign-in; the Owner or Manager sets each user's password in Settings: Users | Scope Q1 | S2, S22 |
-| New **Setup home** for Owner and Manager instead of the Issues inbox and Owner view | Q3 | New screen |
-| A "coming in a later round" page for Supervisor and Accountant | Q3 | New screen |
-| No Excel import, stock ladder, movement history, Issues inbox or Issue detail screens | Scope document | S6, S12, S13, S26 |
-| Issues are still created (shortfall, over-delivery, damage); nobody can view or decide them yet | Scope document | — |
-| Accessibility target stays WCAG 2.1 AA, with the design's touch-target sizes | Q4 | All |
+| Rule | Detail |
+|---|---|
+| Phone and desktop | Every screen works from 320 px wide. Desktop has a side menu with icons; phones have a bottom tab bar. Tables become cards on phones. |
+| Themes | Light, dark and "Device" (follows the phone or computer), chosen in the top bar. |
+| Language and money | English; taka with lakh grouping, for example ৳12,45,000. |
+| Saved messages | A green message confirms each save and repeats the new figure. |
+| Refusals | Shown in plain words next to the form, for example "Only 52 bag in stock." |
+| Accessibility | WCAG 2.1 AA target; skip link first; visible focus; state shown by icon and text, never colour alone. |
 
 ## App Shell (all signed-in screens)
 
 ```
 +--------------------------------------------------------------------------+
-| Mojud        [screen title]               Karim (Warehouse worker)       |
-|                                           Online   [Theme: Light v]      |
-|                                           [Sign out]                     |
-+---------------+----------------------------------------------------------+
-| Side nav      |                                                          |
-| (role-based)  |   main content                                           |
-|  - item       |                                                          |
-|  - item       |                                                          |
-+---------------+----------------------------------------------------------+
+| [logo] Mojud   Haque Traders         (H) Karim                           |
+|                                          Warehouse worker                |
+|                                      Online  [Theme: Light v] [Sign out] |
++----------------+---------------------------------------------------------+
+| Dashboard      |                                                         |
+| Products       |   page title (h1)                                       |
+| Stock in / out |   short subtitle                                        |
+| Stock count    |                                                         |
+| History        |   main content                                          |
+| Approvals      |                                                         |
+| Report         |                                                         |
+| My record      |                                                         |
+| Staff (Owner)  |                                                         |
+| My password    |                                                         |
++----------------+---------------------------------------------------------+
+Phone: the side menu becomes a bottom tab bar that scrolls sideways.
 ```
 
-Accessibility: `header`, `nav` and `main` landmarks; skip-to-content link first; current nav item marked `aria-current="page"`; online status shown as icon plus text, never color alone.
+Every role sees the same menu, except Staff, which only the Owner sees. Every role lands on the Dashboard after signing in.
 
-Side nav per role (Q3):
-
-| Role | Lands on | Side nav |
-|---|---|---|
-| Owner | Setup home | Setup home · Warehouses · Users · Products · Suppliers · Purchase orders · Dispatch orders |
-| Manager | Setup home | Same as Owner (cannot manage Owners) |
-| Sales rep | Dispatch orders | Dispatch orders |
-| Warehouse worker | My tasks | My tasks |
-| Supervisor | Coming later | (none) |
-| Accountant | Coming later | (none) |
-
-## W1. Sign up (S1, page 09.1)
+## W1. Sign up (/signup, S01 page 01.1)
 
 ```
 +--------------------------------------------------------------+
@@ -78,13 +62,9 @@ Side nav per role (Q3):
 +--------------------------------------------------------------+
 ```
 
-After "Create business" the Owner goes straight to the Setup home (no recovery-code view this round).
+States: field errors under each field with a summary ("2 fields need fixing:"); "This phone number is already registered"; "Couldn't save. Try again."; button shows "Saving…" while saving. Success opens the Dashboard.
 
-States: field errors under each field, keeping what was typed; "This phone number is already registered" for a duplicate; "Couldn't save. Try again." on a server error; button disabled while saving.
-
-Accessibility: h1 "Create your business"; `main` landmark; first focus on Business name; every field has a visible label.
-
-## W2. Sign in (S2)
+## W2. Sign in (/signin, S02 page 02.1)
 
 ```
 +--------------------------------------------------------------+
@@ -99,260 +79,266 @@ Accessibility: h1 "Create your business"; `main` landmark; first focus on Busine
 +--------------------------------------------------------------+
 ```
 
-States: "Sign-in details are not correct." (never says which field); "This account is deactivated."; button disabled while signing in.
+States: "Sign-in details are not correct." (never says which field); "This account is deactivated."; "Your session ended. Sign in again." after 12 hours unused. Success returns to the page first asked for, or the Dashboard.
 
-Accessibility: h1 "Sign in"; `main` landmark; first focus on Phone number; the error is announced once.
-
-## W3. Setup home (new; Owner and Manager)
+## W3. Dashboard (/dashboard, S05 page 05.1)
 
 ```
-+---------------+----------------------------------------------------------+
-| Side nav      | Set up Haque Traders (h1)                                |
-|               |                                                          |
-|               | +----------------+ +----------------+ +----------------+ |
-|               | | Warehouses     | | Users          | | Products       | |
-|               | | 2 active       | | 5 users        | | 12 products    | |
-|               | | [Open]         | | [Open]         | | [Open]         | |
-|               | +----------------+ +----------------+ +----------------+ |
-|               | +----------------+ +----------------+ +----------------+ |
-|               | | Suppliers      | | Purchase orders| | Dispatch orders| |
-|               | | 3 suppliers    | | 1 sent         | | 2 open         | |
-|               | | [Open]         | | [Open]         | | [Open]         | |
-|               | +----------------+ +----------------+ +----------------+ |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Dashboard (h1)                                          |
+|                | Your stock and money at a glance.                       |
+|                | +-----------------------------------------------------+ |
+|                | | ! 2 requests waiting for approval                    | |
+|                | |   ৳240 held as damaged, waiting for a decision  [->] | |
+|                | +-----------------------------------------------------+ |
+|                | +------------------------+ +--------------------------+ |
+|                | | Stock value            | | Losses, last 30 days     | |
+|                | | ৳12,45,000             | | ৳9,600                   | |
+|                | | 1,250 units across     | |  Written off      ৳2,400 >| |
+|                | | 24 products            | |  Damage flags       ৳240 >| |
+|                | +------------------------+ |  Missing in counts ৳6,960 >| |
+|                |                            +--------------------------+ |
+|                | [Low stock 3] [Out of stock 1] [Products 24] [Units 1,250]|
+|                |                                                         |
+|                | Needs restocking (h2)                                   |
+|                |  Sugar 1 kg   0 pcs (min 20)   [Out]      [Stock in]    |
+|                |  Rice 25 kg   8 bag (min 10)   [Low]      [Stock in]    |
+|                |                                                         |
+|                | Recent movements (h2)                                   |
+|                |  (last 10 movements, same columns as History)           |
++----------------+---------------------------------------------------------+
 ```
 
-First use (no data): the cards read "None yet" and the page suggests the order: Warehouses, then Products with opening stock, then Suppliers, Users and Purchase orders.
+States: "Every product is above its minimum stock." when nothing needs restocking; no banner when nothing is waiting. Each loss line opens History filtered to that reason.
 
-Accessibility: h1 page title; each card is a link with its heading as the name (h2); keyboard order left to right, top to bottom.
-
-## W4. Settings: Warehouses (S23, page 09.2)
+## W4. Products (/products, S01 page 01.3)
 
 ```
-+---------------+----------------------------------------------------------+
-| Side nav      | Warehouses (h1)                       [ Add warehouse ]  |
-|               | Name             Status     Actions                      |
-|               | Narayanganj      Active     [Rename] [Deactivate]        |
-|               | Gazipur          Active     [Rename] [Deactivate]        |
-|               | 2 of 3 active warehouses                                 |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Products (h1)        [Import from Excel] [Download CSV] |
+|                | Everything you stock, with what it is worth.            |
+|                | +-----------------------------------------------------+ |
+|                | | Add a product (h2)            (Owner, Manager only)  | |
+|                | | SKU [     ] Name [            ] Unit [    ]          | |
+|                | |   For example pcs, ctn or bag.                       | |
+|                | | Minimum stock [   ]  Unit cost (৳) [      ]          | |
+|                | | [ Add product ]                                      | |
+|                | +-----------------------------------------------------+ |
+|                | Search by name or SKU [              ]     24 products  |
+|                | Product            In stock  Min  Unit cost  Value  Status  Actions        |
+|                | RICE25 Rice 25 kg  52 bag    10   ৳2,400  ৳1,24,800 [OK] |
+|                |   [Stock in / out] [Flag damage] [History] [Edit]       |
+|                | FLR2 Flour 2 kg    18 bag    20   ৳120    ৳2,160   [Low] |
+|                |   1 held as damaged                                     |
++----------------+---------------------------------------------------------+
 ```
 
-States: "You can have at most 3 active warehouses." when adding a fourth; a warehouse that holds stock cannot be deactivated (message names the rule); empty: "No warehouses yet" + Add warehouse.
+States: Edit fills the form as "Edit RICE25" with Save changes and Cancel (SKU fixed); "No products yet."; "No products match this search."; status pills OK, Low, Out with icons.
 
-Accessibility: h1; data table with header cells; action buttons named with the warehouse ("Rename Gazipur").
-
-## W5. Settings: Users (S22, page 09.6)
+## W5. Import from Excel (/products/import, S01 page 01.2)
 
 ```
-+---------------+----------------------------------------------------------+
-| Side nav      | Users (h1)                                 [ Add user ]  |
-|               | Name     Phone        Role              Warehouses  Status|
-|               | Karim    01711...     Warehouse worker  Narayanganj Active|
-|               | Tanvir   01811...     Sales rep         All         Active|
-|               |                                                          |
-|               | Add / edit user (panel)                                  |
-|               |  Name [        ]  Phone [        ]                       |
-|               |  Role [ Warehouse worker v ]                             |
-|               |  Assigned warehouses [x] Narayanganj [ ] Gazipur         |
-|               |  Password [        ] (set by you; tell the user)         |
-|               |  [ Save ]  [ Cancel ]                                    |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Import from Excel (h1)                                  |
+|                | 1. Fill in your products in Excel, using the template:  |
+|                |    [Download template]                                  |
+|                | 2. Save the sheet as "CSV UTF-8".                       |
+|                | 3. Choose the file below, check the preview, then import.|
+|                | CSV file [ Choose file ]                                |
+|                |                                                         |
+|                | 24 products are ready to import.                        |
+|                | SKU    Name         Unit  Unit cost  Min  Opening stock |
+|                | RICE25 Rice 25 kg   bag   2,400      10   12            |
+|                | …and 19 more.                                           |
+|                | [ Import 24 products ]                                  |
++----------------+---------------------------------------------------------+
 ```
 
-States: duplicate phone number refused; a Manager cannot add, change or deactivate an Owner (those controls are hidden for Managers); the last active Owner cannot be deactivated.
+States: "products.csv has 2 problems. Fix them in Excel and choose the file again." with "Row 7: …" lines and no Import button; after import, "Imported 24 products with 1,250 units of opening stock." and See products. Owner and Manager only.
 
-Accessibility: h1; table with headers; the panel is a labelled region; focus moves to Name when the panel opens and back to the triggering button when it closes.
-
-## W6. Settings: Products with opening stock (S24, page 09.4)
+## W6. Stock in / out (/stock, S02 page 02.2)
 
 ```
-+---------------+----------------------------------------------------------+
-| Side nav      | Products (h1)                           [ Add product ]  |
-|               | Name          SKU      Units               Barcodes      |
-|               | Rice 25 kg    RICE25   1 ctn = 4 bag       2             |
-|               |                                                          |
-|               | Add / edit product (panel)                               |
-|               |  Name [        ]  SKU [      ]  Category [      ]        |
-|               |  Base unit [ bag ]  Pack unit [ ctn ]  Per pack [ 4 ]    |
-|               |  Base barcode [       ]  Pack barcode [       ]          |
-|               |  Opening stock                                           |
-|               |   Narayanganj  qty [ 10 ctn ] [ 0 bag ]  cost/bag [   ]  |
-|               |   Gazipur      qty [  0 ctn ] [ 0 bag ]  cost/bag [   ]  |
-|               |  [ Save ]  [ Cancel ]                                    |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Stock in / out (h1)                                     |
+|                | Found damaged stock? Flag damage                        |
+|                | Product [ Rice 25 kg                     v ]            |
+|                |   In stock now: 12 bag                                  |
+|                | Direction                                               |
+|                | +-----------------------+ +-----------------------+     |
+|                | | (in)  Stock in        | | (out) Stock out       |     |
+|                | | Purchase, return or   | | Sale, damage or       |     |
+|                | | adjustment            | | adjustment            |     |
+|                | +-----------------------+ +-----------------------+     |
+|                | Reason   [ Purchase v ]                                 |
+|                | Quantity [ 40 ]                                         |
+|                | Note (optional) [                         ]             |
+|                | [ Save ]                                                |
+|                | (ok) Saved. Stock in 40 bag of Rice 25 kg.              |
+|                |      Now 52 bag in stock.                               |
++----------------+---------------------------------------------------------+
 ```
 
-States: duplicate SKU or barcode refused with the field named; carton size must be a whole number of 2 or more; opening stock can be entered once per product and warehouse (later changes need features from a later round).
+Reasons: Stock in — Purchase, Customer return, Count adjustment. Stock out — Sale, Damaged (Owner and Manager only), Count adjustment. States: "Only 52 bag in stock."; "Use Flag damage: a supervisor, manager or owner decides it."; "There are no products yet. Add products first."
 
-Accessibility: h1; grouped fields use `fieldset` and `legend` ("Units", "Opening stock"); quantity fields labelled with warehouse and unit.
-
-## W7. Settings: Suppliers (S25, page 09.5)
+## W7. Stock count (/count, S04 page 04.1)
 
 ```
-+---------------+----------------------------------------------------------+
-| Side nav      | Suppliers (h1)                         [ Add supplier ]  |
-|               | Name          Contact      Phone        Address          |
-|               | ACI Foods     Mr. Rahman   01911...     Tejgaon, Dhaka   |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Stock count (h1)                                        |
+|                | Count what is on the shelf. Any difference from the     |
+|                | record is saved as a stock count, with your name.       |
+|                | Product [ Rice 25 kg                     v ]            |
+|                |   Recorded now: 52 bag                                  |
+|                | Counted quantity [ 50 ]                                 |
+|                | Note (optional)  [                       ]              |
+|                | [ Save count ]                                          |
+|                | Counted 50, record had 52: 2 bag missing (৳4,800).      |
+|                | Stock adjusted.                                         |
++----------------+---------------------------------------------------------+
 ```
 
-States: empty "No suppliers yet" + Add supplier; required name; archive instead of delete.
+States: "Count matches: 52 bag. Nothing changed."; "Counted 55, record had 52: 3 bag extra. Stock adjusted."
 
-Accessibility: h1; table with headers; add/edit panel follows W5's focus rules.
-
-## W8. Purchase orders (S15, page 09.7)
+## W8. Flag damage (/damage, S03 page 03.1)
 
 ```
-+---------------+----------------------------------------------------------+
-| Side nav      | Purchase orders (h1)              [ New purchase order ] |
-|               | No.    Supplier    Warehouse     Expected   Status       |
-|               | PO-12  ACI Foods   Narayanganj   26 Oct     Sent         |
-|               |                                                          |
-|               | New purchase order (page)                                |
-|               |  Supplier [ v ]  Warehouse [ v ]  Expected date [    ]   |
-|               |  Product [ type code or search ]  Qty [ ctn ][ bag ]     |
-|               |    Cost [   ] per [ ctn v ]                [ Add line ]  |
-|               |  Lines: Rice 25 kg  100 ctn  @ 2,400 per ctn  [Remove]   |
-|               |  [ Save as draft ]  [ Send ]                             |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Flag damage (h1)                                        |
+|                | Flag stock that is damaged or expired. It leaves the    |
+|                | sellable stock now, and a supervisor, manager or owner  |
+|                | approves or rejects it.                                 |
+|                | Product [ Flour 2 kg                     v ]            |
+|                |   In stock now: 18 bag                                  |
+|                | Damaged quantity [ 1 ]                                  |
+|                | Note (optional)  [ wet bag               ]              |
+|                | [ Flag damage ]                                         |
+|                | Flagged 1 bag of Flour 2 kg (৳120). Waiting for a       |
+|                | decision.                                               |
++----------------+---------------------------------------------------------+
 ```
 
-States: a Sent purchase order appears in My tasks for workers assigned to its warehouse; status updates to Partly received or Received after receiving.
+Opened from Stock in / out or from a product row, with the product already chosen. States: cannot flag more than is in stock ("Only 18 bag in stock.").
 
-Accessibility: h1; table with headers; line list is a list with remove buttons named per product.
-
-## W9. Dispatch orders (S14; Sales rep home)
+## W9. History (/history, S05 page 05.2)
 
 ```
-+---------------+----------------------------------------------------------+
-| Side nav      | Dispatch orders (h1)            [ New dispatch order ]   |
-|               | No.    Customer       Warehouse     Needed by  Status    |
-|               | DO-31  Rahman Store   Narayanganj   25 Oct     Open      |
-|               |                                                          |
-|               | New dispatch order (page)                                |
-|               |  Customer name [            ]  Warehouse [ v ]           |
-|               |  Needed by [      ]                                      |
-|               |  Product [ type code or search ]                         |
-|               |   Available: 32 ctn                                      |
-|               |   Qty [ ctn ][ bag ]                      [ Add line ]   |
-|               |  [ Save order ]                                          |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | History (h1)                                            |
+|                | Product [All products v] Reason [All reasons v]         |
+|                | By [Everyone v]  From [ date ]  To [ date ]             |
+|                | [Download CSV]  [Clear filters]                         |
+|                | When         Product     Change  Value   Reason   Balance after  By     |
+|                | 16 Nov 09:12 Rice 25 kg  +400    ৳9,60,000 Purchase  452  Karim |
+|                |                                            [Reverse…]   |
+|                | 15 Nov 17:40 Rice 25 kg  −2      ৳4,800  Stock count     |
+|                |              Counted 50, system had 52.   50     Rafiq  |
+|                | [ Load more ]                                           |
++----------------+---------------------------------------------------------+
 ```
 
-States: more than available is refused with "Only 32 ctn available. Max 32 ctn." and a "Use max" button; saving reserves the stock; empty list "No dispatch orders yet" + New dispatch order.
+Reverse… (Owner and Manager, on reversible rows) opens "Ask to reverse this movement" with "Why should it be reversed?" and Ask for reversal / Cancel, then "Reversal asked for. Another owner or manager must approve it." Filters stay in the address so a view can be shared. States: "No stock movements yet."
 
-Accessibility: h1; the refusal is linked to the quantity field by `aria-describedby` and announced once.
-
-## W10. My tasks (S3, page 01.1; Warehouse worker home)
+## W10. Approvals (/approvals, S03 page 03.2)
 
 ```
-+---------------+----------------------------------------------------------+
-| My tasks      | My tasks (h1)                    Narayanganj             |
-|               | +------------------------------------------------------+ |
-|               | | Receive · PO-12 · ACI Foods                 [New]    | |
-|               | | 5 products                                           | |
-|               | +------------------------------------------------------+ |
-|               | +------------------------------------------------------+ |
-|               | | Pick · DO-31 · Rahman Store · needed 25 Oct [In prog]| |
-|               | | 8 / 20 ctn picked                                    | |
-|               | +------------------------------------------------------+ |
-|               | [ Type code ]  (replaces the camera Scan bar)            |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Approvals (h1)                                          |
+|                | Damage flags and reversals need a second person. You    |
+|                | can never decide your own request.                      |
+|                | [ Waiting ] [ Decided ]                                 |
+|                | +-----------------------------------------------------+ |
+|                | | Damage flag   Flour 2 kg   1 bag   ৳120              | |
+|                | | wet bag                                             | |
+|                | | Asked by Karim · 16 Nov 08:30                       | |
+|                | | [ Approve: write off ]  [ Reject: back to stock ]   | |
+|                | +-----------------------------------------------------+ |
+|                | +-----------------------------------------------------+ |
+|                | | Reversal   Rice 25 kg   400 bag                      | |
+|                | | Undo Purchase of 16 Nov 09:12                       | |
+|                | | Asked by Mr. Haque · 16 Nov 10:05                   | |
+|                | | [ Approve ]  [ Reject ]                             | |
+|                | +-----------------------------------------------------+ |
++----------------+---------------------------------------------------------+
 ```
 
-States: empty "All tasks done for today"; each card is one link; status tag New / In progress / Done (no "Not synced" this round); after finishing any task the worker returns here with the next task on top.
+States: "Waiting for someone else to decide." instead of buttons for the person who asked or a role that cannot decide; "Approved: Flour 2 kg."; "This was already decided."; Decided cards show "Approved by Nasima · time"; "Nothing is waiting for a decision."
 
-Accessibility: h1; task list is a list of links named by the card title; Type code is a button that opens a dialog.
-
-## W11. Receive purchase order, blind (S7, pages 01.2 and 01.3)
+## W11. Report (/reports, S07 page 07.1)
 
 ```
-+---------------+----------------------------------------------------------+
-| My tasks      | < Back   Receive PO-12 (h1)   ACI Foods · Narayanganj    |
-|               | +------------------------------------------------------+ |
-|               | | > Rice 25 kg                     counted 8 ctn       | |
-|               | |   Cartons [ - ][ 8  ][ + ]   Bags [ - ][ 0 ][ + ]    | |
-|               | |   [ Save line ]                                      | |
-|               | +------------------------------------------------------+ |
-|               | | Lentils 50 kg                    not counted yet     | |
-|               | +------------------------------------------------------+ |
-|               | [ Mark delivery complete ]                               |
-|               | [ Type code ]                                            |
-+---------------+----------------------------------------------------------+
-
-Type code dialog (S4 without camera):
-+--------------------------------------+
-| Type code (h2)                       |
-| [ code, barcode number or name     ] |
-|  Rice 25 kg   RICE25                 |
-|  Rice 50 kg   RICE50                 |
-| [ Close ]                            |
-+--------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Report (h1)                                             |
+|                | From [ 1 Nov ]  To [ 30 Nov ]            [Download CSV] |
+|                | [Received ৳3,20,000] [Sold ৳2,90,000]                   |
+|                | [Lost (damage and missing) ৳9,600]                      |
+|                | Product     Start  In   Sold  Damaged  Count +/-  Adjusted  End |
+|                | Rice 25 kg  12     40   0     0        −2         0        50   |
+|                | Flour 2 kg  20     0    1     1        0          0        18   |
+|                | Total       …                                           |
++----------------+---------------------------------------------------------+
 ```
 
-Never shown anywhere, including the page code: ordered or remaining quantities (blind). Saving a line moves that quantity into Available straight away. "Mark delivery complete" opens a dialog: "Finish this delivery? 3 of 5 lines counted. Lines with no count are saved as not received in this delivery." Afterwards the worker sees only "Receipt saved"; a shortfall or over-delivery Issue is created in the background.
+States: this month by default; "Choose a start date on or before the end date."; "No stock in this period." Values are in taka at the cost of the time.
 
-States: "Not on this order" when the typed product is not on the purchase order; "Saved" toast after each line; save disabled until a quantity is entered (reason shown beside it).
-
-Accessibility: h1 with the purchase order number; the selected line is marked for screen readers; dialog uses `role="alertdialog"` with focus starting on Go back; the Type code dialog traps focus and Escape closes it.
-
-## W12. Pick dispatch order (S8, page 02.1)
+## W12. My record (/record, S06 page 06.1)
 
 ```
-+---------------+----------------------------------------------------------+
-| My tasks      | < Back   DO-31 (h1)       Rahman Store · Narayanganj     |
-|               | +------------------------------------------------------+ |
-|               | | > Rice 25 kg                     8 / 20 ctn          | |
-|               | |   Cartons [ - ][ 12 ][ + ]  Max 12 ctn               | |
-|               | |   [ Confirm line ]                                   | |
-|               | +------------------------------------------------------+ |
-|               | | Sugar 1 kg                       0 / 5 ctn           | |
-|               | +------------------------------------------------------+ |
-|               | [ Confirm dispatch ]                                     |
-|               | [ Flag damage ]   [ Type code ]                          |
-+---------------+----------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | My record (h1)                                          |
+|                | Your own work, as proof of what you did.                |
+|                | Person [ Me v ]              (Owner, Manager only)      |
+|                | +-------------+ +-------------+ +-------------+         |
+|                | | Today       | | Last 7 days | | Last 30 days|         |
+|                | | Stock in and out: 3 · 40 in · 5 out          |         |
+|                | | Stock counts: 1 · 2 missing · 0 extra        |         |
+|                | | Damage flags: 1 approved · 0 rejected · 0 waiting |    |
+|                | | Decisions for others: 0                      |         |
+|                | +-------------+ +-------------+ +-------------+         |
++----------------+---------------------------------------------------------+
 ```
 
-The quantity is pre-filled with what is left on the line. Confirming a line moves it out of stock straight away. "Confirm dispatch" asks only when lines are short: "2 lines are short. Short quantities stay Reserved."
+"Today" is in Bangladesh time.
 
-States: "Max 12 ctn" refusal with "Use max"; a line with a damaged carton shows a "Damaged 1 ctn" pill; "Not on this order" for a typed product not on the order.
-
-Accessibility: h1 with the order number; progress read as "8 of 20 cartons picked"; Flag damage acts on the selected line and says so in its accessible name ("Flag damage on Rice 25 kg").
-
-## W13. Flag damage sheet (S9, page 02.2)
+## W13. Staff (/staff, S01 page 01.4 and S08 page 08.1; Owner only)
 
 ```
-+--------------------------------------+
-| Flag damage (h2)                     |
-| Product   Rice 25 kg  [change]       |
-| Quantity  [ - ][ 1 ][ + ] ctn        |
-| Reason    (o) damaged ( ) expired    |
-|           ( ) other                  |
-| Note (optional) [               ]    |
-| [ Flag damage ]        [ Close ]     |
-+--------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | Staff (h1)                                              |
+|                | Add the people who work with you, and choose what each  |
+|                | can do.                                                 |
+|                | +-----------------------------------------------------+ |
+|                | | Add a staff member (h2)                             | |
+|                | | Name [        ]  Phone number [          ]          | |
+|                | |   They sign in with this number.                    | |
+|                | | Password [          ][Show]  Role [Warehouse worker v]| |
+|                | | [ Add staff member ]                                | |
+|                | +-----------------------------------------------------+ |
+|                | Your team (h2)                              4 people    |
+|                | Name        Phone        Role              Status   Actions |
+|                | Mr. Haque   01711…       Owner             Active   That's you |
+|                | Karim       01811…       Warehouse worker  Active          |
+|                |                     [Reset password] [Deactivate]        |
+|                | Nasima      01911…       Supervisor        Active          |
++----------------+---------------------------------------------------------+
 ```
 
-Pre-filled from the selected pick line (Q6), so accepting the defaults is one tap. On save: that quantity moves from Reserved to Damaged, a replacement is reserved from Available, a damage Issue is created, and the toast reads "Flagged 1 ctn damaged". If nothing is available to replace it, the line is marked short.
+Reset password opens "New password for Karim" with "Tell them the new password. They are signed out everywhere and sign in with it." and Set password / Cancel. States: "Karim can now sign in."; "This phone number is already registered"; "Karim's password is changed. Tell them the new one."; Deactivated people show Reactivate.
 
-States: refusal "Only 2 ctn on this line. Max 2 ctn."; Close saves nothing.
-
-Accessibility: dialog labelled "Flag damage"; focus starts on the Flag damage button; reason options are a radio group; focus returns to the pick line on close.
-
-## W14. Coming in a later round (Supervisor and Accountant)
+## W14. My password (/account, S08 page 08.2)
 
 ```
-+--------------------------------------------------------------+
-| Mojud                         Nasima (Supervisor) [Sign out] |
-|   Your screens are coming in a later round (h1)              |
-|   You can sign in, but there is nothing to do here yet.      |
-+--------------------------------------------------------------+
++----------------+---------------------------------------------------------+
+| (menu)         | My password (h1)                                        |
+|                | Current password [            ][Show]                   |
+|                | New password     [            ][Show]                   |
+|                |   At least 8 characters.                                |
+|                | [ Change password ]                                     |
++----------------+---------------------------------------------------------+
 ```
 
-Accessibility: h1; `main` landmark; Sign out reachable by keyboard.
+States: "Password changed. Other phones signed in as you are signed out."; "Your current password is not correct."
 
 ## Assumptions & Open Questions
 
-- [assumption] The Flag damage button keeps its designed place at the bottom of the pick screen and acts on the selected line, which matches both the design and Q6.
-- [assumption] Owners and Managers can also open the floor screens (My tasks, receiving, picking), as the PRD's role table allows; they are not in their side nav this round.
+None.

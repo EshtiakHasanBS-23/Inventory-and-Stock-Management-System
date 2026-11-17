@@ -1,16 +1,21 @@
 # Mojud: Inventory and Stock Management System
 
-Mojud keeps stock for small distribution businesses. This repository holds the
-walking skeleton: sign up a business, sign in and out, and land on your role's
-home page, running end to end as a React web app, a Node API and PostgreSQL.
+Mojud keeps stock for small distribution businesses. It keeps a permanent
+record of every stock change with who, when, why and its value in taka, never
+lets stock go below zero, and needs a second person for every damage write-off
+and every correction. It covers sign-up, staff and roles, products with Excel
+import, stock in / out, stock counts, damage flags, reversals and approvals, an
+owner dashboard of stock value and losses, movement history, a monthly report,
+CSV downloads and each person's own record. It runs end to end as a React web
+app, a Node API and PostgreSQL.
 
-| Part                     | Folder                           | What it is                                                       |
-| ------------------------ | -------------------------------- | ---------------------------------------------------------------- |
-| Web app                  | `apps/web`                       | React 18 + Vite, served by nginx in Docker                       |
-| API                      | `apps/api`                       | Express 5 + Kysely, identity module (sign-up, sign-in, sessions) |
-| Shared contract          | `packages/contracts`             | zod schemas and types used by both                               |
-| Database                 | Docker `db` service              | PostgreSQL 16                                                    |
-| Local stack and pipeline | `docker-compose.yml`, `scripts/` | Compose services and `npm run verify`                            |
+| Part                     | Folder                           | What it is                                                        |
+| ------------------------ | -------------------------------- | ----------------------------------------------------------------- |
+| Web app                  | `apps/web`                       | React 18 + Vite, served by nginx in Docker                        |
+| API                      | `apps/api`                       | Express 5 + Kysely: identity (sign-up, sessions, staff) and stock |
+| Shared contract          | `packages/contracts`             | zod schemas and types used by both                                |
+| Database                 | Docker `db` service              | PostgreSQL 16                                                     |
+| Local stack and pipeline | `docker-compose.yml`, `scripts/` | Compose services and `npm run verify`                             |
 
 Everything runs on your own machine; nothing is deployed anywhere.
 

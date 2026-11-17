@@ -1,79 +1,50 @@
 # Bolt Plan — Mojud core slice
 
-A **Bolt** is one build pass over a piece of the work that ends in running, tested code you can check. This plan orders seven Bolts across the three units in `unit-of-work.md`, following `unit-of-work-dependency.md` (U1 → U2 → U3) and `unit-of-work-story-map.md`. Inputs also include `requirements.md`, `stories.md`, `mockups.md`, `components.md`, `contract-summary.md` and the team practices (`team-practices.md`). Answers are in `delivery-planning-questions.md`.
+Updated 2026-11-16 to record the Bolts actually built. A **Bolt** is one build pass that ends in running, tested code you can check. The original plan (seven Bolts over a backend unit and a frontend unit) was replaced after B1 by small vertical slices; the decision is recorded in `simplified-plan.md`. Inputs: `unit-of-work.md`, `unit-of-work-dependency.md`, `unit-of-work-story-map.md`, `requirements.md`, `stories.md`, `components.md`, `contract-summary.md`, `team-practices.md`.
 
-The build runs unit by unit, one at a time (serial). Bolts B2–B5 are planned slices inside U2, and B6–B7 inside U3: they set the order of work and the check at the end of each slice, while the workflow still builds and approves each unit as a whole.
+Bolts ran one after another (serial), each delivering backend and screens together.
 
 ## Sequence
 
 | # | Bolt | Unit | Stories | Walking skeleton |
 |---|---|---|---|---|
-| B1 | Walking skeleton | U1 | US1.1, US1.2 (Owner path) | **Yes** |
-| B2 | Stock ledger and opening stock | U2 | US2.1 (backend) | — |
-| B3 | Remaining setup | U2 | US1.3, US1.4 (backend) | — |
-| B4 | Purchasing, receiving and Issues | U2 | US2.2, US3.2 (backend) | — |
-| B5 | Dispatch, picking, damage and My tasks | U2 | US3.1, US4.1, US5.1, US5.2, US5.3 (backend) | — |
-| B6 | Setup and order screens | U3 | US1.3, US1.4, US2.1, US2.2, US4.1 | — |
-| B7 | Floor screens and Issues list | U3 | US3.1, US3.2, US5.1, US5.2, US5.3 | — |
+| B1 | Walking skeleton | U1 | US-01, US-02 | **Yes** |
+| B2 | Stock core (Round 1: slices S1 Products, S2 Stock in / out, S3 Stock list and low stock, S4 History and dashboard) | U2 | US-05, US-07, US-12, US-13 | — |
+| B3 | Value, count, staff (Round 2) | U3 | US-03, US-05, US-08, US-12 | — |
+| B4 | Phone layout, passwords, history filters (Round 3) | U4 | US-02, US-04, US-13 | — |
+| B5 | Import, export, report (Round 4) | U5 | US-06, US-14, US-15 | — |
+| B6 | UI refresh and accountability (Round 5) | U6 | US-07, US-09, US-10, US-11, US-12, US-13, US-16 | — |
 
 ## B1 — Walking skeleton (U1)
 
-A walking skeleton is the thinnest version that runs the whole way through, built first to prove the pieces connect.
+- **Built:** repository layout with `apps/api`, `apps/web`, `packages/contracts`; Docker Compose (db, migrate, api, web); migration `0001_identity`; the platform pipeline; sign-up, sign-in, sign-out, `/auth/me`; app shell with theme switch and English text; lint, type check, format, secret scan, Vitest with coverage, Playwright smoke test; `npm run verify`.
+- **Proved:** browser → API → PostgreSQL works with sessions, CSRF and migrations on the builder's machine.
+- **Definition of Done (met):** one command starts everything from a clean checkout; an Owner signs up, signs out and signs in again; `npm run verify` passes with at least 80% line coverage.
 
-- **Includes:** Docker Desktop check first; repository layout (backend service, web app, shared `@mojud/contracts` package); Docker Compose for web app, backend and PostgreSQL; forward-only migrations; strict TypeScript, ESLint, Prettier, test runner with coverage; IdentityAccess sign-up, sign-in, sign-out, sessions with CSRF; app shell with theme switch, English translation file and role landing placeholders.
-- **Proves:** browser → API → module → PostgreSQL, sessions and migrations all work together on this Windows machine.
-- **Definition of Done:** one command starts everything from a clean checkout; an Owner can sign up in the browser, sign out and sign in again; tests and lint pass with at least 80% line coverage; the approved verification command passes.
-- **Confidence hypothesis:** the chosen stack runs reliably under Docker on Windows 10 Home (or the allowed database fallback), so later Bolts build on a working base.
-- **Expected demo:** run the start command, open the browser, sign up "Haque Traders", land on the Setup home, sign out, sign back in.
+## B2 — Stock core (U2)
 
-## B2 — Stock ledger and opening stock (U2)
+- **Built:** migration `0002_stock`; products (create, edit, list, search); stock in and out through the single conditional-update write path; append-only trigger; OK, Low, Out status; History; Dashboard totals and recent movements.
+- **Definition of Done (met):** tests prove stock never goes negative (including two simultaneous requests for the last unit), movements cannot be updated or deleted, quantities equal the sum of movements, and every query is scoped to the business.
 
-- **Includes:** StockLedger module (append-only movements, balances, never-negative with maximum, once-only `Idempotency-Key` handling, row locking in a fixed order); the warehouses and products tables it needs (minimal create endpoints); opening stock endpoint.
-- **Proves:** the riskiest rules hold before anything else depends on them.
-- **Definition of Done:** must-pass tests green: stock never negative (including two simultaneous requests for the last unit), no edit or delete path for movements, a repeated key applies once, balances equal the sum of movements; opening stock recorded once per product and warehouse.
-- **Confidence hypothesis:** the ledger design is correct and fast enough that purchasing and dispatch can rely on it unchanged.
-- **Expected demo:** API test run showing the concurrency and repeat-request tests passing.
+## B3 — Value, count, staff (U3)
 
-## B3 — Remaining setup (U2)
+- **Built:** migration `0003_value_and_count`; unit cost in poisha on products and movements; stock value and 30-day losses; Stock count page; Staff page with add, deactivate and reactivate.
+- **Definition of Done (met):** API and screen tests for value sums, count differences (missing, extra, matching), Owner-only staff rules and the deactivated sign-in refusal.
 
-- **Includes:** warehouse rules (3 active, deactivation check), users and roles, assigned warehouses, the full permission matrix on every endpoint, refusing deactivated users, product edit and search, suppliers.
-- **Definition of Done:** API tests for every FR2.2 row (allowed and refused), business data isolation tests, user and warehouse rules; coverage held at 80%.
-- **Confidence hypothesis:** permissions can be enforced on every endpoint from one place without slowing requests.
-- **Expected demo:** API tests show a Sales rep refused on setup endpoints and a worker limited to their warehouse.
+## B4 — Phone layout, passwords, history filters (U4)
 
-## B4 — Purchasing, receiving and Issues (U2)
+- **Built:** bottom tab bar below 1024 px; pages fit at 360 px and 320 px; My password; Owner password reset; History filters in the address with Load more; people names list.
+- **Definition of Done (met):** smoke test checks no sideways scroll at 360 px and 320 px; tests for session ending on password change and reset; filter tests.
 
-- **Includes:** purchase orders (create, edit, send, cancel), blind receiving endpoints, delivery completion with Shortfall and Over-delivery Issues in the same transaction, the Issues module.
-- **Definition of Done:** API tests for US2.2 and US3.2 criteria; a contract test proves the receiving responses contain no ordered quantity; repeated save requests apply once.
-- **Confidence hypothesis:** the shared transaction across Purchasing, StockLedger and Issues behaves as designed.
-- **Expected demo:** API scenario: send a PO for 100, receive 92, complete, see a Shortfall Issue and 92 Available.
+## B5 — Import, export, report (U5)
 
-## B5 — Dispatch, picking, damage and My tasks (U2)
+- **Built:** migration `0004_opening_stock`; Import page and all-or-nothing endpoint; CSV downloads for products, history and report; Report page.
+- **Definition of Done (met):** tests for row-numbered import problems, duplicate SKUs, 1000-row limit, BOM and formula-injection guard, Dhaka time, and report totals.
 
-- **Includes:** dispatch orders (create, edit, cancel with release), picking and confirm dispatch, Damage module with replacement reservation and short lines, Issues list endpoint, My tasks endpoint.
-- **Definition of Done:** API tests for US3.1, US4.1, US5.1, US5.2, US5.3 criteria; damage replacement and short-line cases; whole backend at 80% line coverage.
-- **Confidence hypothesis:** the full backend supports every story's flow through the API alone.
-- **Expected demo:** API scenario: reserve 20, flag 1 damaged with and without spare stock, confirm dispatch, list Issues and My tasks.
+## B6 — UI refresh and accountability (U6)
 
-## B6 — Setup and order screens (U3)
-
-- **Includes:** Setup home, warehouses, users, products with opening stock, suppliers (side panels), purchase orders and dispatch orders (lists, create, edit, detail, cancel).
-- **Definition of Done:** each screen meets its story's criteria end to end in the browser; component tests with accessibility checks pass; light and dark themes checked.
-- **Confidence hypothesis:** the design system can be built as our own components at a steady pace.
-- **Expected demo:** set up a business from empty to a sent purchase order and a dispatch order, in the browser.
-
-## B7 — Floor screens and Issues list (U3)
-
-- **Includes:** My tasks, blind receiving with Type code, picking with Flag damage form, Issues list.
-- **Definition of Done:** every story's criteria pass end to end in the browser; the whole app passes the verification command; coverage at 80%.
-- **Confidence hypothesis:** the full core slice works for all four active roles on this machine.
-- **Expected demo:** the full journey: Owner setup → Manager PO → worker receives with a shortfall → Sales rep orders → worker picks and flags damage → Owner sees the Issues.
-
-## Construction Settings
-
-- **Order:** one unit at a time through its design stages and build (unit-major), serial, with checkpoints.
-- **After the skeleton:** later checkpoints continue automatically once you approve the working skeleton (team practices); you still approve plans, the verification command and any failure.
-- **Branching:** each Bolt on a short-lived branch from `main`, squash-merged into `main` locally; you push later (team practices).
+- **Built:** the mockup look with tint tokens; migration `0005_approvals`; Flag damage; Approvals inbox; Reverse… on History; direct damage limited to Owner and Manager; My record; dashboard loss split and banner.
+- **Definition of Done (met):** tests for "never your own", decided once under simultaneous decisions, one reversal per movement, a reversal that would go negative staying open, loss split values, and 4.5:1 contrast for every text pair in both themes. Final state: 272 automated tests and 9 smoke tests, about 98% line coverage, `npm run verify` green.
 
 ## Assumptions & Open Questions
 

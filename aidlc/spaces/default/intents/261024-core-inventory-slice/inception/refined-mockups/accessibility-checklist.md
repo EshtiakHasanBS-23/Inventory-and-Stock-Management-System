@@ -1,65 +1,44 @@
 # Accessibility Checklist — Mojud core slice
 
-Target: WCAG 2.1 AA in both light and dark themes (rough-mockups Q4; requirements NFR6; story AC1.2.6). Applies to every screen in `mockups.md`; built from the wireframes' per-screen notes, `stories.md`, `requirements.md` and the team practices (tests before each merge).
+Updated 2026-11-16 to record what the built screens do. Target: WCAG 2.1 AA in light and dark themes (NFR-5). Applies to every screen in `mockups.md`. Checked by `apps/web/test/a11y.test.tsx` (axe in both themes, contrast of every text pair), the component tests and the browser smoke test (`apps/web/e2e/smoke.spec.ts`).
 
 ## Global
 
-- [ ] Every page declares `lang="en"` and a unique `<title>` ("{Screen} · Mojud").
-- [ ] Landmarks: `header` (app bar), `nav` (side nav), `main`; a "Skip to content" link is the first focusable element.
-- [ ] One `h1` per page (the screen title); headings in order, no skipped levels.
-- [ ] Every interactive element is reachable and usable by keyboard, in visual order, with a visible `focus-ring` (never `outline: none`).
-- [ ] Text contrast at least 4.5:1, large text and control outlines at least 3:1, checked in both themes. `border` is decorative only; control outlines use `control-border`.
-- [ ] Interactive elements at least 48px tall (`{spacing.target-min}`); floor primary buttons and steppers 64px; at least 8px between targets.
-- [ ] Status is never shown by color alone: online status, task status, stock states and Issue types carry an icon and text.
-- [ ] Dynamic messages (toasts, refusals, result counts) are announced through a polite live region, once per change.
-- [ ] Respect `prefers-reduced-motion`: no panel slide or toast animation when reduced motion is requested.
-- [ ] Page works at 200% browser zoom without loss of content (horizontal scroll below 1024px is allowed this round).
+- [x] Every page has `lang="en"` and a unique title "{Page} · Mojud".
+- [x] Landmarks: `header` (app bar), `nav` labelled "Main" (side menu or bottom tab bar), `main` with `id="main"`; "Skip to content" is the first focusable element and moves focus to `main`.
+- [x] One `h1` per page; headings in order.
+- [x] Everything is usable by keyboard in visual order, with a visible focus ring in both themes.
+- [x] Every text colour pair is at least 4.5:1 in light and dark, including the tint tokens (tested).
+- [x] Touch targets at least 48 px tall (`--spacing-target-min`).
+- [x] State is never shown by colour alone: stock pills (OK / Low / Out), approval kinds, staff status and the dashboard tiles carry an icon and text.
+- [x] Saved messages use `role="status"`; refusals that appear after an action use `role="alert"`.
+- [x] Motion (count-up, fade-up, toast slide) runs only under `prefers-reduced-motion: no-preference`.
+- [x] Pages fit at 320 px wide without sideways page scroll (smoke test at 360 px and 320 px).
+- [x] The current navigation item has `aria-current="page"`.
 
-## Forms (M1, M2, M4–M9, M13)
+## Forms (Sign up, Sign in, Products, Import, Stock in / out, Stock count, Flag damage, History reversal, Staff, My password)
 
-- [ ] Every field has a visible label above it, linked by `for`/`id`; hints and errors linked with `aria-describedby`.
-- [ ] Errors are text naming the field and the fix, and typed values are kept.
-- [ ] Sign-in and sign-up errors appear in a `form-error-summary` that receives focus.
-- [ ] Disabled buttons stay focusable with `aria-disabled="true"` and a visible reason.
-- [ ] Fieldsets with legends group Units and Opening stock on the product form.
+- [x] Every field has a visible label linked by `for`/`id`; hints and errors are linked with `aria-describedby`; invalid fields have `aria-invalid`.
+- [x] With two or more errors, the error summary takes focus and links to each field.
+- [x] The Stock in / Stock out tiles are real radio buttons in a `fieldset` with a legend.
+- [x] Password fields have a Show/Hide toggle with an accessible name.
+- [x] Busy buttons announce their state (`aria-busy`) and are not pressed twice.
 
-## Dialogs and Panels (side-panel, confirmation-dialog, type-code-dialog, Flag damage)
+## Lists and tables (Products, History, Dashboard, Report, Staff, Import preview)
 
-- [ ] `role="dialog"` (or `alertdialog` for confirmations) with an accessible name.
-- [ ] Focus moves into the dialog on open, is trapped while open, and returns to the opener on close.
-- [ ] Escape closes; confirmations start with focus on Go back.
+- [x] Tables have header cells; on phones each row becomes a card that keeps the column labels.
+- [x] Row actions name their row (for example "Deactivate Karim", "Reset password for Karim", "Reverse sale of 4 bag Rice 25 kg").
+- [x] Empty and loading states are written in text.
 
-## Tables and Lists (M4–M10, M14)
+## Approvals
 
-- [ ] Data tables use real `table`, `th` with `scope`, and a caption.
-- [ ] Row actions are named with their row ("Deactivate Gazipur").
-- [ ] Task cards are links named by the card title; task lists are `ul` lists.
+- [x] Waiting and Decided are buttons with `aria-pressed`, grouped and labelled.
+- [x] When a card cannot be decided by this person, the reason is shown in text ("Waiting for someone else to decide.") instead of a disabled button.
 
-## Screen-specific
+## Themes
 
-| Screen | Heading (h1) | Keyboard entry point | Notes |
-|---|---|---|---|
-| M1 Sign up | Create your business | Business name field | Password Show toggle is a button with `aria-pressed` |
-| M2 Sign in | Sign in | Phone number field | Error summary focused on failure |
-| M3 Setup home | Set up {business} | First setup card | Cards are links |
-| M4 Warehouses | Warehouses | Add warehouse button | — |
-| M5 Users | Users | Add user button | Role select is a labelled combobox |
-| M6 Products | Products | Add product button | Fieldsets for groups |
-| M7 Suppliers | Suppliers | Add supplier button | — |
-| M8 Purchase orders | Purchase orders | New purchase order button | Line list announces added and removed lines |
-| M9 Dispatch orders | Dispatch orders | New dispatch order button | Refusal linked to the quantity field |
-| M10 My tasks | My tasks | First task card | — |
-| M11 Receive | Receive PO-{n} | First line | Selected line marked `aria-current="true"`; no expected quantity in any attribute |
-| M12 Pick | {Order number} | First line | Progress read as "8 of 20 cartons picked"; Flag damage named with the line's product |
-| M13 Flag damage | Flag damage (h2 in dialog) | Flag damage button | Reasons are a radio group |
-| M14 Issues | Issues | Issues table | Caption "Open issues" |
-| M15 Coming later | Your screens are coming in a later round | Sign out button | — |
-
-## How It Is Checked
-
-- [ ] Automated: an accessibility checker (for example axe) runs against each screen in component tests; no violations allowed at AA.
-- [ ] Manual keyboard pass on each screen before the unit is approved.
-- [ ] Contrast checked for both themes from the token values.
+- [x] Light, Dark and Device all pass the axe checks and the contrast test.
+- [x] The chosen theme applies before first paint, so there is no flash of the other theme.
 
 ## Assumptions & Open Questions
 

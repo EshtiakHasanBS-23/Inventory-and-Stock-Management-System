@@ -1,5 +1,5 @@
 /**
- * Approvals (PRD FR-15, FR-29, FR-30, FR-51): damage flags and reversal
+ * Approvals (PRD FR-13 to FR-16, FR-22): damage flags and reversal
  * requests that need a second person's decision, and each person's record.
  *
  * - Flag damage: anyone. The units move from on_hand into the product's
@@ -370,7 +370,7 @@ function emptyPeriod(): RecordPeriod {
 
 /**
  * One person's work today (Dhaka time), in the last 7 days and in the last
- * 30 days (PRD FR-51). Everyone sees their own; an Owner or Manager may look
+ * 30 days (PRD FR-22). Everyone sees their own; an Owner or Manager may look
  * at anyone in the business.
  */
 export async function getWorkRecord(

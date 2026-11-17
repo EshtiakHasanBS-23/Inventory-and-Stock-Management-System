@@ -24,7 +24,7 @@ function CloudCheckIcon() {
 
 /**
  * app-bar (desk): app name, business, signed-in name and role, online status
- * as icon and text (always "Online" this round), theme switch and Sign out.
+ * as icon and text (a fixed "Online" label), theme switch and Sign out.
  */
 export function AppBar() {
   const { t } = useTranslation();

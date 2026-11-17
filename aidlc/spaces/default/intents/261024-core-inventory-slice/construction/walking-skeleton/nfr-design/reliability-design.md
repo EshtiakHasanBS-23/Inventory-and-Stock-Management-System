@@ -1,12 +1,12 @@
 # Reliability Design — walking-skeleton
 
-How U1 meets `nfr-requirements/reliability-requirements.md` (NFR8.4–NFR8.8, NFR1.16, NFR1.17). These are single-machine patterns: health-gated start order, transactions, a pool that survives outages, and graceful shutdown. Circuit breakers and retries are not used, because the only dependency is the local database and failing fast with INTERNAL_ERROR is the chosen behaviour (BR2.8).
+How the app meets `nfr-requirements/reliability-requirements.md` (NFR8.4–NFR8.8, NFR1.16, NFR1.17, NFR3.1). These are single-machine patterns: health-gated start order, transactions, a pool that survives outages, and graceful shutdown. Circuit breakers and retries are not used, because the only dependency is the local database and failing fast with INTERNAL_ERROR is the chosen behaviour (BR2.8).
 
 ## Start Order (NFR8.4, NFR8.5)
 
 ```mermaid
 graph LR
-  db["db (postgres:16)"] -->|healthy| migrate["migrate (one-off)"]
+  db["db (postgres:16-alpine)"] -->|healthy| migrate["migrate (one-off)"]
   migrate -->|completed successfully| api["api (Express)"]
   api -->|healthy| web["web (nginx)"]
 ```
@@ -30,7 +30,8 @@ graph LR
 
 - **Sign-up transaction:** sign-up runs in `db.transaction().execute(async trx => …)`, which inserts the business, then the user, then the session. Any thrown error rolls back all three.
 - **Duplicate phone:** the error handler maps PostgreSQL `23505` on the constraint `users_phone_key` to 409 DUPLICATE with `field: 'phone'`. Any other database error becomes 500 INTERNAL_ERROR.
-- **Failure-injection test:** a test-only hook in the repository throws after the business insert, and the test checks that the `businesses` count is unchanged.
+- **Failure-injection test:** a repository test throws after the business insert and checks that the `businesses` count is unchanged.
+- **Stock transactions (NFR3.1):** every stock operation runs in `db.transaction()`. `applyMovement` does the conditional `UPDATE products SET on_hand = on_hand + delta … WHERE on_hand + delta >= 0` and inserts the movement on the same connection; counts and approval decisions first `SELECT … FOR UPDATE`. A refusal (INSUFFICIENT_STOCK, already decided) throws inside the transaction, so nothing is saved. The database adds a second line of defence: `CHECK` constraints on quantities, the append-only trigger on `stock_movements`, the `decided_by <> requested_by` check and the one-reversal-per-movement partial unique index.
 
 ## Database Outages (NFR8.6)
 
@@ -68,7 +69,7 @@ The transaction-level lock is released at commit or rollback, so a lock can neve
 
 ## Backup and Recovery
 
-There are no backups this round. Recovery runs `npm run db:reset` (`docker compose down -v && docker compose up -d --wait`), and the `migrate` service then rebuilds the schema (team Deployment practice).
+There are no backups. Recovery runs `npm run db:reset` (`docker compose down -v && docker compose up -d --wait`), and the `migrate` service then rebuilds the schema (team Deployment practice).
 
 ## Assumptions & Open Questions
 

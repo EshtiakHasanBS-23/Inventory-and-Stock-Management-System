@@ -214,9 +214,9 @@ export async function resolveSession(
 }
 
 /**
- * Contract C2 `authorize`. In U1 it allows any signed-in, active caller
- * (BR2.7, NFR1.9). U2 adds the role table and warehouse scope here, without
- * changing the signature. Every module operation calls it first.
+ * Contract C2 `authorize`: allows any signed-in, active caller (BR2.7,
+ * NFR1.9). Role limits are checked inside each operation. Every module
+ * operation calls it first.
  */
 export function authorize(
   caller: Caller | undefined,

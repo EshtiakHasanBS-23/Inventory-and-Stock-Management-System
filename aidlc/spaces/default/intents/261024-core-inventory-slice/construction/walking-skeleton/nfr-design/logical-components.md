@@ -1,6 +1,6 @@
 # Logical Components — walking-skeleton
 
-The component view of U1 and where the NFR patterns apply. It bridges this design to Infrastructure Design. The components come from `components.md` (IdentityAccess, WebApp) and the tech stack (`nfr-requirements/tech-stack-decisions.md`).
+The component view of the app as built and where the NFR patterns apply. It bridges this design to Infrastructure Design. The components come from `components.md` (IdentityAccess, WebApp) and the tech stack (`nfr-requirements/tech-stack-decisions.md`).
 
 ## Component Inventory
 
@@ -8,9 +8,10 @@ The component view of U1 and where the NFR patterns apply. It bridges this desig
 |---|---|---|---|
 | `web` | nginx container | Serves the React build; proxies `/api/` to `api` | Security headers and CSP, same origin, asset caching (NFR1.14, NFR1.15, NFR5.4) |
 | `api` → platform layer | `api` container | Config, logger, request ID, error handler, Origin, authentication and CSRF middleware, health, OpenAPI | Request pipeline (`security-design.md`), logging, health (NFR1.x, NFR8.x) |
-| `api` → `identity` module | `api` container | Sign-up, sign-in, sign-out, sessions, caller context, `authorize`, session clean-up | Argon2id, uniform failure, business-scoped repositories (NFR1.1–NFR1.9, NFR2.x) |
+| `api` → `identity` module | `api` container | Sign-up, sign-in, sign-out, sessions, caller context, `authorize`, session clean-up, staff, passwords | Argon2id, uniform failure, business-scoped repositories (NFR1.1–NFR1.9, NFR2.x) |
+| `api` → `stock` module | `api` container | Products, stock movements, counts, import, damage flags, approvals, reversals, dashboard, history, report, CSV, My record | Transactions, conditional update, row locks, business-scoped queries, CSV formula guard (NFR1.20, NFR2.x, NFR3.1) |
 | `migrate` | one-off container (same image as `api`) | Applies forward-only SQL migrations | Start order (NFR8.4) |
-| `db` | `postgres:16` container | Stores businesses, users, sessions | Indexes, named volume (NFR8.3) |
+| `db` | `postgres:16-alpine` container | Stores businesses, users, sessions, products, stock movements, approvals | Indexes, checks, append-only trigger, named volume (NFR8.3, NFR3.1) |
 | `@mojud/contracts` | build-time package | zod schemas, types, error codes shared by `api` and `web` | One validation source (NFR1.10) |
 
 ## Backend Module Layout (NFR Design Q3)
@@ -21,12 +22,15 @@ apps/api/src/
   modules/
     identity/
       index.ts     the only public surface: router, resolveCaller, authorize, types
-      internal/    service, repository, password, tokens, cleanup
+      internal/    service, repository, staff, password, tokens, cleanup, ids, types
+    stock/
+      index.ts     the only public surface: createStockRouter
+      internal/    service (products, movements, counts, import, dashboard, history, report, CSV),
+                   approvals (damage flags, reversals, decisions, My record), routes
 ```
 
 - **Import rule:** ESLint `no-restricted-imports` forbids `modules/*/internal/**` from outside its own module, and forbids `modules/*` from importing `platform/middleware`.
-- **Table ownership:** each module owns its tables. `identity` owns `businesses`, `users` and `sessions`. The `sessions` table has no `business_id`; it reaches its business through `users` (`security-design.md` global lookups).
-- **Later modules:** U2 adds `catalogue`, `stock-ledger`, `purchasing`, `dispatch`, `damage`, `issues` and `my-tasks` the same way.
+- **Table ownership:** `identity` owns `businesses`, `users` and `sessions`; `stock` owns `products`, `stock_movements` and `approvals`. The `sessions` table has no `business_id`; it reaches its business through `users` (`security-design.md` global lookups). The stock module reads `users` only for names (history, approvals, My record) and uses identity only through `modules/identity/index.ts` (`authorize`, `Caller`).
 
 ## Failure Domains and Blast Radius
 
@@ -40,7 +44,7 @@ apps/api/src/
 
 ## Shared Resources
 
-- **Database:** one PostgreSQL database with one schema (`public`), shared by all modules. Each module owns its tables and has no cross-module foreign keys, except to `businesses` (`components.md`).
+- **Database:** one PostgreSQL database with one schema (`public`), shared by both modules. Stock tables reference `businesses` and `users` (who recorded, requested or decided).
 - **Pool and logger:** one pool and one root logger per `api` process.
 
 ## Assumptions & Open Questions

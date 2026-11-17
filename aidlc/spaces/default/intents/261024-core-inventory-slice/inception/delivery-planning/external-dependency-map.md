@@ -1,14 +1,15 @@
 # External Dependency Map — Mojud core slice
 
-Things outside the project that the Bolts in `bolt-plan.md` rely on (a Bolt is one build pass that ends in running, tested code). The work is AI-built and local only (`unit-of-work.md`, `unit-of-work-dependency.md`, `contract-summary.md`, team practices in `team-practices.md`), so the list is short. Requirements (`requirements.md`), stories (`stories.md`), mockups (`mockups.md`), components (`components.md`) and the story map (`unit-of-work-story-map.md`) name no external systems.
+Updated 2026-11-16. Things outside the project that the Bolts in `bolt-plan.md` relied on. The app runs only on the builder's machine and connects to no other system (`unit-of-work.md`, `contract-summary.md`, `team-practices.md`).
 
-| Dependency | Owner | Lead time | Blocks | If it slips |
-|---|---|---|---|---|
-| Docker Desktop with WSL 2 installed and running on the build machine | You | About 1 hour, plus a restart; may need virtualization turned on in BIOS | B1 (and everything after) | Use the allowed fallback: PostgreSQL alone in Docker, or PostgreSQL installed directly, with the backend and web app run by Node |
-| Node.js (current LTS) on the build machine, for running tools outside Docker | You | Minutes | B1 | Run tools only inside Docker containers |
-| Package registry (npm) reachable over the internet | npm | None | B1 and any Bolt adding a library | Retry later; nothing else depends on it |
+| Dependency | Owner | Used by | If unavailable |
+|---|---|---|---|
+| Docker with Compose on the build machine | Builder | `npm run up` and `npm run verify` (PostgreSQL 16, migrate, API, web containers) | Run PostgreSQL alone in Docker or a local PostgreSQL install, and start the API and web app with `npm run dev` |
+| Node.js 22 (`^22.13.0`) | Builder | Every script, the API and the web build | Nothing runs; install it |
+| npm registry | npm | Installing packages (Express, Kysely, pg, argon2, helmet, pino, zod, React, Vite, TanStack Query, i18next, Vitest, Playwright and the rest of `package.json`) | Retry later; an installed `node_modules` keeps working |
+| Playwright browser download | Playwright | The browser smoke test in `npm run verify` | Smoke test cannot run until the browser is installed |
 
-No external APIs, data feeds, approvals or other teams are involved this round.
+No external APIs, data feeds, cloud services, approvals or other teams are involved.
 
 ## Assumptions & Open Questions
 

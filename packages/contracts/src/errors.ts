@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Error codes used in U1 (functional-spec.md Error Catalogue; contract C1). */
+/** Error codes used by the API (functional-spec.md Error Catalogue; contract C1). */
 export const ERROR_CODES = [
   "VALIDATION_FAILED",
   "DUPLICATE",

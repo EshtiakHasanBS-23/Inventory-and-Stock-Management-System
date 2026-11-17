@@ -1,50 +1,52 @@
 ---
 title: "PRD Addendum: Mojud (working name)"
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-11-16
 ---
 
 # PRD Addendum: Mojud (working name)
 
-Technical notes and background that support the PRD but describe *how* rather than *what*. **No technology stack has been chosen.** Everything below is an option for the architecture step, not a decision.
+Technical notes and background that support the PRD. They describe *how* the built app meets the requirements, in plain terms. The PRD stays the source for *what* the app does.
 
-## A. Technical notes for architecture (options, not decisions)
+## A. How the built app meets key requirements
 
-**Stock ledger (FR-11 – FR-15)**
-- The usual pattern is an append-only `stock_movements` table, with balances either summed from it or kept in a balance table updated in the same database transaction.
-- To meet FR-13 (no negative stock) and NFR-4 (correct under concurrency), the balance check and the insert must happen atomically, as one step that nothing else can interrupt. Options include row locking on the balance row, or a database constraint such as `CHECK (qty >= 0)` on balance rows.
-- A relational database with transactions suits this, for example PostgreSQL.
+**Technology**
+- TypeScript throughout: a React web app, a Node (Express) API and a PostgreSQL 16 database. Validation rules are written once and shared by the web app and the API.
+- It runs locally only, with Docker Compose (web, API, database) or in development mode with hot reload (NFR-8).
 
-**Duplicate prevention and offline (FR-14, FR-40 – FR-44)**
-- One option: the device generates a unique ID (UUID) for each action, and the server stores it with a unique index. This gives idempotent writes: sending the same action twice has no extra effect.
-- A service worker together with IndexedDB can hold the Offline queue, and the queue is replayed in order when the device reconnects.
-- Device time and server time are both kept, and the server's checks are the ones that count.
+**Stock ledger and never-negative stock (FR-9 – FR-11, NFR-3)**
+- Every stock change inserts a row into an append-only stock movements table. A database trigger refuses any update or delete of that table.
+- The Product's stock quantity is changed in the same database transaction as the movement is inserted, using a conditional update ("only if enough is in stock"). A database check also refuses a negative quantity. So two requests for the last unit can never both succeed.
 
-**Camera scanning (FR-38)**
-- The browser `BarcodeDetector` API is supported in Chrome on Android but not everywhere. A JavaScript fallback library (ZXing-based) is a common choice.
-- FMCG products mostly carry EAN-13 barcodes. Scanning needs HTTPS and permission to use the camera.
+**Stock counts (FR-12)**
+- The Product row is locked while the count is compared and saved, so no other change can happen between reading the current quantity and saving the difference.
 
-**Languages (FR-45)**
-- A common approach is an i18n library, with all text kept in translation files from the start.
-- Bangla needs a font that displays conjunct characters correctly, and should be tested on low-cost phones.
+**Approvals (FR-13 – FR-16, FR-23)**
+- Damage flags and Reversals are stored as approval requests. A database check refuses a decision by the person who asked.
+- Deciding locks the request row, so if two people decide at the same moment only one decision is saved; the other is told "This was already decided."
 
-**Data isolation (FR-1, NFR-7)**
-- Every table carries a `business_id`, and every query is filtered by the User's Business. Row-level security in the database is an optional extra safeguard.
+**Money (FR-17, NFR-9)**
+- Unit costs and values are stored and added up as whole poisha (1/100 taka), so totals have no rounding drift. Each movement stores the Unit cost of its moment.
 
-**Excel import (FR-46, FR-47)**
-- A common approach is to read `.xlsx` files on the server, validate every row first, and save in one transaction only after the Manager confirms.
+**Data isolation (FR-4, NFR-2)**
+- Every table carries the Business it belongs to, and every query is filtered by the caller's Business. A record of another Business is answered as "not found".
 
-## B. Rationale for key PRD choices
+**Excel import (FR-8)**
+- The CSV file is read and checked in the browser first, so problems are shown by row before anything is sent. The API checks every row again and saves all rows in one database transaction, or none.
 
-- **One Warehouse per Dispatch order (FR-23):** this keeps reservation and picking simple. Orders that need stock from two Warehouses are rare and can be split into two orders.
-- **Damage approval means Write-off (FR-30):** this is the simplest flow. Selling damaged goods at a discount or returning them to the Supplier is left out of v1.
-- **Unexplained state (FR-36, FR-37):** count shortages keep their value and stay visible to the Owner, instead of disappearing through a silent adjustment. This puts the brief's "evidence over scores" principle into practice.
-- **Count shortages are taken from Available, then Damaged, then Reserved (FR-36):** this keeps the no-negative rule true in every case. Reserved is touched last because changing it affects promises already made to customers.
-- **Only two kinds of Stock movement, Move and Revalue:** the brief's design principles also listed a third kind, Transform. Converting cartons to pieces needs no Transform, because every quantity is already stored in Base units. Kitting and assembly are non-goals, so Transform is deferred until a real need appears.
-- **Returns are a non-goal:** this keeps v1 lean. A simple "return in" can be added later. Until then, the only way to record a returned item is an approved Reversal of the dispatch, done by a Manager.
-- **No notifications in v1:** the brief asked for one ranked inbox instead of a separate alert per problem. Leaving out SMS also avoids its cost.
+**CSV downloads (FR-21)**
+- Files start with a UTF-8 byte-order mark for Excel. Cells starting with `=`, `+`, `-` or `@` get a leading apostrophe to block formula injection.
+
+## B. Rationale for key choices
+
+- **A permanent, append-only record:** the owner can only trust the numbers if nobody, including the owner, can quietly change past records. Mistakes are corrected with a Reversal that stays visible next to the original.
+- **Damage goes through a hold and a second person:** a worker can report damage at once, but the stock is only written off after someone else agrees. This stops silent write-offs and protects the worker who reported it.
+- **Direct "Damaged" stock out only for Owners and Managers:** the people who already decide approvals can record an obvious write-off directly; everyone else uses Flag damage.
+- **Stock counts and Damage flag movements cannot be reversed:** a count records what was physically on the shelf, and a Damage flag is settled by approving or rejecting it, so reversing them would hide the real evidence.
+- **One Unit cost per Product, kept on each movement:** this is the simplest way to show stock value, while past losses keep the value they had when they happened.
+- **Losses split three ways on the Dashboard:** written off, damage flags and missing in counts point to different causes, and each one links to the movements behind it.
 
 ## C. Related documents
 
 - Product brief: `_bmad-output/planning-artifacts/briefs/brief-E2E_IAM-2026-10-22/brief.md`
-- Brief addendum, covering market research with sources (A), the post-v1 backlog (B) and 10 design principles (C): `_bmad-output/planning-artifacts/briefs/brief-E2E_IAM-2026-10-22/addendum.md`
+- Brief addendum (market research and design principles): `_bmad-output/planning-artifacts/briefs/brief-E2E_IAM-2026-10-22/addendum.md`

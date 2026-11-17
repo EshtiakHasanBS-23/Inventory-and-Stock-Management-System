@@ -304,7 +304,7 @@ export async function recordMovement(
 ): Promise<Movement> {
   const checked = requireCaller(caller, "stock.movements.record");
   const input = validate(RecordMovementSchema, body, MOVEMENT_FIELD_MESSAGES);
-  // Segregation of duties (PRD FR-5, FR-29): only an Owner or Manager writes
+  // Segregation of duties (PRD FR-23): only an Owner or Manager writes
   // damage off directly; everyone else flags it for a second person.
   if (input.reason === "damage" && !MANAGE_PRODUCTS_ROLES.has(checked.role)) {
     throw new AppError(

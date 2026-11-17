@@ -1,176 +1,53 @@
-# Owner Metric Tile [crd-004]
+# Metric Tile
 
-**Type:** Interactive
-**Category:** Card (metric)
-**Purpose:** Owner view figure tile that opens its drill-down panel.
-**DESIGN.md key:** `owner-metric-tile` ([DESIGN.md → Components](../../../_bmad-output/planning-artifacts/ux-designs/ux-E2E_IAM-2026-10-22/DESIGN.md#components); behaviour in [EXPERIENCE.md → Component Patterns](../../../_bmad-output/planning-artifacts/ux-designs/ux-E2E_IAM-2026-10-22/EXPERIENCE.md#component-patterns))
+**Code:** `DashboardPage.tsx` (`Figure` + `apps/web/src/useCountUp.ts`); report summary tiles in `ReportPage.tsx` · **Classes:** `.hero-grid`, `.tile`, `.tile--hero`, `.tile__label`, `.tile__value` (`--primary`, `--danger`, `--warning`), `.tile__meta`; `.stat-grid`, `.stat`, `.stat--out`
+**Mockups:** [key-dashboard.html](../../../_bmad-output/planning-artifacts/ux-designs/ux-E2E_IAM-2026-10-22/mockups/key-dashboard.html)
 **Tokens:** [design-tokens.md](../design-tokens.md) · **Index:** [00-design-system.md](../00-design-system.md#components)
 
 ---
 
-## Overview
+## What it is
 
-The whole card is one target, min 64px. Label in `body-strong`, taka value in `amount-hero`, a chevron icon. Unexplained values carry the question icon and dashed pattern next to the number. Selected while its drill-down is open; only one tile selected at a time.
+A card with a label and one big figure. On the Dashboard the figures count up from 0 when they load.
 
----
+## Dashboard tiles (`<dl class="hero-grid">`, 4 columns)
 
-## Variants
+| Tile | Variant | Figure | Extra |
+|---|---|---|---|
+| `box` "Stock value" | hero (spans 2), `--primary` | ৳ total | "1,240 units across 36 products" |
+| `alert` "Losses, last 30 days" | hero, `--danger` | ৳ total | three [loss rows](loss-row.md) |
+| "Low stock" | `--warning` | count, with a 26px alert icon | |
+| "Out of stock" | `--danger` | count, with a 26px x icon | |
+| "Products" | plain | count | |
+| "Units in stock" | plain | count | |
 
-This component has no variants.
+## Count-up
 
----
-
-## States
-
-**Required States:**
-
-- default
-- selected
-- focus
-- hover
-
-**Optional States:**
-
-- loading
-- offline (as of)
-- empty / first use
-
-**State Descriptions:**
-
-**Selected:** 2px `{colors.primary}` border, `{colors.surface-alt}` fill, text tag "Showing" with chevron-right; `aria-expanded="true"`. Distinct from the focus ring.
-**Offline:** "as of HH:MM (offline)".
-
----
+`useCountUp(target)` animates from the previous value to the target over 700ms with an ease-out cubic curve. Whole numbers are shown while counting; the exact figure (with poisha, as taka via `formatTaka`) at the end. Under `prefers-reduced-motion: reduce` (or without `requestAnimationFrame`) the target shows at once.
 
 ## Styling
 
-### Visual Properties
+| Part | Value |
+|---|---|
+| Grid | 4 equal columns, gap `--spacing-4`; 2 columns, gap `--spacing-3` at ≤1023px |
+| Tile | grid, gap `--spacing-1`, padding `--spacing-4` (`--spacing-3` ≤1023px), `--colors-surface`, 1px `--colors-border`, `--rounded-md`, `--shadow-card` |
+| Hero | spans 2 columns, padding `--spacing-5` (`--spacing-4` ≤1023px) |
+| Label | flex with icon, body-strong, `--colors-text-muted` |
+| Value | 1.75rem / 700 / 1.2, tabular numbers (hero 2.25rem); ≤1023px 1.375rem (hero 1.75rem) |
+| Meta | `--colors-text-muted` |
 
-**Size:** min-height `{spacing.target-floor}`.  
-**Shape:** `{rounded.md}`.  
-**Colors:** `{colors.surface}`, 1px `{colors.border}`; selected as above.  
-**Typography:** Value `{typography.amount-hero}` (digits and ৳ only); label `{typography.body-strong}`.  
-**Spacing:** Padding `{spacing.4}` [ASSUMPTION]; grid gap `{spacing.4}`.
+Motion (no reduced-motion preference): tiles fade up in a 50ms stagger and lift 2px with `--shadow-raised` on hover.
 
-Dark mode: every `{colors.X}` resolves to `{colors.X-dark}` (see [design-tokens.md](../design-tokens.md#colors)). Values marked [ASSUMPTION] are not in DESIGN.md and are listed under Open Questions or the index's token gaps.
+While loading, a `.skeleton-grid` of four shimmering `.skeleton` blocks (7rem high) stands in, with a visually hidden "Loading…".
 
-### Design Tokens
+## Report summary tiles (`.stat`)
 
-Verbatim from the DESIGN.md frontmatter (`components.owner-metric-tile`). Do not edit here; change DESIGN.md first.
-
-```yaml
-owner-metric-tile:
-    background: '{colors.surface}'
-    border: '1px solid {colors.border}'
-    value-typography: '{typography.amount-hero}'
-    label-typography: '{typography.body-strong}'
-    radius: '{rounded.md}'
-    min-height: '{spacing.target-floor}'
-    selected: '2px {colors.primary} border, {colors.surface-alt} fill, text tag "Showing" with icon chevron-right'
-```
-
-### Figma Reference
-
-None. Custom design system without a Figma library. Visual reference: [key-owner-view.html](../../../_bmad-output/planning-artifacts/ux-designs/ux-E2E_IAM-2026-10-22/mockups/key-owner-view.html).
-
-### Library Component
-
-Not applicable (no component library chosen).
-
----
-
-## Behavior
-
-### Interactions
-
-Click opens the drill-down; focus moves to the panel heading; Close/Back returns focus to the tile.
-
-### Animations
-
-None. Any motion ≤ 200ms and off under reduced motion (EXPERIENCE.md → Interaction Primitives).
-
----
+Three tiles on the Report page: "Received", "Sold", "Lost (damage and missing)" (`.stat--out`, danger left bar). Each is padding `--spacing-4`, 1px `--colors-border`, 4px `--colors-primary` left bar, `--rounded-md`, `--shadow-card`; label meta size muted; value headline size and weight, tabular numbers. No count-up. Grid `repeat(auto-fit, minmax(160px, 1fr))`, 2 columns ≤1023px.
 
 ## Accessibility
 
-**ARIA Attributes:** `<button aria-expanded aria-controls>`; name = label + value.
+A definition list: `<dt>` label, `<dd>` value. Icons `aria-hidden`. Low and Out are told apart by label and icon, not colour.
 
-**Keyboard Support:** Enter / Space.
+## Used on
 
-**Screen Reader:** "Unexplained, ৳45,000, button, expanded".
-
-**Floor rules:** targets ≥ `{spacing.target-min}` (48px) for anything interactive; never color alone (icon + text, pattern for Damaged / Unexplained); visible [focus ring](focus-ring.md) on `:focus-visible`; works at 320 CSS px, 200% text and in both themes.
-
----
-
-## Content Rules
-
-৳ with lakh grouping, Western digits; label in chosen language.
-
-General: one language per User except the Scan bar and floor primary buttons (Bangla first); Bangla never below 16px and never in `meta`; Western digits 0-9 with tabular numerals for quantities and money; Product, Supplier and customer names exactly as entered.
-
----
-
-## Usage
-
-### When to Use
-
-Owner view figures.
-
-### When Not to Use
-
-Floor screens; Big & Bold weight on desk.
-
-### Best Practices
-
-- Never color alone for Unexplained - question icon + dashed pattern.
-
----
-
-## Used In
-
-**Pages:** 2
-
-**Page IDs:** 03.1, 04.1
-
-- [03.1-issues-inbox](../../C-UX-Scenarios/03-nasima-clears-the-inbox/03.1-issues-inbox/03.1-issues-inbox.md)
-- [04.1-owner-view](../../C-UX-Scenarios/04-haque-traces-an-unexplained-loss/04.1-owner-view/04.1-owner-view.md)
-
----
-
-## Related Components
-
-- [Drill-down Panel [cnt-001]](drill-down-panel.md) - opened by tile
-- [Stock State Pill [pil-001]](stock-state-pill.md) - compact Unexplained pill
-- [Loss Row [lst-001]](loss-row.md) - losses card rows
-
----
-
-## Open Questions
-
-1. Tile padding is not in frontmatter.
-
----
-
-## Version History
-
-**Created:** 2026-10-24  
-**Last Updated:** 2026-10-24
-
-**Changes:**
-
-- 2026-10-24: Created from DESIGN.md frontmatter `components.owner-metric-tile` (WDS Phase 7, Create).
-
----
-
-## Notes
-
-Component reference for page specs:
-
-```yaml
-component_reference:
-  id: crd-004
-  name: Owner Metric Tile
-  key: owner-metric-tile
-  file: D-Design-System/components/owner-metric-tile.md
-```
+/dashboard (05.1), /reports (07.1).

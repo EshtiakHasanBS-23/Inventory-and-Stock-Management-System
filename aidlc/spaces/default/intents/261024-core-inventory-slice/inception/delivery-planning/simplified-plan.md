@@ -21,16 +21,9 @@ vertical slices, each delivering backend and screen together.
   product's quantity (refused when it would go below zero) plus one appended
   movement row. Movements cannot be updated or deleted (database trigger).
 - Roles: Owner and Manager may create and edit products; every signed-in user
-  may view stock and record movements. The six roles stay in the schema, but no
-  user management screen is built.
+  may view stock and record movements. The six roles stay in the schema; the Staff
+  screen came in Round 2.
 - Every query is scoped to the caller's business.
-
-## Cut or deferred
-
-Purchase orders, suppliers, blind receiving, dispatch orders, reservations,
-picking, damage replacement, the Issues module, My tasks, multiple warehouses,
-user management, the full permission table, idempotency keys, offline mode and
-Bangla.
 
 ## Process
 
@@ -67,9 +60,9 @@ stack, structure and conventions. Each slice is built and checked with
 
 | Item | Delivers |
 |---|---|
-| UI refresh | The look of the HTML mockups (key-owner-view, key-receiving): tinted background with white cards, icon side nav pills, hero tiles with count-up figures, tinted state pills with icons, green saved toast, big Stock in / Stock out tiles, bottom tab bar with icons on phones; gentle motion only when reduced motion is not requested. New tint tokens for light and dark, each text pair checked at 4.5:1. |
-| Damage flag + approval (PRD FR-29, FR-30) | Anyone flags damage; the units leave sellable stock into a Damaged hold (`damage_flagged` movement). A supervisor, manager or owner who did not flag it approves (written off) or rejects (`damage_rejected`, back in stock) in one tap. Workers can no longer write damage off directly. |
+| UI refresh | The look of the HTML mockups (now `key-dashboard`, `key-stock-movement`): tinted background with white cards, icon side nav pills, hero tiles with count-up figures, tinted state pills with icons, green saved toast, big Stock in / Stock out tiles, bottom tab bar with icons on phones; gentle motion only when reduced motion is not requested. New tint tokens for light and dark, each text pair checked at 4.5:1. |
+| Damage flag + approval (PRD FR-13, FR-14, FR-23) | Anyone flags damage; the units leave sellable stock into a Damaged hold (`damage_flagged` movement). A supervisor, manager or owner who did not flag it approves (written off) or rejects (`damage_rejected`, back in stock) in one tap. Workers can no longer write damage off directly. |
 | Reversal (PRD FR-15) | An owner or manager asks to undo a movement with a reason; a different owner or manager approves, and the opposite `reversal` movement is recorded, linked to the original. Counts and flags cannot be reversed; one open or approved reversal per movement; a reversal that would go below zero is refused and stays open. |
-| Approvals inbox | One inbox (waiting / decided) for flags and reversals. Nobody decides their own request (also a database check); a decision locks the row so only one of two simultaneous decisions wins. |
-| My record (PRD FR-51) | Each person's movements, counts (missing / extra), flags by outcome and decisions for today (Dhaka time), the last 7 and the last 30 days. Owners and managers can view anyone. |
-| Losses by source (PRD FR-48, FR-49) | The dashboard splits 30-day losses into written off, damage flags (less rejections) and missing in counts, each linking to the movements behind it, with a banner for requests waiting and the value held as damaged. |
+| Approvals inbox (PRD FR-16) | One inbox (waiting / decided) for flags and reversals. Nobody decides their own request (also a database check); a decision locks the row so only one of two simultaneous decisions wins. |
+| My record (PRD FR-22) | Each person's movements, counts (missing / extra), flags by outcome and decisions for today (Dhaka time), the last 7 and the last 30 days. Owners and managers can view anyone. |
+| Losses by source (PRD FR-18) | The dashboard splits 30-day losses into written off, damage flags (less rejections) and missing in counts, each linking to the movements behind it, with a banner for requests waiting and the value held as damaged. |

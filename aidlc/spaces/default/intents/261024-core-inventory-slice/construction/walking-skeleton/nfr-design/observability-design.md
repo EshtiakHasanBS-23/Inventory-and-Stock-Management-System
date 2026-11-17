@@ -1,10 +1,10 @@
 # Observability Design — walking-skeleton
 
-How U1 meets `nfr-requirements/observability-requirements.md` (NFR8.9–NFR8.14, NFR1.18). Logs go to the console and the health endpoint is checked by Docker. There is no metrics backend, tracing or alerting this round, because the app runs only locally.
+How the app meets `nfr-requirements/observability-requirements.md` (NFR8.9–NFR8.14, NFR1.18). Logs go to the console and the health endpoint is checked by Docker. There is no metrics backend, tracing or alerting, because the app runs only locally.
 
 ## Structured Logging (NFR8.9, NFR8.12)
 
-- **Logger:** one root `pino` logger in `apps/api/src/log.ts`, with `level: LOG_LEVEL`. Development pipes the output through `pino-pretty`. Tests use `silent`, or a captured stream when a test checks the logs.
+- **Logger:** one root `pino` logger in `apps/api/src/platform/log.ts`, with `level: LOG_LEVEL`. Development pipes the output through `pino-pretty`. Tests use `silent`, or a captured stream when a test checks the logs.
 - **Request line:** `pino-http` writes one line when each request finishes. The line includes `requestId`, `method`, `route` (the route pattern, not the raw URL), `status` and `durationMs`. When a caller exists, it also includes `userId` and `businessId`, which a `customProps` hook adds from `req.caller`.
 - **Response-time header:** the API sets `X-Response-Time` from the same timer as the log line (used by the NFR5.3 measurement).
 
@@ -35,6 +35,13 @@ All of these are removed. Request bodies are never logged.
 | `auth.signout` | info | userId |
 | `auth.session_ended` | info | userId, reason (`expired` or `inactive`) |
 | `session.cleanup` | info | deleted count |
+| `auth.password_changed` | info | userId |
+| `identity.staff_created`, `identity.staff_active_changed`, `identity.staff_password_reset` | info | userId (and role or active) |
+| `stock.product_created`, `stock.product_updated`, `stock.products_imported` | info | productId, or created and openingUnits |
+| `stock.movement_recorded`, `stock.count_recorded` | info | movementId or productId, direction, quantity or difference |
+| `stock.damage_flagged`, `stock.reversal_requested`, `stock.approval_decided` | info | approvalId, quantity, kind, status |
+| `health.db_down` | warn | err |
+| `server.listening`, `server.signal`, `shutdown.start`, `shutdown.done`, `shutdown.timeout`, `migrate.applied`, `migrate.current` | info / warn | process lifecycle |
 | unhandled error | error | err (with stack), requestId |
 
 ## Health (NFR8.13, NFR8.14)
@@ -44,7 +51,7 @@ All of these are removed. Request bodies are never logged.
 
 ## Metrics, Tracing, Alerting, SLOs
 
-These are not designed this round, because the app runs only locally. When a cloud environment is planned, the request line already holds what is needed for request-rate, error-rate and latency SLIs.
+None, because the app runs only locally. The request line holds request rate, error rate and latency for anyone reading the logs.
 
 ## Assumptions & Open Questions
 

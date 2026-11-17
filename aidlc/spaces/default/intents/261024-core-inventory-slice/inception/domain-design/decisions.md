@@ -1,121 +1,195 @@
 # Architecture Decisions — Mojud core slice
 
-Decisions made while designing the components in `components.md`, from `requirements.md`, `stories.md`, the team practices and the answers in `domain-design-questions.md`.
+Updated 2026-11-16: the decisions behind the components in `components.md`, as built. Sources: the code, the migrations, `requirements.md` (FR-1 to FR-23, NFR-1 to NFR-9), `stories.md` and `simplified-plan.md`.
 
-## ADR-001: Split the system into blocks by business area
-
-### Status: Accepted
-
-### Context
-The round covers sign-up and access, setup data, a stock record, purchasing with blind receiving, dispatch with picking, damage and Issues (FR1–FR18). One beginner builder will maintain it, and later rounds add transfers, counts, decisions and an owner view. Clear ownership of each piece of data keeps changes local.
-
-### Decision
-Eight business blocks: IdentityAccess, Catalogue, StockLedger, Purchasing, Dispatch, Damage, Issues and MyTasks, plus the WebApp user interface (Q1, Q4).
-
-### Consequences
-- Positive: every entity has one owner; each later feature has an obvious home; blocks can be tested on their own.
-- Negative: more interfaces to define and wire together than a four-block split.
-- Security: authorization lives in one block (IdentityAccess) that every other block calls, so permission rules are not scattered.
-
-### Alternatives Rejected
-- Four larger blocks (Identity, Setup, Stock, Orders): simpler at first, but Orders would mix purchasing, dispatch, damage and Issues and grow too large to reason about.
-- One block per screen: the same data would be owned by several blocks.
-
-## ADR-002: The Stock ledger is the only writer of stock movements
+## ADR-001: A modular monolith with two business modules
 
 ### Status: Accepted
 
 ### Context
-Stock must never go negative, movements must never be edited, each action must apply once, and simultaneous requests must not oversell (FR8, NFR3). These rules are the product's core promise.
+One builder working with an AI developer maintains the app. Stock changes, approvals and the ledger must commit together in one database transaction (NFR-3). The app runs only on the builder's machine (NFR-8).
 
 ### Decision
-Only StockLedger writes movements and balances. Catalogue, Purchasing, Dispatch and Damage ask it to (Q2). It serializes changes to the same product and warehouse and records processed action IDs.
+One API process with two modules, `identity` and `stock`, on a shared `platform` layer. Approvals live inside `stock` because every decision writes stock movements. Each module exposes only its `index.ts`; ESLint refuses imports from another module's `internal/` folder.
 
 ### Consequences
-- Positive: one place to implement and test every stock rule; no other block can bypass them.
-- Negative: every stock-changing flow makes a call into StockLedger; it becomes a hot spot that must stay simple and fast.
-- Security: a single write path makes the audit trail complete (NFR4) and limits where data integrity can be broken.
+- Positive: one transaction covers a stock change and its approval; one process to start, test and debug.
+- Negative: `stock/internal/service.ts` is large (products, ledger, history, dashboard, import, export, report in one file).
+- Security: authentication and CSRF run once in the platform pipeline for every protected route; a route-inventory test proves no protected route is mounted before authentication.
 
 ### Alternatives Rejected
-- Each block writes its own movements under shared rules: fewer calls, but the same rules repeated in several places and easy to get inconsistent.
+- Separate services for identity and stock: a network hop and no shared transaction, for no benefit at this size.
+- More modules (products, ledger, approvals, reports apart): more interfaces than the code needs; approvals and the ledger would still need one transaction.
 
-## ADR-003: Issues are created in the same transaction as the stock change
+## ADR-002: One write path for stock, guarded by the database
+
+### Status: Accepted
 
 ### Context
-A shortfall, over-delivery, damage flag or short line must never exist without its Issue, and an Issue must never exist for a stock change that did not happen.
+Stock must never go below zero, even with two requests for the last unit at the same moment, and the record must never be edited (FR-10, FR-11, NFR-3).
 
 ### Decision
-Purchasing, Dispatch and Damage call Issues directly and synchronously, inside the same database transaction as the stock change (Q3).
+`applyMovement` is the only code that changes `products.on_hand`. In the caller's transaction it runs `UPDATE products SET on_hand = on_hand + delta WHERE … AND on_hand + delta >= 0`; no row returned means "Only N unit in stock." It then inserts the movement with the balance after. The database backs this up: a check keeps `on_hand >= 0`, and a trigger refuses every update or delete on `stock_movements`.
 
 ### Consequences
-- Positive: stock changes and Issues are saved together or not at all; simple to reason about and test.
-- Negative: these blocks must share one database transaction boundary, which constrains Units Generation to keep them in one deployable, or to add a more complex coordination pattern.
-- Security: no gap where a loss is recorded without anyone being told.
+- Positive: one place for every stock rule; concurrent requests are serialized by the row update without explicit locks; the database refuses mistakes even outside the app.
+- Negative: fixing a mistake needs a new movement (ADR-006), never an edit.
+- Security: the audit trail cannot be changed through the app or directly in the database.
 
 ### Alternatives Rejected
-- Events handled later by Issues: looser coupling, but an Issue can lag or be lost if handling fails, and it needs extra infrastructure.
+- Read the quantity, check it in code, then write: two simultaneous requests could both pass the check.
+- Compute the quantity from movements on every read: always consistent, but slower and still needs a lock to refuse negatives.
 
-## ADR-004: Damage is its own block
+## ADR-003: Money stored as whole poisha, cost kept on each movement
+
+### Status: Accepted
 
 ### Context
-This round, damage is flagged only from a pick line (FR16). Later rounds add flagging from Available stock and Supervisor decisions (approve as write-off, reject back to Available).
+Stock value and losses are shown in taka and summed across many rows (FR-17, FR-18, FR-20). A later price change must not alter past losses.
 
 ### Decision
-A separate Damage block owns damage flags, the Reserved-to-Damaged movement request and the Damage flag Issue; Dispatch calls it (Q4).
+Every amount is an integer number of poisha (1 taka = 100 poisha) in the database. Each movement and each approval stores the product's unit cost at its moment. The API converts to taka at the edge; the web app formats with lakh grouping.
 
 ### Consequences
-- Positive: later damage features extend one block without touching Dispatch.
-- Negative: one more block and interface this round.
-- Security: none beyond the shared authorization done by Dispatch before it calls Damage.
+- Positive: exact sums; past losses keep their value.
+- Negative: conversion at every boundary; unit cost input is limited to 2 decimals.
+- Security: none beyond input validation of the amount.
 
 ### Alternatives Rejected
-- Damage inside Dispatch: fewer blocks now, but must be moved out when flagging from stock arrives.
+- `numeric` columns in taka: exact too, but JavaScript numbers would still need careful handling and sums would come back as strings.
+- Only the current product cost: past losses would change whenever the price changes.
 
-## ADR-005: My tasks is a read-only composition
+## ADR-004: Server-side sessions with a CSRF token
+
+### Status: Accepted
 
 ### Context
-The worker's list combines receiving work (Purchasing) and picking work (Dispatch) in their assigned warehouses (FR11).
+People sign in with phone and password on shared office desktops and their own phones. Sign-out and deactivation must take effect at once (FR-2, FR-3, FR-5, NFR-1).
 
 ### Decision
-A MyTasks block owns no data and asks Purchasing and Dispatch for open work, scoped by IdentityAccess (Q5).
+A random session ID in an HttpOnly, SameSite=Lax cookie; only its SHA-256 hash is stored in `sessions`. Each session has a CSRF token sent back on sign-in and checked in `X-CSRF-Token` on every non-GET request, together with an Origin check. The session ends 12 hours after last use. Passwords are Argon2id hashes.
 
 ### Consequences
-- Positive: one place for task ordering and status rules; no duplicated task data to keep in sync.
-- Negative: an extra call per page load; acceptable at this round's scale.
-- Security: warehouse scoping is applied once, from the worker's assigned warehouses.
+- Positive: sign-out, password change, reset and deactivation end sessions immediately; a stolen database does not reveal usable cookies.
+- Negative: one database read per request; a daily clean-up removes expired rows.
+- Security: page scripts cannot read the cookie; cross-site requests fail the CSRF and Origin checks.
 
 ### Alternatives Rejected
-- Each block exposes its own list and the screen merges them: ordering and status rules would live in the user interface.
+- Signed tokens (JWT) with no server state: cannot be ended at once on sign-out or deactivation.
+- bcrypt: acceptable, but Argon2id is the current recommendation.
 
-## ADR-006: Warehouses belong to IdentityAccess, not Catalogue
+## ADR-005: Damage flags hold units out of sellable stock until decided
+
+### Status: Accepted
 
 ### Context
-The Q1 option listed warehouses under Catalogue. But every block's access check is scoped by warehouse (FR2.2), so IdentityAccess must know warehouses, and Catalogue must call IdentityAccess to authorize. With warehouses in Catalogue, IdentityAccess would also call Catalogue to validate assigned warehouses, creating a cycle.
+Workers find damaged stock but must not write it off alone (FR-13, FR-14, FR-23). Damaged units must not be sold while a decision waits.
 
 ### Decision
-IdentityAccess owns Business, Warehouse, User and Session. Catalogue owns Product and Supplier.
+Flagging writes a `damage_flagged` movement out of `on_hand` and adds the quantity to `products.damaged` (the hold). Approving removes it from the hold (written off). Rejecting removes it from the hold and writes a `damage_rejected` movement back into `on_hand`. Direct `damage` write-offs are allowed only to Owner and Manager.
 
 ### Consequences
-- Positive: no dependency cycle; access scoping and the warehouses it scopes live together.
-- Negative: differs from the wording of the Q1 option; the person sees this at the approval gate.
-- Security: warehouse scoping checks need no cross-block call, so they cannot be skipped by a failed call.
+- Positive: sellable stock is right at once; losses count from the flag and are cancelled by a rejection; the dashboard shows the value held.
+- Negative: two quantities per product (`on_hand` and `damaged`) to keep straight.
+- Security: no one can make stock disappear without a second person, except the Owner and Manager, whose direct write-offs are recorded under their names.
 
 ### Alternatives Rejected
-- Warehouses in Catalogue with a cycle between Catalogue and IdentityAccess: harder to test and to split later.
-- Passing authorization context from the user interface only: rejected because the server must enforce permissions itself (FR2.2).
+- Leave the units in stock until approved: they could be sold meanwhile.
+- No direct write-off at all: the Owner and Manager would need someone else for every write-off.
 
-## ADR-007: Dispatch orchestrates the replacement after damage
+## ADR-006: One approvals table for damage flags and reversals
+
+### Status: Accepted
 
 ### Context
-After damage is flagged, a replacement must be reserved for the same order line, or the line marked short with a Dispatch short Issue (FR16.3, FR16.4). The line belongs to Dispatch.
+Damage flags and corrections both need a second person, and the decider sees them in one inbox (FR-14, FR-15, FR-16). Two people may press Approve at the same moment.
 
 ### Decision
-Dispatch calls Damage to record the flag, then itself asks StockLedger for the replacement reservation and raises the Dispatch short Issue when needed, all in one transaction.
+One `approvals` table with `kind` damage or reversal. A database check refuses `decided_by = requested_by`. Deciding selects the row `FOR UPDATE` and refuses anything not pending with "This was already decided." A partial unique index allows one open or approved reversal per movement. An approved reversal writes the opposite `reversal` movement through `applyMovement`, linked by `reverses_movement_id`; if it would go below zero, the whole decision rolls back and the request stays pending.
 
 ### Consequences
-- Positive: Damage never calls back into Dispatch, so the graph stays acyclic; the line's reserved and short quantities have one owner.
-- Negative: the damage flow spans two blocks, so its tests must cover both together.
-- Security: none beyond ADR-002.
+- Positive: one inbox, one decision path, one set of tests for "never your own" and "decided once".
+- Negative: some columns mean different things per kind (`movement_id` is the flag movement or the movement to undo).
+- Security: segregation of duties is enforced by the database as well as the code.
 
 ### Alternatives Rejected
-- Damage reserves the replacement and updates the line: Damage would need to call Dispatch, creating a cycle.
+- Separate tables per kind: two inboxes to merge and the same rules written twice.
+- Edit or delete the wrong movement: breaks ADR-002.
+
+## ADR-007: One stock location per business
+
+### Status: Accepted
+
+### Context
+The target distributors keep stock in one place (simplified-plan, Rules).
+
+### Decision
+The quantity lives on the product row (`on_hand`, `damaged`). There is no location table.
+
+### Consequences
+- Positive: simpler queries, forms and tests.
+- Negative: a business with stock in two places cannot record it separately.
+- Security: none.
+
+### Alternatives Rejected
+- A per-location quantity table: more joins and forms for a need the users do not have.
+
+## ADR-008: Shared zod contracts for both sides
+
+### Status: Accepted
+
+### Context
+The server must validate every input (NFR-1), and the forms should show the same rules and messages.
+
+### Decision
+`@mojud/contracts` holds the zod schemas, limits, field messages and response types. The API validates with them; the web app checks forms and import rows with them.
+
+### Consequences
+- Positive: one source of truth for limits and messages; type errors when the API and the web app disagree.
+- Negative: a contracts change rebuilds both apps.
+- Security: strict schemas refuse unknown fields; size limits apply everywhere.
+
+### Alternatives Rejected
+- Separate validation on each side: drift between client and server messages.
+- Generated client from OpenAPI: more tooling than one TypeScript repository needs.
+
+## ADR-009: CSV for Excel, checked twice, all-or-nothing import
+
+### Status: Accepted
+
+### Context
+Owners keep products in Excel and want files back for their accountants (FR-8, FR-21).
+
+### Decision
+Import reads a CSV in the browser (loose headers, comma or semicolon, Excel number formats, BOM), lists problems by spreadsheet row, and sends parsed rows as JSON. The server checks them again and saves all in one transaction, with opening quantities as `opening` movements; at most 1000 rows. Exports are CSV with a BOM, CRLF and a leading apostrophe on cells starting with `= + - @`.
+
+### Consequences
+- Positive: no spreadsheet library; quick feedback before upload; never half an import.
+- Negative: people must save as "CSV UTF-8" from Excel.
+- Security: formula injection in exported files is blocked; the import body stays under the 100 KB limit.
+
+### Alternatives Rejected
+- Read `.xlsx` files: a large library and more parsing risk.
+- Save valid rows and skip bad ones: leaves the catalogue half imported.
+
+## ADR-010: Reports worked back from the ledger
+
+### Status: Accepted
+
+### Context
+The monthly report needs start and end quantities for any date range (FR-20), and there are no stored daily snapshots.
+
+### Decision
+The end quantity is the current quantity minus movements after the range; the start quantity is the end quantity minus movements inside it. Values use each movement's own unit cost. Dates in the API are a `from` inclusive and `to` exclusive range; the web app sends Dhaka days.
+
+### Consequences
+- Positive: always matches the ledger; no snapshot job.
+- Negative: the cost grows with the number of movements after the range.
+- Security: none beyond business scoping.
+
+### Alternatives Rejected
+- Nightly snapshots: another job to run and keep right on a local-only app.
+
+## Assumptions & Open Questions
+
+None.

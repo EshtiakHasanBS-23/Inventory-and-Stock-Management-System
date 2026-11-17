@@ -1,22 +1,21 @@
 # Team Allocation — Mojud core slice
 
-A **Bolt** is one build pass over a piece of the work that ends in running, tested code (see `bolt-plan.md`). A **mob** is the group that works on a Bolt together; here it is one builder working with the AI. Inputs: `unit-of-work.md`, `unit-of-work-dependency.md`, `unit-of-work-story-map.md`, `requirements.md`, `stories.md`, `mockups.md`, `components.md`, `contract-summary.md` and the team practices (`team-practices.md`).
+Updated 2026-11-16. A **Bolt** is one build pass that ends in running, tested code (see `bolt-plan.md`). Inputs: `unit-of-work.md`, `unit-of-work-story-map.md`, `bolt-plan.md` and the team practices (`team-practices.md`).
 
-Team Formation did not run in this workflow (`mvp`), so every Bolt is built by the AI developer (aidlc-developer-agent) in this session, with you reviewing and approving. There is one team, so no program board is needed.
+There is one builder, working with an AI developer in the same session. The builder decided scope and approved each plan and result; the AI wrote the code and tests. There is one team, so no program board was needed.
 
 | Bolt | Unit | Built by | Reviewed and approved by |
 |---|---|---|---|
-| B1 Walking skeleton | U1 | AI developer | You |
-| B2 Stock ledger and opening stock | U2 | AI developer | You |
-| B3 Remaining setup | U2 | AI developer | You |
-| B4 Purchasing, receiving and Issues | U2 | AI developer | You |
-| B5 Dispatch, picking, damage and My tasks | U2 | AI developer | You |
-| B6 Setup and order screens | U3 | AI developer | You |
-| B7 Floor screens and Issues list | U3 | AI developer | You |
+| B1 Walking skeleton | U1 | AI developer | Builder |
+| B2 Stock core | U2 | AI developer | Builder |
+| B3 Value, count, staff | U3 | AI developer | Builder |
+| B4 Phone layout, passwords, history filters | U4 | AI developer | Builder |
+| B5 Import, export, report | U5 | AI developer | Builder |
+| B6 UI refresh and accountability | U6 | AI developer | Builder |
 
-**Staffing:** one session runs all the work (solo ownership), because you are the only person on this project (intent capture). Bolts run one after another.
+**Staffing:** solo ownership; Bolts ran one after another.
 
-**Your part:** approve each code plan before it is built, approve the verification command, approve the working skeleton, and decide on any failure. After the skeleton, routine checkpoints continue automatically (team practices). You push `main` to GitHub when you choose.
+**Builder's part:** chose the simplified plan after B1, approved the verification command and the working skeleton, approved each round's scope, and decided on any failure. The builder pushes `main` to GitHub when they choose.
 
 ## Assumptions & Open Questions
 

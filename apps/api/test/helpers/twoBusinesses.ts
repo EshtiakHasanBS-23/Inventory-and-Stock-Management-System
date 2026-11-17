@@ -21,8 +21,8 @@ export interface SeededBusiness {
 
 /**
  * Businesses A and B signed up through the API, each with a signed-in
- * Supertest agent holding its cookie and CSRF token. U2 reuses this for the
- * 404 checks on every record endpoint (AC1.1.4).
+ * Supertest agent holding its cookie and CSRF token. The stock tests reuse
+ * this for the cross-business checks (AC1.1.4).
  */
 export async function twoBusinesses(
   app: AppBundle["app"],

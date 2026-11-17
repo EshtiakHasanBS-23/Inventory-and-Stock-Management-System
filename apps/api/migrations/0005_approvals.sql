@@ -1,5 +1,5 @@
 -- 0005_approvals: damage flags held for a decision, and reversal requests
--- (PRD FR-15, FR-29, FR-30). Forward-only migration.
+-- (PRD FR-13 to FR-16). Forward-only migration.
 
 -- Units flagged as damaged wait here, out of the sellable quantity
 -- (on_hand), until a second person approves or rejects the flag.

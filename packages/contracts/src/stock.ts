@@ -226,7 +226,7 @@ export interface CountResult {
   movement: Movement | null;
 }
 
-/** Where the last 30 days' losses came from, in taka (PRD FR-48). */
+/** Where the last 30 days' losses came from, in taka (PRD FR-18). */
 export interface LossBreakdown {
   /** Written off directly by an Owner or Manager. */
   damage: number;

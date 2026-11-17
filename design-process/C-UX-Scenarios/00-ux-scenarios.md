@@ -1,149 +1,125 @@
-# UX Scenarios: Mojud (E2E_IAM)
+Updated 2026-11-16 to match the built app.
 
-> Scenario outlines connecting Trigger Map personas to concrete user journeys
+# UX Scenarios: Mojud
 
-**Created:** 2026-10-23
-**Author:** eshtiakhasan with Claude (WDS Suggest mode)
+> The user journeys the built app supports, page by page. Every page spec is
+> grounded in the code: pages in `apps/web/src/pages/**`, copy in
+> `apps/web/src/i18n/en.json`, API in `apps/api/src/modules/**/routes.ts`,
+> field rules in `packages/contracts/src/*.ts`.
+
+**Created:** 2026-10-23 · **Rewritten:** 2026-11-16 (as built)
 **Method:** Whiteport Design Studio (WDS)
-**Format:** Storyboard (dynamic app). Each page lists its on-page states for Phase 4.
-**Sources:** [Trigger Map](../B-Trigger-Map/trigger-map.md), PRD §2.3, EXPERIENCE.md → Information Architecture (S1–S27) and Key Flows (UJ-1 … UJ-9)
+**Format:** Storyboard (dynamic web app). Each page lists its elements, states and messages.
+**Sources:** [Trigger Map](../B-Trigger-Map/trigger-map.md), the as-built specification (FR-1 … FR-23, US-01 … US-16), the code.
 
 ---
 
 ## Scenario Summary
 
-| ID | Scenario | Persona | Pages | Priority | Mockup | Status |
-|----|----------|---------|-------|----------|--------|--------|
-| 01 | [Karim Receives a Supplier Delivery Blind](01-karim-receives-a-delivery-blind/01-karim-receives-a-delivery-blind.md) | Karim the Warehouse Worker | 4 | ⭐ P1 | key-receiving.html | ✅ Specified |
-| 02 | [Karim Picks an Order and Flags a Crushed Carton](02-karim-picks-and-flags-damage/02-karim-picks-and-flags-damage.md) | Karim the Warehouse Worker | 2 | ⭐ P1 | key-picking.html | ✅ Specified |
-| 03 | [Nasima Clears the Inbox at Shift End](03-nasima-clears-the-inbox/03-nasima-clears-the-inbox.md) | Nasima the Supervisor | 2 | ⭐ P1 | key-issues-inbox.html | ✅ Specified |
-| 04 | [Mr. Haque Traces an Unexplained Loss](04-haque-traces-an-unexplained-loss/04-haque-traces-an-unexplained-loss.md) | Mr. Haque the Owner | 2 | ⭐ P1 | key-owner-view.html | ✅ Specified |
-| 05 | [Karim's Transfer Arrives Short](05-karims-transfer-arrives-short/05-karims-transfer-arrives-short.md) | Karim the Warehouse Worker | 3 | P2 | — | ✅ Specified |
-| 06 | [Karim Proves Where a Carton Went](06-karim-proves-where-a-carton-went/06-karim-proves-where-a-carton-went.md) | Karim the Warehouse Worker | 1 | P2 | — | ✅ Specified |
-| 07 | [Tanvir Promises Stock While the Customer Waits](07-tanvir-promises-stock-while-the-customer-waits/07-tanvir-promises-stock-while-the-customer-waits.md) | Tanvir the Sales Rep | 3 | P2 | — | ✅ Specified |
-| 08 | [Rafiq the Manager Runs the Weekly Count](08-rafiq-runs-the-weekly-count/08-rafiq-runs-the-weekly-count.md) | Rafiq the Manager | 2 | P2 | — | ✅ Specified |
-| 09 | [Mr. Haque Sets Up His Business](09-haque-sets-up-his-business/09-haque-sets-up-his-business.md) | Mr. Haque the Owner | 7 | P3 | — | ✅ Specified |
-| 10 | [Karim Signs In on the Shared Warehouse Phone](10-karim-signs-in-on-the-shared-phone/10-karim-signs-in-on-the-shared-phone.md) | Karim the Warehouse Worker | 3 | P3 | — | ✅ Specified |
-| 11 | [Mr. Haque Recovers His Account](11-haque-recovers-his-account/11-haque-recovers-his-account.md) | Mr. Haque the Owner | 1 | P3 | — | ✅ Specified |
+| ID | Scenario | Persona | Pages | Priority | Status |
+|----|----------|---------|-------|----------|--------|
+| 01 | [Haque Sets Up His Business](01-haque-sets-up-his-business/01-haque-sets-up-his-business.md) | Mr. Abdul Haque, Owner | 4 | P2 | ✅ Built |
+| 02 | [Karim Records the Morning Delivery](02-karim-records-the-morning-delivery/02-karim-records-the-morning-delivery.md) | Karim, Warehouse worker | 2 | ⭐ P1 | ✅ Built |
+| 03 | [Karim Flags a Wet Bag and Nasima Decides](03-karim-flags-a-wet-bag-and-nasima-decides/03-karim-flags-a-wet-bag-and-nasima-decides.md) | Karim, Warehouse worker; Nasima, Supervisor | 2 | ⭐ P1 | ✅ Built |
+| 04 | [Rafiq Counts the Rice Shelf](04-rafiq-counts-the-rice-shelf/04-rafiq-counts-the-rice-shelf.md) | Rafiq, Manager | 1 | P2 | ✅ Built |
+| 05 | [Haque Traces a Loss and Fixes a Mistake](05-haque-traces-a-loss-and-fixes-a-mistake/05-haque-traces-a-loss-and-fixes-a-mistake.md) | Mr. Abdul Haque, Owner; Rafiq, Manager | 2 | ⭐ P1 | ✅ Built |
+| 06 | [Karim Proves His Week](06-karim-proves-his-week/06-karim-proves-his-week.md) | Karim, Warehouse worker | 1 | P2 | ✅ Built |
+| 07 | [Haque Closes the Month](07-haque-closes-the-month/07-haque-closes-the-month.md) | Mr. Abdul Haque, Owner | 1 | P3 | ✅ Built |
+| 08 | [Karim Forgets His Password](08-karim-forgets-his-password/08-karim-forgets-his-password.md) | Karim, Warehouse worker; Mr. Abdul Haque, Owner | 2 | P3 | ✅ Built |
 
 ---
 
 ## Scenarios
 
-### [01: Karim Receives a Supplier Delivery Blind](01-karim-receives-a-delivery-blind/01-karim-receives-a-delivery-blind.md)
-**Persona:** Karim the Warehouse Worker — Being blamed for gaps he didn't cause
-**Pages:** My tasks, Receive PO (blind), Scan overlay, Offline queue
-**User Value:** Every carton he counted is saved under his name, the shortfall is someone else's issue, and the next task is already on screen.
-**Business Value:** Receipt recorded at source with who, when, where (SM-3 = 100%); 92 vs 100 Shortfall Issue raised automatically, so no silent loss enters stock.
+### [01: Haque Sets Up His Business](01-haque-sets-up-his-business/01-haque-sets-up-his-business.md)
+**Pages:** Sign up, Import products, Products, Staff
+**Stories:** US-01, US-06, US-05, US-03
+**User value:** His business, products with opening stock and staff are in Mojud in one sitting, from the Excel sheet he already keeps.
 
-### [02: Karim Picks an Order and Flags a Crushed Carton](02-karim-picks-and-flags-damage/02-karim-picks-and-flags-damage.md)
-**Persona:** Karim the Warehouse Worker — Recording that slows him down
-**Pages:** Pick Dispatch order, Flag damage
-**User Value:** The crushed carton is flagged in one tap plus one scan, the order stays complete through automatic re-reservation, and the van leaves on time.
-**Business Value:** Damage recorded the same minute it was found, with who/when/where; the carton leaves sellable stock immediately and the customer order isn't short.
+### [02: Karim Records the Morning Delivery](02-karim-records-the-morning-delivery/02-karim-records-the-morning-delivery.md)
+**Pages:** Sign in, Stock in / out
+**Stories:** US-02, US-07
+**User value:** The delivery is recorded under his name in a few taps on his phone, and the saved message shows the new balance.
 
-### [03: Nasima Clears the Inbox at Shift End](03-nasima-clears-the-inbox/03-nasima-clears-the-inbox.md)
-**Persona:** Nasima the Supervisor — Alert overload
-**Pages:** Issues inbox, Issue detail
-**User Value:** Inbox reads 'No open issues.' and every decision is recorded under her name with the evidence she saw.
-**Business Value:** Damage flags decided within the shift (SM-5 24 h target); write-offs carry a Reason, so the owner's loss figures are explained.
+### [03: Karim Flags a Wet Bag and Nasima Decides](03-karim-flags-a-wet-bag-and-nasima-decides/03-karim-flags-a-wet-bag-and-nasima-decides.md)
+**Pages:** Flag damage, Approvals
+**Stories:** US-09, US-10
+**User value:** Karim reports damage without writing it off himself; Nasima decides it in one tap and can never decide her own.
 
-### [04: Mr. Haque Traces an Unexplained Loss](04-haque-traces-an-unexplained-loss/04-haque-traces-an-unexplained-loss.md)
-**Persona:** Mr. Haque the Owner — Finding losses too late
-**Pages:** Owner view + drill-down, Low stock
-**User Value:** Knows the ৳1,450 unexplained comes from two open count cases, has assigned one to the Manager, and has checked what's running low.
-**Business Value:** Unexplained case assigned within minutes of being seen (SM-4, ≥ 80% resolved in 7 days); the owner sees value in Mojud, which is what keeps the pilot going (SM-7).
+### [04: Rafiq Counts the Rice Shelf](04-rafiq-counts-the-rice-shelf/04-rafiq-counts-the-rice-shelf.md)
+**Pages:** Stock count
+**Stories:** US-08
+**User value:** The shelf count corrects the record, and the difference is saved with his name, in units and taka.
 
-### [05: Karim's Transfer Arrives Short](05-karims-transfer-arrives-short/05-karims-transfer-arrives-short.md)
-**Persona:** Karim the Warehouse Worker — Being blamed for gaps he didn't cause
-**Pages:** Transfers, Send Transfer, Receive Transfer (blind)
-**User Value:** Both counts, both people and both times are on record; the missing carton stays In transit and is clearly not his gap.
-**Business Value:** The handoff gap is captured as a Transfer-shortage Issue instead of disappearing into month-end shrinkage.
+### [05: Haque Traces a Loss and Fixes a Mistake](05-haque-traces-a-loss-and-fixes-a-mistake/05-haque-traces-a-loss-and-fixes-a-mistake.md)
+**Pages:** Dashboard, History (then Approvals, page 03.2, for Rafiq)
+**Stories:** US-12, US-13, US-11
+**User value:** From one loss figure Haque reaches the movements behind it, and corrects a wrong entry without editing history.
 
-### [06: Karim Proves Where a Carton Went](06-karim-proves-where-a-carton-went/06-karim-proves-where-a-carton-went.md)
-**Persona:** Karim the Warehouse Worker — Being blamed for gaps he didn't cause
+### [06: Karim Proves His Week](06-karim-proves-his-week/06-karim-proves-his-week.md)
 **Pages:** My record
-**User Value:** His record shows he sent 20 ctn at 10:12 and Gazipur received 19 at 16:40; he hands the phone to the Manager and is cleared.
-**Business Value:** Honest worker protected by the same record that holds people accountable, which builds floor trust and adoption.
+**Stories:** US-16
+**User value:** His own work for today, 7 days and 30 days, as proof of what he did.
 
-### [07: Tanvir Promises Stock While the Customer Waits](07-tanvir-promises-stock-while-the-customer-waits/07-tanvir-promises-stock-while-the-customer-waits.md)
-**Persona:** Tanvir the Sales Rep — Over-promising and losing face
-**Pages:** Product search, Product stock, Dispatch orders
-**User Value:** Within 10 seconds he sees Narayanganj 32 and Gazipur 20 promisable, and books 32 + 18 as two dispatch orders before hanging up.
-**Business Value:** 50 units reserved immediately so no one else can promise them; no over-promise means no shortfall at the customer.
+### [07: Haque Closes the Month](07-haque-closes-the-month/07-haque-closes-the-month.md)
+**Pages:** Report (with CSV downloads)
+**Stories:** US-14, US-15
+**User value:** What came in, went out and was lost this month, in units and taka, and a CSV for the accountant.
 
-### [08: Rafiq the Manager Runs the Weekly Count](08-rafiq-runs-the-weekly-count/08-rafiq-runs-the-weekly-count.md)
-**Persona:** Rafiq the Manager — Discrepancies with no trail
-**Pages:** Stock counts, Count lines (blind)
-**User Value:** 20 products counted blind by two workers, mismatches opened as cases, matched lines marked verified today.
-**Business Value:** Accuracy measured weekly (SM-1) and every shortage held as Unexplained until resolved, never deleted.
-
-### [09: Mr. Haque Sets Up His Business](09-haque-sets-up-his-business/09-haque-sets-up-his-business.md)
-**Persona:** Mr. Haque the Owner — A tool staff won't use
-**Pages:** Sign up, Settings: Warehouses, Settings: Excel import, Settings: Products, Settings: Suppliers, Settings: Users, Purchase orders
-**User Value:** Two warehouses, his products, suppliers, opening stock and four staff are set up, and the first purchase order already shows as Karim's task.
-**Business Value:** A distributor fully onboarded and ready for the 8-week proof (SM-7).
-
-### [10: Karim Signs In on the Shared Warehouse Phone](10-karim-signs-in-on-the-shared-phone/10-karim-signs-in-on-the-shared-phone.md)
-**Persona:** Karim the Warehouse Worker — Recording under someone else's name
-**Pages:** Sign in, Change temporary password, Settings: Me
-**User Value:** Signed in as himself, password set, interface in Bangla, app installed to the home screen, and his name showing in the app bar.
-**Business Value:** Each floor action attributable to the right person (SM-3) from day one.
-
-### [11: Mr. Haque Recovers His Account](11-haque-recovers-his-account/11-haque-recovers-his-account.md)
-**Persona:** Mr. Haque the Owner — Data being lost or exposed
-**Pages:** Owner recovery
-**User Value:** Back in with a new password, and prompted to save a new recovery code.
-**Business Value:** Owner retained; the data-trust fear is answered.
+### [08: Karim Forgets His Password](08-karim-forgets-his-password/08-karim-forgets-his-password.md)
+**Pages:** Staff (reset password), My password
+**Stories:** US-04
+**User value:** Haque sets a new password for Karim; Karim then changes it to one only he knows.
 
 ---
 
 ## Page Coverage Matrix
 
-| Page | Scenario | Purpose in Flow |
-|------|----------|----------------|
-| 01.1 My tasks | 01 | See today's tasks with the supplier delivery at the top |
-| 01.2 Receive PO (blind) | 01 | See the products on the delivery with no ordered quantities |
-| 01.3 Scan overlay | 01 | Scan a carton barcode to jump to its line |
-| 01.4 Offline queue | 01 | Confirm that the counts saved on the phone have synced |
-| 02.1 Pick Dispatch order | 02 | See the order lines with big 'picked / ordered' progress and confirm each line |
-| 02.2 Flag damage | 02 | Report the crushed carton in one scan |
-| 03.1 Issues inbox | 03 | See every open issue ranked: assigned, then reserved stock, then value at risk, then age |
-| 03.2 Issue detail | 03 | See the full evidence and history, then decide |
-| 04.1 Owner view + drill-down | 04 | See this month's losses by Reason in taka, then the cases behind Unexplained |
-| 04.2 Low stock | 04 | See which products are below their threshold per warehouse |
-| 05.1 Transfers | 05 | See incoming and outgoing transfers and start a new one |
-| 05.2 Send Transfer | 05 | Pick the destination, scan and count out each product, send |
-| 05.3 Receive Transfer (blind) | 05 | The receiver counts what arrived without seeing the sent quantity |
-| 06.1 My record | 06 | See his week's work and the cases linked to his actions, with their outcomes |
-| 07.1 Product search | 07 | Find the product by typing a few letters in Bangla or English |
-| 07.2 Product stock | 07 | See the stock ladder per warehouse: on hand, damaged, reserved, in transit, promisable |
-| 07.3 Dispatch orders | 07 | Create the order, then a second one from Gazipur |
-| 08.1 Stock counts | 08 | Start a count for chosen products at one warehouse and assign counters |
-| 08.2 Count lines (blind) | 08 | Workers scan and count each product without seeing system quantities |
-| 09.1 Sign up | 09 | Create the business and his owner account; save the one-time recovery code |
-| 09.2 Settings: Warehouses | 09 | Add Narayanganj and Gazipur |
-| 09.3 Settings: Excel import | 09 | Download templates, upload products, preview errors, confirm |
-| 09.4 Settings: Products | 09 | Check the imported products: units, barcodes, thresholds, opening stock |
-| 09.5 Settings: Suppliers | 09 | Check the imported suppliers |
-| 09.6 Settings: Users | 09 | Add Nasima, Rahim, Karim and Tanvir with roles, assigned warehouses and temporary passwords |
-| 09.7 Purchase orders | 09 | Create the first purchase order to a supplier |
-| 10.1 Sign in | 10 | Sign in with phone number and temporary password |
-| 10.2 Change temporary password | 10 | Set his own password before seeing anything else |
-| 10.3 Settings: Me | 10 | Choose Bangla, install the app, see who is signed in |
-| 11.1 Owner recovery | 11 | Enter phone number and recovery code, set a new password |
+| Page | Route | Scenario | Purpose in flow |
+|------|-------|----------|-----------------|
+| 01.1 Sign up | `/signup` | 01 | Create the business and the Owner account |
+| 01.2 Import products | `/products/import` | 01 | Load products and opening stock from a CSV saved from Excel |
+| 01.3 Products | `/products` | 01 | Check, search, add and edit products |
+| 01.4 Staff | `/staff` | 01 | Add staff with roles; deactivate and reactivate |
+| 02.1 Sign in | `/signin` | 02 | Sign in with phone number and password |
+| 02.2 Stock in / out | `/stock` | 02 | Record a purchase, return, sale or adjustment |
+| 03.1 Flag damage | `/damage` | 03 | Move damaged units into a hold that waits for a decision |
+| 03.2 Approvals | `/approvals` | 03, 05 | Decide damage flags and reversals (second person) |
+| 04.1 Stock count | `/count` | 04 | Enter the counted quantity; the difference is saved |
+| 05.1 Dashboard | `/dashboard` | 05 | Stock value, losses by reason, low stock, recent movements |
+| 05.2 History | `/history` | 05 | Filter the movement record and ask for a reversal |
+| 06.1 My record | `/record` | 06 | Own work for today, 7 and 30 days |
+| 07.1 Report | `/reports` | 07 | Stock report for a date range, with CSV downloads |
+| 08.1 Staff: reset password | `/staff` | 08 | The Owner sets a new password for a staff member |
+| 08.2 My password | `/account` | 08 | Change your own password |
 
-**Coverage:** 30/30 pages assigned to scenarios, each exactly once.
-
-**Shared elements (not pages):** app bar with the signed-in name, bottom tab bar / desktop side nav per role, fixed Scan bar on floor screens, offline banner, toasts. Documented with the design system (Phase 7) and EXPERIENCE.md → Home and navigation per Role.
-
-**Pages used across scenarios** (designed once, in their home scenario): My tasks (01.1) is the entry point for 02, 05 and 08; Issue detail (03.2) is used in 04 and 08; Owner view (04.1) is the landing page after 09 and 11.
+**Coverage:** every signed-in route and both public routes are specified. `/staff` appears twice: 01.4 covers adding and deactivating people, 08.1 covers the reset-password form on the same page.
 
 ---
 
-## Next Phase
+## Shared frame (every signed-in page)
 
-These scenario outlines feed into **Phase 4: UX Design**, in priority order. P1 scenarios 01–04 start from the existing BMAD mockups.
+Specified once here; page specs refer to it.
+
+| Element | Copy | testid | Notes |
+|---|---|---|---|
+| Skip link | "Skip to content" | `skip-link` | First focusable element; moves focus to `main#main` |
+| App bar: brand | "Mojud" + logo | – | Sticky at the top |
+| App bar: business name | the business name | – | Hidden below 1024 px |
+| App bar: person | name, role (e.g. "Warehouse worker") | `app-bar-user-name`, `app-bar-user-role` | Below 600 px only the initial avatar shows |
+| App bar: status | cloud icon + "Online" | – | Hidden below 1024 px |
+| Theme switch | label "Theme"; options "Light", "Dark", "Device" | `theme-switch` | Label visually hidden below 1024 px; whole switch hidden below 360 px |
+| Sign out | "Sign out" | `app-bar-sign-out-button` | Ends the session at once (`POST /api/v1/auth/signout`), goes to Sign in; on failure "Couldn't save. Try again." |
+| Main menu | `nav` labelled "Main" | `side-nav` | Dashboard, Products, Stock in / out, Stock count, History, Approvals, Report, My record, Staff (Owner only), My password. Links `side-nav-<item>-link`; current page has `aria-current="page"` |
+
+- **Desktop (1024 px and up):** side menu with icons on the left, page content on the right.
+- **Phone and tablet (below 1024 px):** the menu becomes a bottom tab bar that scrolls sideways; forms use the full width.
+- **Below 700 px:** tables marked as stackable (Products, Staff) become one card per row, with a label beside each value. Other tables scroll sideways inside their frame.
+- **Page title:** "<Page> · Mojud".
+- **Loading a page:** "Loading…" (`loading`). **Load failure:** "Couldn't load this. Refresh the page to try again."
+- **Saved message:** a green toast-style box with a check mark (`role="status"`).
+- **Session:** a signed-out person who opens a signed-in page goes to Sign in and returns to that page after signing in. A session ends 12 hours after last use.
+- **Roles:** a role that may not open a page (only `/staff` for non-Owners and `/products/import` for roles other than Owner and Manager) is sent to the Dashboard.
 
 ---
 
