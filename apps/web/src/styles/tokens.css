@@ -43,6 +43,13 @@
   --colors-danger-tint: #fbe3e1;
   --colors-info-tint: #e1ecf8;
 
+  /* Solid fills (buttons, logo, active tab and nav pill). Light uses the
+     primary itself; dark needs a deeper fill so white text stays readable. */
+  --colors-primary-fill: #0b5a54;
+  --colors-on-primary-fill: #ffffff;
+  --colors-nav-active: #ffffff;
+  --colors-on-nav-active: #0b5a54;
+
   /* Elevation (DESIGN.md Elevation & Depth) */
   --shadow-card: 0 1px 2px rgb(13 31 28 / 6%);
   --shadow-raised: 0 6px 16px rgb(13 31 28 / 12%);
@@ -94,68 +101,82 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --colors-primary: #63d5c6;
-  --colors-on-primary: #00211e;
-  --colors-surface: #0e1716;
-  --colors-surface-alt: #18241f;
-  --colors-text: #eaf4f1;
-  --colors-text-muted: #aabfba;
-  --colors-border: #3d524d;
-  --colors-control-border: #6b827c;
-  --colors-success: #74d68c;
-  --colors-on-success: #06210e;
+  /* Night violet (reference dashboards): near-black page, layered charcoal
+     cards, violet accent. Contrast: text 15:1, muted 7:1, primary text 7.5:1
+     on cards; white on the violet fill 4.9:1; control borders 3.5:1. */
+  --colors-primary: #a99cff;
+  --colors-on-primary: #14102e;
+  --colors-primary-fill: #6c5ce7;
+  --colors-on-primary-fill: #ffffff;
+  --colors-nav-active: #6c5ce7;
+  --colors-on-nav-active: #ffffff;
+  --colors-surface: #18181f;
+  --colors-surface-alt: #0f0f14;
+  --colors-text: #ececf3;
+  --colors-text-muted: #a0a0b4;
+  --colors-border: #2a2a36;
+  --colors-control-border: #6e6e85;
+  --colors-success: #5fd68a;
+  --colors-on-success: #062112;
   --colors-warning: #f4b65c;
   --colors-on-warning: #2b1d00;
-  --colors-danger: #ff8f85;
-  --colors-on-danger: #300704;
-  --colors-info: #8dbbf2;
+  --colors-danger: #ff7b86;
+  --colors-on-danger: #33070c;
+  --colors-info: #7fb2ff;
   --colors-on-info: #071a33;
-  --colors-surface-disabled: #1e2a27;
-  --colors-text-disabled: #a3b5b1;
-  --colors-scrim: #00000099;
-  --colors-page: #0a1210;
-  --colors-primary-tint: #12302c;
-  --colors-success-tint: #12301b;
+  --colors-surface-disabled: #202029;
+  --colors-text-disabled: #9a9aab;
+  --colors-scrim: #000000b3;
+  --colors-page: #0b0b0f;
+  --colors-primary-tint: #262046;
+  --colors-success-tint: #10291a;
   --colors-warning-tint: #f4b65c;
   --colors-on-warning-tint: #2b1d00;
-  --colors-danger-tint: #3a1714;
-  --colors-info-tint: #13243a;
-  --shadow-card: none;
-  --shadow-raised: none;
-  --shadow-float: 0 6px 16px rgb(0 0 0 / 50%);
+  --colors-danger-tint: #35161a;
+  --colors-info-tint: #14203a;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-raised: 0 8px 24px rgb(0 0 0 / 45%);
+  --shadow-float: 0 8px 24px rgb(0 0 0 / 60%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --colors-primary: #63d5c6;
-    --colors-on-primary: #00211e;
-    --colors-surface: #0e1716;
-    --colors-surface-alt: #18241f;
-    --colors-text: #eaf4f1;
-    --colors-text-muted: #aabfba;
-    --colors-border: #3d524d;
-    --colors-control-border: #6b827c;
-    --colors-success: #74d68c;
-    --colors-on-success: #06210e;
+    /* Night violet (reference dashboards): near-black page, layered charcoal
+       cards, violet accent. Contrast: text 15:1, muted 7:1, primary text 7.5:1
+       on cards; white on the violet fill 4.9:1; control borders 3.5:1. */
+    --colors-primary: #a99cff;
+    --colors-on-primary: #14102e;
+    --colors-primary-fill: #6c5ce7;
+    --colors-on-primary-fill: #ffffff;
+    --colors-nav-active: #6c5ce7;
+    --colors-on-nav-active: #ffffff;
+    --colors-surface: #18181f;
+    --colors-surface-alt: #0f0f14;
+    --colors-text: #ececf3;
+    --colors-text-muted: #a0a0b4;
+    --colors-border: #2a2a36;
+    --colors-control-border: #6e6e85;
+    --colors-success: #5fd68a;
+    --colors-on-success: #062112;
     --colors-warning: #f4b65c;
     --colors-on-warning: #2b1d00;
-    --colors-danger: #ff8f85;
-    --colors-on-danger: #300704;
-    --colors-info: #8dbbf2;
+    --colors-danger: #ff7b86;
+    --colors-on-danger: #33070c;
+    --colors-info: #7fb2ff;
     --colors-on-info: #071a33;
-    --colors-surface-disabled: #1e2a27;
-    --colors-text-disabled: #a3b5b1;
-    --colors-scrim: #00000099;
-    --colors-page: #0a1210;
-    --colors-primary-tint: #12302c;
-    --colors-success-tint: #12301b;
+    --colors-surface-disabled: #202029;
+    --colors-text-disabled: #9a9aab;
+    --colors-scrim: #000000b3;
+    --colors-page: #0b0b0f;
+    --colors-primary-tint: #262046;
+    --colors-success-tint: #10291a;
     --colors-warning-tint: #f4b65c;
     --colors-on-warning-tint: #2b1d00;
-    --colors-danger-tint: #3a1714;
-    --colors-info-tint: #13243a;
-    --shadow-card: none;
-    --shadow-raised: none;
-    --shadow-float: 0 6px 16px rgb(0 0 0 / 50%);
+    --colors-danger-tint: #35161a;
+    --colors-info-tint: #14203a;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-raised: 0 8px 24px rgb(0 0 0 / 45%);
+    --shadow-float: 0 8px 24px rgb(0 0 0 / 60%);
   }
 }

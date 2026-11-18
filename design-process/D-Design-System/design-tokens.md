@@ -17,7 +17,7 @@ CSS custom properties named `--<group>-<name>`: `--colors-primary`, `--spacing-t
 | Dark (chosen) | `:root[data-theme="dark"]`, set by the [theme switch](components/theme-switch.md) |
 | Dark (device) | `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }` when the theme is "Device" |
 
-The two dark blocks hold the same values (a test checks this). Only colours and shadows change between themes; spacing, type, radius and layout are shared.
+The two dark blocks hold the same values (a test checks this). Only colours and shadows change between themes; spacing, type, radius and layout are shared. Light is the teal "Calm Professional" palette; dark is "Night violet": a near-black page, charcoal cards and a violet accent.
 
 ---
 
@@ -27,47 +27,51 @@ The two dark blocks hold the same values (a test checks this). Only colours and 
 
 | Token | Light | Dark | Used for |
 |---|---|---|---|
-| `--colors-primary` | `#0b5a54` | `#63d5c6` | brand, links, primary button, current nav item, tile figures |
-| `--colors-on-primary` | `#ffffff` | `#00211e` | text on primary |
-| `--colors-surface` | `#ffffff` | `#0e1716` | cards, panels, tables, inputs, app bar |
-| `--colors-surface-alt` | `#edf4f2` | `#18241f` | page background, side nav, table header, row hover, empty state |
-| `--colors-text` | `#0d1f1c` | `#eaf4f1` | body text, focus ring |
-| `--colors-text-muted` | `#3e524f` | `#aabfba` | labels, hints, meta text, nav icons |
-| `--colors-border` | `#8faaa5` | `#3d524d` | decorative card and row dividers only |
-| `--colors-control-border` | `#6b8580` | `#6b827c` | outline of every input, select, secondary button, chip, choice tile |
+| `--colors-primary` | `#0b5a54` | `#a99cff` | brand, links, tile figures, accents |
+| `--colors-primary-fill` | `#0b5a54` | `#6c5ce7` | solid fills: primary button, logo, chosen tab, Owner pill |
+| `--colors-on-primary-fill` | `#ffffff` | `#ffffff` | text on primary fill |
+| `--colors-nav-active` | `#ffffff` | `#6c5ce7` | current side-nav item background |
+| `--colors-on-nav-active` | `#0b5a54` | `#ffffff` | current side-nav item text and icon |
+| `--colors-on-primary` | `#ffffff` | `#14102e` | text on primary (no fill uses it now; fills use `on-primary-fill`) |
+| `--colors-surface` | `#ffffff` | `#18181f` | cards, panels, tables, inputs, app bar |
+| `--colors-surface-alt` | `#edf4f2` | `#0f0f14` | page background, side nav, table header, row hover, empty state |
+| `--colors-text` | `#0d1f1c` | `#ececf3` | body text, focus ring |
+| `--colors-text-muted` | `#3e524f` | `#a0a0b4` | labels, hints, meta text, nav icons |
+| `--colors-border` | `#8faaa5` | `#2a2a36` | decorative card and row dividers only |
+| `--colors-control-border` | `#6b8580` | `#6e6e85` | outline of every input, select, secondary button, chip, choice tile |
 
 ### Semantic
 
 | Token | Light | Dark | Used for |
 |---|---|---|---|
-| `--colors-success` | `#1b6e31` | `#74d68c` | saved toast, Approve button, OK pill text, Stock in, Online icon, empty-state icon |
-| `--colors-on-success` | `#ffffff` | `#06210e` | text on success |
+| `--colors-success` | `#1b6e31` | `#5fd68a` | saved toast, Approve button, OK pill text, Stock in, Online icon, empty-state icon |
+| `--colors-on-success` | `#ffffff` | `#062112` | text on success |
 | `--colors-warning` | `#8a4f00` | `#f4b65c` | Low stock figure, damage card edge, "held as damaged" text |
 | `--colors-on-warning` | `#ffffff` | `#2b1d00` | text on warning (defined; the Low pill now uses the tint pair) |
-| `--colors-danger` | `#a8231b` | `#ff8f85` | refusals, error summary, losses, Out pill, Stock out, Flag damage button |
-| `--colors-on-danger` | `#ffffff` | `#300704` | text on danger |
-| `--colors-info` | `#1d5799` | `#8dbbf2` | role pill text, reversal card edge |
+| `--colors-danger` | `#a8231b` | `#ff7b86` | refusals, error summary, losses, Out pill, Stock out, Flag damage button |
+| `--colors-on-danger` | `#ffffff` | `#33070c` | text on danger |
+| `--colors-info` | `#1d5799` | `#7fb2ff` | role pill text, reversal card edge |
 | `--colors-on-info` | `#ffffff` | `#071a33` | defined, not used by a component |
 
 ### Tints
 
 | Token | Light | Dark | Used for |
 |---|---|---|---|
-| `--colors-primary-tint` | `#d7ece8` | `#12302c` | nav hover, current bottom tab, avatars, count badge, secondary hover, record icons |
-| `--colors-success-tint` | `#dff1e4` | `#12301b` | OK pill, Stock in change pill, chosen Stock in tile |
+| `--colors-primary-tint` | `#d7ece8` | `#262046` | nav hover, current bottom tab, avatars, count badge, secondary hover, record icons |
+| `--colors-success-tint` | `#dff1e4` | `#10291a` | OK pill, Stock in change pill, chosen Stock in tile |
 | `--colors-warning-tint` | `#ffc94d` | `#f4b65c` | Low pill, pending banner, count-warning toast |
 | `--colors-on-warning-tint` | `#2b1d00` | `#2b1d00` | text and dashed outline on warning tint |
-| `--colors-danger-tint` | `#fbe3e1` | `#3a1714` | Out pill, Stock out change pill, chosen Stock out tile, error summary, danger chip hover |
-| `--colors-info-tint` | `#e1ecf8` | `#13243a` | role pill |
+| `--colors-danger-tint` | `#fbe3e1` | `#35161a` | Out pill, Stock out change pill, chosen Stock out tile, error summary, danger chip hover |
+| `--colors-info-tint` | `#e1ecf8` | `#14203a` | role pill |
 
 ### Defined but not used by any component
 
 | Token | Light | Dark |
 |---|---|---|
-| `--colors-surface-disabled` | `#e4ebe9` | `#1e2a27` |
-| `--colors-text-disabled` | `#4f625f` | `#a3b5b1` |
-| `--colors-scrim` | `#0d1f1c80` | `#00000099` |
-| `--colors-page` | `#e3ecea` | `#0a1210` |
+| `--colors-surface-disabled` | `#e4ebe9` | `#202029` |
+| `--colors-text-disabled` | `#4f625f` | `#9a9aab` |
+| `--colors-scrim` | `#0d1f1c80` | `#000000b3` |
+| `--colors-page` | `#e3ecea` | `#0b0b0f` |
 
 The app has no disabled controls and no overlays, so these have no consumer. The page background is `--colors-surface-alt`.
 
@@ -77,26 +81,28 @@ Every text pair the app uses reaches WCAG AA 4.5:1 in both themes. `apps/web/tes
 
 | Pair | Light | Dark |
 |---|---|---|
-| `text` on `surface` | 17.1:1 | 16.2:1 |
-| `text` on `surface-alt` | 15.3:1 | 14.3:1 |
-| `text-muted` on `surface` | 8.3:1 | 9.4:1 |
-| `text-muted` on `surface-alt` | 7.5:1 | 8.3:1 |
-| `on-primary` on `primary` | 8.1:1 | 9.6:1 |
-| `primary` on `surface` | 8.1:1 | 10.3:1 |
-| `primary` on `surface-alt` | 7.2:1 | 9.0:1 |
-| `primary` on `primary-tint` | 6.5:1 | 8.0:1 |
-| `text` on `primary-tint` | 13.9:1 | 12.6:1 |
-| `danger` on `surface` | 7.2:1 | 8.3:1 |
-| `danger` on `danger-tint` | 5.9:1 | 7.3:1 |
-| `text` on `danger-tint` | 14.0:1 | 14.3:1 |
-| `success` on `success-tint` | 5.4:1 | 8.0:1 |
-| `on-success` on `success` | 6.3:1 | 9.5:1 |
-| `on-danger` on `danger` | 7.2:1 | 8.2:1 |
-| `warning` on `surface` | 6.6:1 | 10.1:1 |
+| `text` on `surface` | 17.1:1 | 15.0:1 |
+| `text` on `surface-alt` | 15.3:1 | 16.3:1 |
+| `text-muted` on `surface` | 8.3:1 | 6.9:1 |
+| `text-muted` on `surface-alt` | 7.5:1 | 7.4:1 |
+| `on-primary-fill` on `primary-fill` | 8.1:1 | 4.9:1 |
+| `on-nav-active` on `nav-active` | 8.1:1 | 4.9:1 |
+| `on-primary` on `primary` | 8.1:1 | 7.8:1 |
+| `primary` on `surface` | 8.1:1 | 7.5:1 |
+| `primary` on `surface-alt` | 7.2:1 | 8.1:1 |
+| `primary` on `primary-tint` | 6.5:1 | 6.5:1 |
+| `text` on `primary-tint` | 13.9:1 | 13.0:1 |
+| `danger` on `surface` | 7.2:1 | 7.1:1 |
+| `danger` on `danger-tint` | 5.9:1 | 6.6:1 |
+| `text` on `danger-tint` | 14.0:1 | 13.9:1 |
+| `success` on `success-tint` | 5.4:1 | 8.5:1 |
+| `on-success` on `success` | 6.3:1 | 9.3:1 |
+| `on-danger` on `danger` | 7.2:1 | 7.2:1 |
+| `warning` on `surface` | 6.6:1 | 9.8:1 |
 | `on-warning-tint` on `warning-tint` | 10.7:1 | 9.1:1 |
-| `info` on `info-tint` | 6.1:1 | 7.8:1 |
-| `control-border` on `surface` (non-text, needs 3:1) | 4.0:1 | 4.4:1 |
-| `border` on `surface` (decorative) | 2.5:1 | 2.2:1 |
+| `info` on `info-tint` | 6.1:1 | 7.5:1 |
+| `control-border` on `surface` (non-text, needs 3:1) | 4.0:1 | 3.6:1 |
+| `border` on `surface` (decorative) | 2.5:1 | 1.2:1 |
 
 `--colors-border` is below 3:1 on purpose: it only separates cards and rows. Anything a person must see to use a control has `--colors-control-border`.
 
@@ -158,11 +164,11 @@ Token names: `--typography-<set>-size`, `-weight`, `-line-height`; `--typography
 
 | Token | Light | Dark | Used for |
 |---|---|---|---|
-| `--shadow-card` | `0 1px 2px rgb(13 31 28 / 6%)` | `none` | cards, panels, tiles, tables, app bar, current nav item |
-| `--shadow-raised` | `0 6px 16px rgb(13 31 28 / 12%)` | `none` | hover on primary/approve/danger buttons, tiles, approval cards; auth card |
-| `--shadow-float` | `0 6px 16px rgb(0 0 0 / 25%)` | `0 6px 16px rgb(0 0 0 / 50%)` | saved toast |
+| `--shadow-card` | `0 1px 2px rgb(13 31 28 / 6%)` | `0 1px 2px rgb(0 0 0 / 40%)` | cards, panels, tiles, tables, app bar, current nav item |
+| `--shadow-raised` | `0 6px 16px rgb(13 31 28 / 12%)` | `0 8px 24px rgb(0 0 0 / 45%)` | hover on primary/approve/danger buttons, tiles, approval cards; auth card |
+| `--shadow-float` | `0 6px 16px rgb(0 0 0 / 25%)` | `0 8px 24px rgb(0 0 0 / 60%)` | saved toast |
 
-In dark mode cards are separated by their borders, not shadows.
+In dark mode cards are lighter charcoal than the page and carry a soft shadow, so they read as layered.
 
 ---
 

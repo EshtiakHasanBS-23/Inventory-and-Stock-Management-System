@@ -12,10 +12,18 @@
 <title>Mojud Design Catalog</title>
 <style>
 /* ===== tokens.css ===== */
+/*
+ * Design tokens as CSS custom properties (design-system-mapping.md), copied
+ * from design-process/D-Design-System/design-tokens.md (DESIGN.md wins on any
+ * difference). Light values sit on :root. Dark values apply when the user chose
+ * Dark ([data-theme="dark"]) or, with "Device", when the OS prefers dark.
+ * The dark block is repeated on purpose: CSS cannot share it between a media
+ * query and an attribute selector.
+ */
 :root {
   color-scheme: light;
 
-  
+  /* Base colors */
   --colors-primary: #0b5a54;
   --colors-on-primary: #ffffff;
   --colors-surface: #ffffff;
@@ -25,7 +33,7 @@
   --colors-border: #8faaa5;
   --colors-control-border: #6b8580;
 
-  
+  /* Semantic colors */
   --colors-success: #1b6e31;
   --colors-on-success: #ffffff;
   --colors-warning: #8a4f00;
@@ -35,12 +43,12 @@
   --colors-info: #1d5799;
   --colors-on-info: #ffffff;
 
-  
+  /* Disabled and overlay */
   --colors-surface-disabled: #e4ebe9;
   --colors-text-disabled: #4f625f;
   --colors-scrim: #0d1f1c80;
 
-  
+  /* Tints for pills and highlights (mockups: key-dashboard, key-stock-movement) */
   --colors-page: #e3ecea;
   --colors-primary-tint: #d7ece8;
   --colors-success-tint: #dff1e4;
@@ -49,12 +57,19 @@
   --colors-danger-tint: #fbe3e1;
   --colors-info-tint: #e1ecf8;
 
-  
+  /* Solid fills (buttons, logo, active tab and nav pill). Light uses the
+     primary itself; dark needs a deeper fill so white text stays readable. */
+  --colors-primary-fill: #0b5a54;
+  --colors-on-primary-fill: #ffffff;
+  --colors-nav-active: #ffffff;
+  --colors-on-nav-active: #0b5a54;
+
+  /* Elevation (DESIGN.md Elevation & Depth) */
   --shadow-card: 0 1px 2px rgb(13 31 28 / 6%);
   --shadow-raised: 0 6px 16px rgb(13 31 28 / 12%);
   --shadow-float: 0 6px 16px rgb(0 0 0 / 25%);
 
-  
+  /* Typography */
   --typography-font-family:
     system-ui, "Segoe UI", Roboto, "Noto Sans Bengali", "Nirmala UI", sans-serif;
   --typography-headline-size: 1.25rem;
@@ -73,7 +88,7 @@
   --typography-meta-weight: 500;
   --typography-meta-line-height: 1.4;
 
-  
+  /* Spacing */
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
@@ -86,13 +101,13 @@
   --spacing-button-desk: 3.5rem;
   --spacing-app-bar-height: 3.5rem;
 
-  
+  /* Radius */
   --rounded-sm: 6px;
   --rounded-md: 12px;
   --rounded-lg: 16px;
   --rounded-full: 9999px;
 
-  
+  /* Layout sizes named in DESIGN.md prose */
   --layout-side-nav-width: 13.75rem;
   --layout-content-max: 75rem;
   --layout-auth-card-width: 30rem;
@@ -100,73 +115,88 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --colors-primary: #63d5c6;
-  --colors-on-primary: #00211e;
-  --colors-surface: #0e1716;
-  --colors-surface-alt: #18241f;
-  --colors-text: #eaf4f1;
-  --colors-text-muted: #aabfba;
-  --colors-border: #3d524d;
-  --colors-control-border: #6b827c;
-  --colors-success: #74d68c;
-  --colors-on-success: #06210e;
+  /* Night violet (reference dashboards): near-black page, layered charcoal
+     cards, violet accent. Contrast: text 15:1, muted 7:1, primary text 7.5:1
+     on cards; white on the violet fill 4.9:1; control borders 3.5:1. */
+  --colors-primary: #a99cff;
+  --colors-on-primary: #14102e;
+  --colors-primary-fill: #6c5ce7;
+  --colors-on-primary-fill: #ffffff;
+  --colors-nav-active: #6c5ce7;
+  --colors-on-nav-active: #ffffff;
+  --colors-surface: #18181f;
+  --colors-surface-alt: #0f0f14;
+  --colors-text: #ececf3;
+  --colors-text-muted: #a0a0b4;
+  --colors-border: #2a2a36;
+  --colors-control-border: #6e6e85;
+  --colors-success: #5fd68a;
+  --colors-on-success: #062112;
   --colors-warning: #f4b65c;
   --colors-on-warning: #2b1d00;
-  --colors-danger: #ff8f85;
-  --colors-on-danger: #300704;
-  --colors-info: #8dbbf2;
+  --colors-danger: #ff7b86;
+  --colors-on-danger: #33070c;
+  --colors-info: #7fb2ff;
   --colors-on-info: #071a33;
-  --colors-surface-disabled: #1e2a27;
-  --colors-text-disabled: #a3b5b1;
-  --colors-scrim: #00000099;
-  --colors-page: #0a1210;
-  --colors-primary-tint: #12302c;
-  --colors-success-tint: #12301b;
+  --colors-surface-disabled: #202029;
+  --colors-text-disabled: #9a9aab;
+  --colors-scrim: #000000b3;
+  --colors-page: #0b0b0f;
+  --colors-primary-tint: #262046;
+  --colors-success-tint: #10291a;
   --colors-warning-tint: #f4b65c;
   --colors-on-warning-tint: #2b1d00;
-  --colors-danger-tint: #3a1714;
-  --colors-info-tint: #13243a;
-  --shadow-card: none;
-  --shadow-raised: none;
-  --shadow-float: 0 6px 16px rgb(0 0 0 / 50%);
+  --colors-danger-tint: #35161a;
+  --colors-info-tint: #14203a;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-raised: 0 8px 24px rgb(0 0 0 / 45%);
+  --shadow-float: 0 8px 24px rgb(0 0 0 / 60%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --colors-primary: #63d5c6;
-    --colors-on-primary: #00211e;
-    --colors-surface: #0e1716;
-    --colors-surface-alt: #18241f;
-    --colors-text: #eaf4f1;
-    --colors-text-muted: #aabfba;
-    --colors-border: #3d524d;
-    --colors-control-border: #6b827c;
-    --colors-success: #74d68c;
-    --colors-on-success: #06210e;
+    /* Night violet (reference dashboards): near-black page, layered charcoal
+       cards, violet accent. Contrast: text 15:1, muted 7:1, primary text 7.5:1
+       on cards; white on the violet fill 4.9:1; control borders 3.5:1. */
+    --colors-primary: #a99cff;
+    --colors-on-primary: #14102e;
+    --colors-primary-fill: #6c5ce7;
+    --colors-on-primary-fill: #ffffff;
+    --colors-nav-active: #6c5ce7;
+    --colors-on-nav-active: #ffffff;
+    --colors-surface: #18181f;
+    --colors-surface-alt: #0f0f14;
+    --colors-text: #ececf3;
+    --colors-text-muted: #a0a0b4;
+    --colors-border: #2a2a36;
+    --colors-control-border: #6e6e85;
+    --colors-success: #5fd68a;
+    --colors-on-success: #062112;
     --colors-warning: #f4b65c;
     --colors-on-warning: #2b1d00;
-    --colors-danger: #ff8f85;
-    --colors-on-danger: #300704;
-    --colors-info: #8dbbf2;
+    --colors-danger: #ff7b86;
+    --colors-on-danger: #33070c;
+    --colors-info: #7fb2ff;
     --colors-on-info: #071a33;
-    --colors-surface-disabled: #1e2a27;
-    --colors-text-disabled: #a3b5b1;
-    --colors-scrim: #00000099;
-    --colors-page: #0a1210;
-    --colors-primary-tint: #12302c;
-    --colors-success-tint: #12301b;
+    --colors-surface-disabled: #202029;
+    --colors-text-disabled: #9a9aab;
+    --colors-scrim: #000000b3;
+    --colors-page: #0b0b0f;
+    --colors-primary-tint: #262046;
+    --colors-success-tint: #10291a;
     --colors-warning-tint: #f4b65c;
     --colors-on-warning-tint: #2b1d00;
-    --colors-danger-tint: #3a1714;
-    --colors-info-tint: #13243a;
-    --shadow-card: none;
-    --shadow-raised: none;
-    --shadow-float: 0 6px 16px rgb(0 0 0 / 50%);
+    --colors-danger-tint: #35161a;
+    --colors-info-tint: #14203a;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-raised: 0 8px 24px rgb(0 0 0 / 45%);
+    --shadow-float: 0 8px 24px rgb(0 0 0 / 60%);
   }
 }
 
 /* ===== base.css ===== */
+/* Base styles: system font stack, focus ring, skip link, layout frame. */
 *,
 *::before,
 *::after {
@@ -198,6 +228,7 @@ a {
   color: var(--colors-primary);
 }
 
+/* Focus ring (components.focus-ring): 2px surface inner line, 3px text outer line. */
 :focus-visible {
   outline: 3px solid var(--colors-text);
   outline-offset: 2px;
@@ -216,6 +247,7 @@ a {
   border: 0;
 }
 
+/* Skip link: first focusable element, visible only when focused. */
 .skip-link {
   position: absolute;
   left: var(--spacing-4);
@@ -235,6 +267,7 @@ a {
   top: var(--spacing-2);
 }
 
+/* Public pages (M1, M2): centred card on surface-alt. */
 .public-page {
   min-height: 100vh;
   display: flex;
@@ -268,6 +301,7 @@ a {
   min-height: var(--spacing-target-min);
 }
 
+/* Fields (input-field) */
 .field {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -309,6 +343,7 @@ a {
   border: 2px solid var(--colors-danger);
 }
 
+/* Refusal message: 4px danger bar, danger text. */
 .refusal {
   margin: 0;
   padding-left: var(--spacing-2);
@@ -317,6 +352,7 @@ a {
   font-weight: var(--typography-body-strong-weight);
 }
 
+/* Form error summary */
 .error-summary {
   padding: var(--spacing-3) var(--spacing-4);
   border-left: 4px solid var(--colors-danger);
@@ -341,6 +377,7 @@ a {
   color: var(--colors-danger);
 }
 
+/* Buttons */
 .button {
   display: inline-flex;
   align-items: center;
@@ -359,8 +396,8 @@ a {
   min-height: var(--spacing-button-desk);
   font-size: var(--typography-label-button-size);
   font-weight: var(--typography-label-button-weight);
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
   border: none;
 }
 
@@ -399,6 +436,7 @@ a {
   }
 }
 
+/* Signed-in frame: app bar, side nav, main. */
 .app-bar {
   position: sticky;
   top: 0;
@@ -505,6 +543,7 @@ a {
   padding: var(--spacing-6);
 }
 
+/* Stock pages (simplified-plan.md S1–S4) */
 h2 {
   margin: var(--spacing-5) 0 var(--spacing-3);
   font-size: var(--typography-title-size);
@@ -549,6 +588,11 @@ h2 {
 
 .field select {
   flex: 1;
+  /* Without these a select is as wide as its longest option and spills
+     into the next grid column. */
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
   min-height: var(--spacing-target-min);
   padding: 0 var(--spacing-3);
   font: inherit;
@@ -595,6 +639,8 @@ h2 {
   font-weight: var(--typography-body-strong-weight);
 }
 
+/* Relative, so the absolutely positioned visually-hidden header text stays
+   inside the scroll box instead of widening the page. */
 .table-wrap {
   position: relative;
   overflow-x: auto;
@@ -734,6 +780,10 @@ h2 {
   margin-bottom: var(--spacing-3);
 }
 
+.filter-grid > * {
+  min-width: 0;
+}
+
 .field input[type="date"] {
   min-width: 0;
 }
@@ -744,6 +794,12 @@ h2 {
   margin-top: var(--spacing-4);
 }
 
+/*
+ * Phone and tablet (below 1024px): the side nav becomes a bottom tab bar that
+ * scrolls sideways when it has more items than fit, the app bar drops the
+ * extras, and forms use the full width. Floor screens start at 360px and
+ * work from 320px (product brief, Platform Strategy).
+ */
 @media (max-width: 1023px) {
   .app-bar {
     gap: var(--spacing-2);
@@ -755,7 +811,7 @@ h2 {
     display: none;
   }
 
-  
+  /* Hidden on screen only: the select keeps its "Theme" name. */
   .theme-switch__label {
     position: absolute;
     width: 1px;
@@ -883,6 +939,13 @@ h2 {
   text-align: left;
 }
 
+/* =====================================================================
+ * Visual refresh (mockups key-dashboard and key-stock-movement, DESIGN.md
+ * "Calm Professional"): a tinted app background with white cards, side
+ * nav pills with icons, big figures, tinted state pills and gentle motion.
+ * Every animation sits in the no-preference motion block at the end.
+ * ===================================================================== */
+
 body {
   background: var(--colors-surface-alt);
 }
@@ -891,6 +954,7 @@ body {
   flex: none;
 }
 
+/* App bar */
 .app-bar {
   box-shadow: var(--shadow-card);
 }
@@ -908,8 +972,8 @@ body {
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
   border-radius: var(--rounded-md);
 }
 
@@ -929,6 +993,7 @@ body {
   margin-left: 0;
 }
 
+/* Side nav: pills with icons, the current page on a white pill. */
 .side-nav {
   padding: var(--spacing-3);
   background: var(--colors-surface-alt);
@@ -953,8 +1018,8 @@ body {
 }
 
 .side-nav a[aria-current="page"] {
-  color: var(--colors-primary);
-  background: var(--colors-surface);
+  color: var(--colors-on-nav-active);
+  background: var(--colors-nav-active);
   box-shadow: var(--shadow-card);
 }
 
@@ -963,9 +1028,10 @@ body {
 }
 
 .side-nav a[aria-current="page"] .icon {
-  color: var(--colors-primary);
+  color: var(--colors-on-nav-active);
 }
 
+/* Page header */
 .page-header {
   margin-bottom: var(--spacing-5);
 }
@@ -979,6 +1045,7 @@ body {
   color: var(--colors-text-muted);
 }
 
+/* Cards */
 .card,
 .panel {
   background: var(--colors-surface);
@@ -999,6 +1066,7 @@ body {
   padding: var(--spacing-5);
 }
 
+/* Metric tiles */
 .hero-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1077,6 +1145,7 @@ body {
   text-decoration: underline;
 }
 
+/* Dashboard columns */
 .dash-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
@@ -1121,6 +1190,7 @@ body {
   color: var(--colors-success);
 }
 
+/* Tables sit on a card; rows highlight on hover. */
 .table-wrap {
   background: var(--colors-surface);
   border: 1px solid var(--colors-border);
@@ -1146,6 +1216,7 @@ body {
   background: var(--colors-surface-alt);
 }
 
+/* State pills: tint, icon and text (never colour alone). */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1192,6 +1263,7 @@ body {
   background: var(--colors-danger-tint);
 }
 
+/* Buttons */
 .button {
   transition:
     transform 120ms ease,
@@ -1219,6 +1291,7 @@ body {
   text-decoration-thickness: 2px;
 }
 
+/* Saved message: a green toast with a check mark. */
 .success {
   display: flex;
   align-items: center;
@@ -1256,6 +1329,7 @@ body {
   border-radius: var(--rounded-md);
 }
 
+/* Big Stock in / Stock out choice: real radios, drawn as tiles. */
 .choice-tiles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1287,6 +1361,8 @@ body {
     transform 120ms ease;
 }
 
+/* The real radio covers the whole tile, invisibly, so a tap anywhere on the
+   tile chooses it and keyboard, screen readers and tests use the radio. */
 .choice-tile input {
   position: absolute;
   inset: 0;
@@ -1343,6 +1419,7 @@ body {
   background: var(--colors-danger);
 }
 
+/* Report summary tiles reuse the tile look. */
 .stat {
   border: 1px solid var(--colors-border);
   border-left: 4px solid var(--colors-primary);
@@ -1353,6 +1430,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Sign in and Sign up: a card on the tinted background. */
 .auth-card {
   padding: var(--spacing-6);
   background: var(--colors-surface);
@@ -1361,6 +1439,7 @@ body {
   box-shadow: var(--shadow-raised);
 }
 
+/* Dashboard recent movements: a list that reads well on a phone. */
 .movement-list {
   margin: 0;
   padding: 0;
@@ -1385,6 +1464,7 @@ body {
   font-weight: var(--typography-body-strong-weight);
 }
 
+/* Row actions: bold links, underlined on hover. */
 .row-actions a,
 .row-actions .link-button {
   font-weight: var(--typography-body-strong-weight);
@@ -1400,6 +1480,7 @@ body {
   white-space: nowrap;
 }
 
+/* Accountability round: approvals inbox, flag damage, loss rows, record. */
 .button--approve,
 .button--danger {
   min-height: var(--spacing-button-desk);
@@ -1446,8 +1527,8 @@ body {
 }
 
 .tab[aria-pressed="true"] {
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
 }
 
 .approval-list {
@@ -1647,6 +1728,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Products and Staff: aligned forms, roomy tables, cards on phones. */
 .page-header--split {
   display: flex;
   flex-wrap: wrap;
@@ -1667,6 +1749,7 @@ body {
   max-width: none;
 }
 
+/* Fixed columns, so every box in a row starts and ends in line. */
 .form-grid--3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--spacing-4) var(--spacing-5);
@@ -1738,6 +1821,8 @@ body {
   white-space: nowrap;
 }
 
+/* The main area never grows past the screen; wide tables scroll inside
+   their own box instead. */
 .app-main {
   min-width: 0;
 }
@@ -1763,6 +1848,7 @@ body {
   gap: var(--spacing-2);
 }
 
+/* Products: four actions wrap into a tidy 2 x 2 block in their cell. */
 .data-table--stack .row-actions:has(> :nth-child(3)) {
   display: grid;
   grid-template-columns: repeat(2, max-content);
@@ -1845,8 +1931,8 @@ body {
 }
 
 .pill--owner {
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
 }
 
 .badge--muted {
@@ -1877,6 +1963,8 @@ body {
   }
 }
 
+/* Phones: one column of boxes, and each table row becomes a card with a
+   label beside every value. */
 @media (max-width: 699px) {
   .form-grid--3,
   .form-grid--4 {
@@ -1974,6 +2062,7 @@ body {
   }
 }
 
+/* Loading placeholders */
 .skeleton-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2096,6 +2185,7 @@ body {
   }
 }
 
+/* Small phones: the avatar stands in for the name and role. */
 @media (max-width: 599px) {
   .app-bar__brand {
     font-size: var(--typography-body-size);
@@ -2120,6 +2210,7 @@ body {
   }
 }
 
+/* Motion: only for people who have not asked for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes fade-up {
     from {
@@ -2322,7 +2413,7 @@ body {
   <section class="cat-section" id="tokens-colors" aria-labelledby="h-colors">
     <h2 id="h-colors" class="cat-h2">Colours</h2>
     <p class="muted">Swatches show the current theme; switch the theme above. Hex values are from <code>tokens.css</code>.</p>
-    <h3 class="cat-h3">Base</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-primary)"></span><span class="cat-swatch__name">--colors-primary</span><span class="muted">#0b5a54 · #63d5c6</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-primary)"></span><span class="cat-swatch__name">--colors-on-primary</span><span class="muted">#ffffff · #00211e</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-surface)"></span><span class="cat-swatch__name">--colors-surface</span><span class="muted">#ffffff · #0e1716</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-surface-alt)"></span><span class="cat-swatch__name">--colors-surface-alt</span><span class="muted">#edf4f2 · #18241f</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-text)"></span><span class="cat-swatch__name">--colors-text</span><span class="muted">#0d1f1c · #eaf4f1</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-text-muted)"></span><span class="cat-swatch__name">--colors-text-muted</span><span class="muted">#3e524f · #aabfba</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-border)"></span><span class="cat-swatch__name">--colors-border</span><span class="muted">#8faaa5 · #3d524d</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-control-border)"></span><span class="cat-swatch__name">--colors-control-border</span><span class="muted">#6b8580 · #6b827c</span></div></div><h3 class="cat-h3">Semantic</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-success)"></span><span class="cat-swatch__name">--colors-success</span><span class="muted">#1b6e31 · #74d68c</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-success)"></span><span class="cat-swatch__name">--colors-on-success</span><span class="muted">#ffffff · #06210e</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-warning)"></span><span class="cat-swatch__name">--colors-warning</span><span class="muted">#8a4f00 · #f4b65c</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-warning)"></span><span class="cat-swatch__name">--colors-on-warning</span><span class="muted">#ffffff · #2b1d00</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-danger)"></span><span class="cat-swatch__name">--colors-danger</span><span class="muted">#a8231b · #ff8f85</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-danger)"></span><span class="cat-swatch__name">--colors-on-danger</span><span class="muted">#ffffff · #300704</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-info)"></span><span class="cat-swatch__name">--colors-info</span><span class="muted">#1d5799 · #8dbbf2</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-info)"></span><span class="cat-swatch__name">--colors-on-info</span><span class="muted">#ffffff · #071a33</span></div></div><h3 class="cat-h3">Tints</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-primary-tint)"></span><span class="cat-swatch__name">--colors-primary-tint</span><span class="muted">#d7ece8 · #12302c</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-success-tint)"></span><span class="cat-swatch__name">--colors-success-tint</span><span class="muted">#dff1e4 · #12301b</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-warning-tint)"></span><span class="cat-swatch__name">--colors-warning-tint</span><span class="muted">#ffc94d · #f4b65c</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-warning-tint)"></span><span class="cat-swatch__name">--colors-on-warning-tint</span><span class="muted">#2b1d00 · #2b1d00</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-danger-tint)"></span><span class="cat-swatch__name">--colors-danger-tint</span><span class="muted">#fbe3e1 · #3a1714</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-info-tint)"></span><span class="cat-swatch__name">--colors-info-tint</span><span class="muted">#e1ecf8 · #13243a</span></div></div><h3 class="cat-h3">Defined, not used by a component</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-surface-disabled)"></span><span class="cat-swatch__name">--colors-surface-disabled</span><span class="muted">#e4ebe9 · #1e2a27</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-text-disabled)"></span><span class="cat-swatch__name">--colors-text-disabled</span><span class="muted">#4f625f · #a3b5b1</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-scrim)"></span><span class="cat-swatch__name">--colors-scrim</span><span class="muted">#0d1f1c80 · #00000099</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-page)"></span><span class="cat-swatch__name">--colors-page</span><span class="muted">#e3ecea · #0a1210</span></div></div>
+    <h3 class="cat-h3">Base</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-primary)"></span><span class="cat-swatch__name">--colors-primary</span><span class="muted">#0b5a54 · #a99cff</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-primary)"></span><span class="cat-swatch__name">--colors-on-primary</span><span class="muted">#ffffff · #14102e</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-primary-fill)"></span><span class="cat-swatch__name">--colors-primary-fill</span><span class="muted">#0b5a54 · #6c5ce7</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-primary-fill)"></span><span class="cat-swatch__name">--colors-on-primary-fill</span><span class="muted">#ffffff · #ffffff</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-nav-active)"></span><span class="cat-swatch__name">--colors-nav-active</span><span class="muted">#ffffff · #6c5ce7</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-nav-active)"></span><span class="cat-swatch__name">--colors-on-nav-active</span><span class="muted">#0b5a54 · #ffffff</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-surface)"></span><span class="cat-swatch__name">--colors-surface</span><span class="muted">#ffffff · #18181f</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-surface-alt)"></span><span class="cat-swatch__name">--colors-surface-alt</span><span class="muted">#edf4f2 · #0f0f14</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-text)"></span><span class="cat-swatch__name">--colors-text</span><span class="muted">#0d1f1c · #ececf3</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-text-muted)"></span><span class="cat-swatch__name">--colors-text-muted</span><span class="muted">#3e524f · #a0a0b4</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-border)"></span><span class="cat-swatch__name">--colors-border</span><span class="muted">#8faaa5 · #2a2a36</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-control-border)"></span><span class="cat-swatch__name">--colors-control-border</span><span class="muted">#6b8580 · #6e6e85</span></div></div><h3 class="cat-h3">Semantic</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-success)"></span><span class="cat-swatch__name">--colors-success</span><span class="muted">#1b6e31 · #5fd68a</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-success)"></span><span class="cat-swatch__name">--colors-on-success</span><span class="muted">#ffffff · #062112</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-warning)"></span><span class="cat-swatch__name">--colors-warning</span><span class="muted">#8a4f00 · #f4b65c</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-warning)"></span><span class="cat-swatch__name">--colors-on-warning</span><span class="muted">#ffffff · #2b1d00</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-danger)"></span><span class="cat-swatch__name">--colors-danger</span><span class="muted">#a8231b · #ff7b86</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-danger)"></span><span class="cat-swatch__name">--colors-on-danger</span><span class="muted">#ffffff · #33070c</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-info)"></span><span class="cat-swatch__name">--colors-info</span><span class="muted">#1d5799 · #7fb2ff</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-info)"></span><span class="cat-swatch__name">--colors-on-info</span><span class="muted">#ffffff · #071a33</span></div></div><h3 class="cat-h3">Tints</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-primary-tint)"></span><span class="cat-swatch__name">--colors-primary-tint</span><span class="muted">#d7ece8 · #262046</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-success-tint)"></span><span class="cat-swatch__name">--colors-success-tint</span><span class="muted">#dff1e4 · #10291a</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-warning-tint)"></span><span class="cat-swatch__name">--colors-warning-tint</span><span class="muted">#ffc94d · #f4b65c</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-on-warning-tint)"></span><span class="cat-swatch__name">--colors-on-warning-tint</span><span class="muted">#2b1d00 · #2b1d00</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-danger-tint)"></span><span class="cat-swatch__name">--colors-danger-tint</span><span class="muted">#fbe3e1 · #35161a</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-info-tint)"></span><span class="cat-swatch__name">--colors-info-tint</span><span class="muted">#e1ecf8 · #14203a</span></div></div><h3 class="cat-h3">Defined, not used by a component</h3><div class="cat-swatches"><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-surface-disabled)"></span><span class="cat-swatch__name">--colors-surface-disabled</span><span class="muted">#e4ebe9 · #202029</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-text-disabled)"></span><span class="cat-swatch__name">--colors-text-disabled</span><span class="muted">#4f625f · #9a9aab</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-scrim)"></span><span class="cat-swatch__name">--colors-scrim</span><span class="muted">#0d1f1c80 · #000000b3</span></div><div class="cat-swatch"><span class="cat-swatch__chip" style="background:var(--colors-page)"></span><span class="cat-swatch__name">--colors-page</span><span class="muted">#e3ecea · #0b0b0f</span></div></div>
   </section>
 
   <section class="cat-section" id="tokens-type" aria-labelledby="h-type">

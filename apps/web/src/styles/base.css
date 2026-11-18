@@ -198,8 +198,8 @@ a {
   min-height: var(--spacing-button-desk);
   font-size: var(--typography-label-button-size);
   font-weight: var(--typography-label-button-weight);
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
   border: none;
 }
 
@@ -774,8 +774,8 @@ body {
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
   border-radius: var(--rounded-md);
 }
 
@@ -820,8 +820,8 @@ body {
 }
 
 .side-nav a[aria-current="page"] {
-  color: var(--colors-primary);
-  background: var(--colors-surface);
+  color: var(--colors-on-nav-active);
+  background: var(--colors-nav-active);
   box-shadow: var(--shadow-card);
 }
 
@@ -830,7 +830,7 @@ body {
 }
 
 .side-nav a[aria-current="page"] .icon {
-  color: var(--colors-primary);
+  color: var(--colors-on-nav-active);
 }
 
 /* Page header */
@@ -1329,8 +1329,8 @@ body {
 }
 
 .tab[aria-pressed="true"] {
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
 }
 
 .approval-list {
@@ -1733,8 +1733,8 @@ body {
 }
 
 .pill--owner {
-  color: var(--colors-on-primary);
-  background: var(--colors-primary);
+  color: var(--colors-on-primary-fill);
+  background: var(--colors-primary-fill);
 }
 
 .badge--muted {
