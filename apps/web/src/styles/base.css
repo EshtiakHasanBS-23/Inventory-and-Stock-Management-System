@@ -72,11 +72,19 @@ a {
 /* Public pages (M1, M2): centred card on surface-alt. */
 .public-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: var(--spacing-6) var(--spacing-gutter-phone);
   background: var(--colors-surface-alt);
+}
+
+/* Auto margins centre the card both ways; when the card is taller than the
+   screen they fall to 0, so it starts at the top and scrolls instead of
+   being cut off. */
+.public-page > * {
+  margin: auto;
 }
 
 .auth-card {
@@ -333,7 +341,8 @@ a {
 
 .app-main {
   flex: 1;
-  max-width: var(--layout-content-max);
+  /* Fills the screen beside the side nav; tables, tiles and grids use the
+     full width. */
   padding: var(--spacing-5) var(--spacing-gutter-desktop);
 }
 

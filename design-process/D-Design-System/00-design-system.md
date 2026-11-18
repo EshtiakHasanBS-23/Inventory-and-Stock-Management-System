@@ -132,8 +132,8 @@ Layout classes in base.css that are shared but too simple for their own spec.
 
 | Pattern | Classes | What it does |
 |---|---|---|
-| Signed-in frame | `.app-frame`, `.app-main` | flex row: side nav + main (max `--layout-content-max`, padding `--spacing-5` × desktop gutter). Below 1024px: block, phone gutters, extra bottom padding for the tab bar |
-| Public frame | `.public-page`, `.auth-card`, `.auth-card__switch` | Sign up / Sign in: a 30rem card (`--rounded-lg`, `--shadow-raised`, padding `--spacing-6`) centred on `surface-alt`, with "New business? Create one" / "Already have an account? Sign in" below |
+| Signed-in frame | `.app-frame`, `.app-main` | flex row: side nav + main (fills the rest of the screen, padding `--spacing-5` × desktop gutter). Below 1024px: block, phone gutters, extra bottom padding for the tab bar |
+| Public frame | `.public-page`, `.auth-card`, `.auth-card__switch` | Sign up / Sign in: a 30rem card (`--rounded-lg`, `--shadow-raised`, padding `--spacing-6`) centred both ways on `surface-alt` (a card taller than the screen starts at the top and scrolls), with "New business? Create one" / "Already have an account? Sign in" below |
 | Page header | `.page-header`, `.page-header__sub`, `.page-header--split` | `h1` and a muted subtitle; `--split` puts `.page-actions` (buttons) on the right (Products) |
 | Panel (form card) | `.panel`, `.panel--wide` | a form on a card: grid, gap `--spacing-4`, max 720px (wide: no max), padding `--spacing-5` (`--spacing-4` on phones), `--rounded-lg`, `--shadow-card` |
 | Card | `.card` | content card with an `h2` (dashboard columns, My record) |

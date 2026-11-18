@@ -177,7 +177,7 @@ In dark mode cards are lighter charcoal than the page and carry a soft shadow, s
 | Token | Value | Used for |
 |---|---|---|
 | `--layout-side-nav-width` | 13.75rem (220px) | side nav column |
-| `--layout-content-max` | 75rem (1200px) | main area max width (desktop) |
+| `--layout-content-max` | 75rem (1200px) | defined, not used: the main area fills the screen beside the side nav |
 | `--layout-auth-card-width` | 30rem (480px) | Sign up / Sign in card |
 
 **Breakpoints (in base.css, not tokens):** ≤1199px (dashboard columns stack, 4-column forms go to 2), ≤1023px (bottom tab bar, phone gutters, tiles 2-up), ≤699px (stacked tables, one-column forms), ≤599px (app bar drops name and role), ≤359px (theme switch hidden). Works from 320px.
