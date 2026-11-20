@@ -2151,14 +2151,33 @@ body {
   }
 }
 
-/* Desktop: the side nav stays in place on every page; only the page
-   content beside it scrolls. Phones already have a fixed bottom tab bar. */
+/* Desktop: the app is one screen tall and never scrolls as a whole. The
+   top bar is fixed, and the side nav and the page content are two separate
+   scroll areas, so only the page content moves when it scrolls. Phones keep
+   normal page scrolling with the fixed bottom tab bar. */
 @media (min-width: 1024px) {
-  .side-nav {
-    position: sticky;
-    top: var(--spacing-app-bar-height);
-    align-self: flex-start;
-    height: calc(100vh - var(--spacing-app-bar-height));
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-shell > .app-bar {
+    flex: none;
+  }
+
+  .app-shell > .app-frame {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .app-shell .side-nav {
+    overflow-y: auto;
+  }
+
+  .app-shell .app-main {
     overflow-y: auto;
   }
 }

@@ -1,5 +1,5 @@
 import type { Role } from "@mojud/contracts";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Outlet, useLocation, type Location } from "react-router-dom";
 import { AppBar } from "../components/AppBar";
@@ -57,6 +57,12 @@ export function PublicLayout() {
 export function SignedInLayout() {
   const { session, loading, endReason } = useSession();
   const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+  // On desktop the main area scrolls by itself, so a new page starts at
+  // its top instead of where the last page was left.
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [location.pathname]);
   if (loading) return <Loading />;
   if (!session) {
     return endReason === "signedOut" ? (
@@ -68,14 +74,16 @@ export function SignedInLayout() {
   return (
     <>
       <SkipLink />
-      <AppBar />
-      <div className="app-frame">
-        <SideNav role={session.role} />
-        <main id="main" className="app-main" tabIndex={-1}>
-          <Suspense fallback={<Loading />}>
-            <Outlet />
-          </Suspense>
-        </main>
+      <div className="app-shell">
+        <AppBar />
+        <div className="app-frame">
+          <SideNav role={session.role} />
+          <main id="main" className="app-main" tabIndex={-1} ref={mainRef}>
+            <Suspense fallback={<Loading />}>
+              <Outlet />
+            </Suspense>
+          </main>
+        </div>
       </div>
     </>
   );
