@@ -61,7 +61,12 @@ function mayDecide(
 async function queryApprovals(
   db: StockDeps["db"] | Transaction<Database>,
   caller: Caller,
-  filter: { status?: "pending" | "decided"; id?: string },
+  filter: {
+    status?: "pending" | "decided";
+    id?: string;
+    limit?: number;
+    offset?: number;
+  },
 ): Promise<Approval[]> {
   let query = db
     .selectFrom("approvals as a")
@@ -102,7 +107,8 @@ async function queryApprovals(
       "desc",
     )
     .orderBy("a.id", "desc")
-    .limit(200)
+    .limit(filter.limit ?? 200)
+    .offset(filter.offset ?? 0)
     .execute();
   return rows.map((row) => ({
     id: row.id,
@@ -255,10 +261,16 @@ export async function listApprovals(
   query: Record<string, unknown>,
 ): Promise<Approval[]> {
   const checked = requireCaller(caller, "stock.approvals.list");
-  const { status } = validate(ApprovalQuerySchema, withoutEmpty(query), {
-    status: "Choose pending or decided.",
-  });
-  return queryApprovals(deps.db, checked, { status });
+  const { status, limit, offset } = validate(
+    ApprovalQuerySchema,
+    withoutEmpty(query),
+    {
+      status: "Choose pending or decided.",
+      limit: "Ask for 1 to 200 approvals.",
+      offset: "Ask for a valid page.",
+    },
+  );
+  return queryApprovals(deps.db, checked, { status, limit, offset });
 }
 
 /** Approve or reject, once, by someone allowed who did not ask. */

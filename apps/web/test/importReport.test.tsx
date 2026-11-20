@@ -279,6 +279,30 @@ describe("Report page", () => {
     return { from: "x", to: "y", lines, totals };
   }
 
+  it("shows 50 report lines at a time, with the total for every line", async () => {
+    const user = userEvent.setup();
+    const month = thisMonth();
+    const lines = Array.from({ length: 60 }, (_, i) => ({
+      ...LINE,
+      productId: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
+      sku: `SKU-${i}`,
+    }));
+    setup("/reports", {
+      [reportKey(month.from, month.to)]: { status: 200, body: aReport(lines) },
+    });
+    const table = await screen.findByTestId("report-table");
+    const rows = () => table.querySelectorAll("tbody tr").length;
+    expect(rows()).toBe(50);
+    expect(screen.getByTestId("report-total")).toBeInTheDocument();
+    expect(screen.getByTestId("report-showing")).toHaveTextContent(
+      "Showing 50 of 60",
+    );
+
+    await user.click(screen.getByTestId("report-load-more"));
+    expect(rows()).toBe(60);
+    expect(screen.queryByTestId("report-load-more")).toBeNull();
+  });
+
   it("works out this month in local dates", () => {
     expect(thisMonth(new Date(2026, 10, 16, 9))).toEqual({
       from: "2026-11-01",

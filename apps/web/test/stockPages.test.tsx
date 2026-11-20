@@ -142,6 +142,42 @@ describe("Dashboard (S4)", () => {
 });
 
 describe("Products (S1, S3)", () => {
+  it("shows 50 products at a time with Load more, and starts again on a new search", async () => {
+    const user = userEvent.setup();
+    const many = Array.from({ length: 120 }, (_, i) =>
+      aProduct({
+        id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
+        sku: `SKU-${String(i).padStart(3, "0")}`,
+        name: `Product ${String(i).padStart(3, "0")}`,
+      }),
+    );
+    setup("/products", {
+      [PRODUCTS]: { status: 200, body: many },
+      "GET /api/v1/products?q=Product": { status: 200, body: many },
+    });
+    const table = await screen.findByTestId("products-table");
+    const rows = () => table.querySelectorAll("tbody tr").length;
+    expect(rows()).toBe(50);
+    expect(screen.getByTestId("products-showing")).toHaveTextContent(
+      "Showing 50 of 120",
+    );
+
+    await user.click(screen.getByTestId("products-load-more"));
+    expect(rows()).toBe(100);
+    await user.click(screen.getByTestId("products-load-more"));
+    expect(rows()).toBe(120);
+    expect(screen.queryByTestId("products-load-more")).toBeNull();
+    expect(screen.queryByTestId("products-showing")).toBeNull();
+
+    await user.click(screen.getByTestId("product-search-input"));
+    await user.paste("Product");
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("products-table").querySelectorAll("tbody tr"),
+      ).toHaveLength(50),
+    );
+  });
+
   it("lists products with their stock and a text status badge", async () => {
     const { container } = setup("/products", {
       [PRODUCTS]: { status: 200, body: [aProduct(), OIL] },

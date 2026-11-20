@@ -18,10 +18,12 @@ import { DownloadLink } from "../../components/DownloadLink";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
 import { Icon } from "../../components/Icons";
 import { InputField } from "../../components/InputField";
+import { LoadMore } from "../../components/LoadMore";
 import { formatTaka } from "../../format";
 import { canManageProducts } from "../../session/roles";
 import { useSession } from "../../session/SessionProvider";
 import { usePageTitle } from "../usePageTitle";
+import { useShowMore } from "../useShowMore";
 import { StockBadge } from "./StockBadge";
 
 interface Draft {
@@ -186,6 +188,8 @@ export function ProductsPage() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const products = useProducts(search.trim());
+  const allProducts = products.data ?? [];
+  const page = useShowMore(allProducts, search.trim());
 
   return (
     <section data-testid="products-page">
@@ -277,7 +281,7 @@ export function ProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {products.data.map((product) => (
+              {page.visible.map((product) => (
                 <tr key={product.id} data-testid={`product-row-${product.sku}`}>
                   <td className="cell-title" data-label={t("products.name")}>
                     <span className="cell-name">
@@ -347,6 +351,17 @@ export function ProductsPage() {
             </tbody>
           </table>
         </div>
+      ) : null}
+      {page.hasMore ? (
+        <>
+          <p className="muted list-progress" data-testid="products-showing">
+            {t("common.showing", {
+              shown: page.visible.length,
+              total: allProducts.length,
+            })}
+          </p>
+          <LoadMore testId="products-load-more" onClick={page.showMore} />
+        </>
       ) : null}
     </section>
   );

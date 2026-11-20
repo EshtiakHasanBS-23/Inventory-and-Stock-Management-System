@@ -92,7 +92,7 @@ function setup(
 ) {
   const fetchFn = stubFetch({
     ...EMPTY_STOCK,
-    "GET /api/v1/approvals?status=pending": { status: 200, body: [] },
+    "GET /api/v1/approvals?status=pending&limit=50": { status: 200, body: [] },
     [ME]: { status: 200, body: aSession(role) },
     ...handlers,
   });
@@ -108,11 +108,45 @@ function bodiesSentTo(fetchFn: ReturnType<typeof stubFetch>, key: string) {
 }
 
 describe("Approvals inbox", () => {
+  it("loads 50 approvals at a time from the server with Load more", async () => {
+    const user = userEvent.setup();
+    const page = (from: number, count: number) =>
+      Array.from({ length: count }, (_, i) =>
+        anApproval({
+          id: `00000000-0000-4000-8000-${String(from + i).padStart(12, "0")}`,
+          requestedBy: `Person ${from + i}`,
+        }),
+      );
+    const { fetchFn } = setup("/approvals", {
+      "GET /api/v1/approvals?status=pending&limit=50": {
+        status: 200,
+        body: page(0, 50),
+      },
+      "GET /api/v1/approvals?status=pending&limit=50&offset=50": {
+        status: 200,
+        body: page(50, 3),
+      },
+    });
+    const list = await screen.findByTestId("approval-list");
+    expect(list.children).toHaveLength(50);
+
+    await user.click(screen.getByTestId("approvals-load-more"));
+    expect(await screen.findByText(/Person 52/)).toBeInTheDocument();
+    expect(screen.getByTestId("approval-list").children).toHaveLength(53);
+    expect(screen.queryByTestId("approvals-load-more")).toBeNull();
+    expect(
+      bodiesSentTo(
+        fetchFn,
+        "GET /api/v1/approvals?status=pending&limit=50&offset=50",
+      ),
+    ).toHaveLength(1);
+  });
+
   it("approves a damage flag in one tap", async () => {
     const user = userEvent.setup();
     let decided = false;
     const { fetchFn, container } = setup("/approvals", {
-      "GET /api/v1/approvals?status=pending": () => ({
+      "GET /api/v1/approvals?status=pending&limit=50": () => ({
         status: 200,
         body: decided ? [] : [anApproval()],
       }),
@@ -148,7 +182,7 @@ describe("Approvals inbox", () => {
     const user = userEvent.setup();
     let attempt = 0;
     setup("/approvals", {
-      "GET /api/v1/approvals?status=pending": {
+      "GET /api/v1/approvals?status=pending&limit=50": {
         status: 200,
         body: [
           anApproval({
@@ -197,11 +231,11 @@ describe("Approvals inbox", () => {
     setup(
       "/approvals",
       {
-        "GET /api/v1/approvals?status=pending": {
+        "GET /api/v1/approvals?status=pending&limit=50": {
           status: 200,
           body: [anApproval({ canDecide: false })],
         },
-        "GET /api/v1/approvals?status=decided": {
+        "GET /api/v1/approvals?status=decided&limit=50": {
           status: 200,
           body: [
             anApproval({
@@ -229,7 +263,10 @@ describe("Approvals inbox", () => {
 
   it("says when nothing has been decided", async () => {
     setup("/approvals?status=decided", {
-      "GET /api/v1/approvals?status=decided": { status: 200, body: [] },
+      "GET /api/v1/approvals?status=decided&limit=50": {
+        status: 200,
+        body: [],
+      },
     });
     expect(await screen.findByTestId("approvals-empty")).toHaveTextContent(
       "Nothing has been decided yet.",

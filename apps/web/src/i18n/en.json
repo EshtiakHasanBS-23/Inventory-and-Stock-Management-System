@@ -78,7 +78,9 @@
   },
   "common": {
     "saving": "Saving…",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loadMore": "Load more",
+    "showing": "Showing {{shown}} of {{total}}"
   },
   "dashboard": {
     "title": "Dashboard",

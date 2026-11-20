@@ -9,8 +9,10 @@ import { useSearchParams } from "react-router-dom";
 import { reportExportHref, useStockReport } from "../../api/stock";
 import { DownloadLink } from "../../components/DownloadLink";
 import { InputField } from "../../components/InputField";
+import { LoadMore } from "../../components/LoadMore";
 import { dayStartIso, formatTaka, nextDayStartIso } from "../../format";
 import { usePageTitle } from "../usePageTitle";
+import { useShowMore } from "../useShowMore";
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -81,6 +83,7 @@ export function ReportPage() {
 
   const data = valid ? report.data : undefined;
   const lines: ReportLine[] = data?.lines ?? [];
+  const page = useShowMore(lines, `${from}|${to}`);
 
   return (
     <section data-testid="report-page">
@@ -175,7 +178,7 @@ export function ReportPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {lines.map((line) => (
+                  {page.visible.map((line) => (
                     <tr key={line.productId}>
                       <th scope="row">
                         {line.name}{" "}
@@ -196,6 +199,17 @@ export function ReportPage() {
               </table>
             </div>
           )}
+          {page.hasMore ? (
+            <>
+              <p className="muted list-progress" data-testid="report-showing">
+                {t("common.showing", {
+                  shown: page.visible.length,
+                  total: lines.length,
+                })}
+              </p>
+              <LoadMore testId="report-load-more" onClick={page.showMore} />
+            </>
+          ) : null}
         </>
       ) : null}
     </section>

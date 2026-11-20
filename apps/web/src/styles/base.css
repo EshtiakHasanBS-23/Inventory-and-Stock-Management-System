@@ -605,6 +605,16 @@ h2 {
   margin-top: var(--spacing-4);
 }
 
+/* "Showing 50 of 312" above a Load more button. */
+.list-progress {
+  margin: var(--spacing-4) 0 0;
+  text-align: center;
+}
+
+.list-progress + .load-more {
+  margin-top: var(--spacing-2);
+}
+
 /*
  * Phone and tablet (below 1024px): the side nav becomes a bottom tab bar that
  * scrolls sideways when it has more items than fit, the app bar drops the
@@ -2138,5 +2148,17 @@ body {
 
   .skeleton {
     animation: shimmer 1.4s linear infinite;
+  }
+}
+
+/* Desktop: the side nav stays in place on every page; only the page
+   content beside it scrolls. Phones already have a fixed bottom tab bar. */
+@media (min-width: 1024px) {
+  .side-nav {
+    position: sticky;
+    top: var(--spacing-app-bar-height);
+    align-self: flex-start;
+    height: calc(100vh - var(--spacing-app-bar-height));
+    overflow-y: auto;
   }
 }

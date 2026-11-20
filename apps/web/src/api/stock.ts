@@ -3,6 +3,7 @@
  * successful change refreshes all three, so each page shows current stock.
  */
 import {
+  APPROVALS_PAGE_SIZE,
   HISTORY_PAGE_SIZE,
   type Approval,
   type ChangePasswordInput,
@@ -256,11 +257,30 @@ export function toFailure(error: unknown, fallback: string): FormFailure {
   return { message: fallback };
 }
 
+export function approvalsPath(
+  status: "pending" | "decided",
+  offset = 0,
+): string {
+  const params = new URLSearchParams({
+    status,
+    limit: String(APPROVALS_PAGE_SIZE),
+  });
+  if (offset > 0) params.set("offset", String(offset));
+  return `/approvals?${params.toString()}`;
+}
+
+/** The approvals inbox, one page of APPROVALS_PAGE_SIZE at a time. */
 export function useApprovals(status: "pending" | "decided") {
   const { client } = useSession();
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["approvals", status],
-    queryFn: () => client.get<Approval[]>(`/approvals?status=${status}`),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      client.get<Approval[]>(approvalsPath(status, pageParam)),
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === APPROVALS_PAGE_SIZE
+        ? pages.length * APPROVALS_PAGE_SIZE
+        : undefined,
   });
 }
 

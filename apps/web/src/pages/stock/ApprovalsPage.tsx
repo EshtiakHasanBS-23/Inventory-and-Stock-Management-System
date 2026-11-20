@@ -9,6 +9,7 @@ import { useSearchParams } from "react-router-dom";
 import { toFailure, useApprovals, useDecideApproval } from "../../api/stock";
 import { ButtonSecondary } from "../../components/Buttons";
 import { Icon } from "../../components/Icons";
+import { LoadMore } from "../../components/LoadMore";
 import { formatTaka } from "../../format";
 import { usePageTitle } from "../usePageTitle";
 import { formatDateTime } from "./MovementTable";
@@ -126,6 +127,7 @@ export function ApprovalsPage() {
   const [params, setParams] = useSearchParams();
   const status = params.get("status") === "decided" ? "decided" : "pending";
   const approvals = useApprovals(status);
+  const items = approvals.data?.pages.flat();
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -167,7 +169,7 @@ export function ApprovalsPage() {
       {approvals.isError ? (
         <p className="refusal">{t("errors.loadFailed")}</p>
       ) : null}
-      {approvals.data && approvals.data.length === 0 ? (
+      {items && items.length === 0 ? (
         <p className="empty-state" data-testid="approvals-empty">
           <Icon name="check" size={28} />
           {status === "pending"
@@ -175,9 +177,9 @@ export function ApprovalsPage() {
             : t("approvals.emptyDecided")}
         </p>
       ) : null}
-      {approvals.data && approvals.data.length > 0 ? (
+      {items && items.length > 0 ? (
         <ul className="approval-list" data-testid="approval-list">
-          {approvals.data.map((approval) => (
+          {items.map((approval) => (
             <ApprovalCard
               key={approval.id}
               approval={approval}
@@ -192,6 +194,13 @@ export function ApprovalsPage() {
             />
           ))}
         </ul>
+      ) : null}
+      {approvals.hasNextPage ? (
+        <LoadMore
+          testId="approvals-load-more"
+          loading={approvals.isFetchingNextPage}
+          onClick={() => void approvals.fetchNextPage()}
+        />
       ) : null}
     </section>
   );

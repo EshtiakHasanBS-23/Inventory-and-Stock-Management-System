@@ -53,7 +53,7 @@ The identity module's `authorize(caller, action)` refuses a missing or inactive 
 
 ### WF11 Decide an approval (US-10, US-11; FR-14, FR-15, FR-16, FR-23)
 
-1. `GET /api/v1/approvals?status=pending|decided` lists cards with `canDecide` per caller (BR12.7).
+1. `GET /api/v1/approvals?status=pending|decided` lists cards with `canDecide` per caller (BR12.7), newest first. Optional `limit` 1–200 (default 200) and `offset` 0–1,000,000 page the list; the web app asks for 50 per page and "Load more" sends the next offset. The Products and Report pages load their full list once and show 50 rows at a time with "Load more".
 2. `POST /api/v1/approvals/:id/approve` or `/reject`. In one transaction the approval row is locked (BR12.3), the decider is checked against the kind and the requester (BR12.1, BR12.2), the effect is applied (BR12.4 for damage, BR12.5 for reversal) and the decision recorded (BR12.6).
 3. Returns **200** with the updated card. A second decision returns 409 "This was already decided."
 

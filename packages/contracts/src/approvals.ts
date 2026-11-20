@@ -73,8 +73,13 @@ export interface Approval {
 }
 
 /** `GET /api/v1/approvals?status=`: open ones, or decided ones. */
+/** Approvals page size: "Load more" asks for the next page with `offset`. */
+export const APPROVALS_PAGE_SIZE = 50;
+
 export const ApprovalQuerySchema = z.object({
   status: z.enum(["pending", "decided"]).default("pending"),
+  limit: z.coerce.number().int().min(1).max(200).default(200),
+  offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
 });
 
 /** One person's work for a period (PRD FR-22, "My record"). */

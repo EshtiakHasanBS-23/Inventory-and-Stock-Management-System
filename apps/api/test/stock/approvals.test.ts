@@ -426,6 +426,43 @@ describe("approvals: damage flags, reversals and my record", () => {
         (await post(owner, "/api/v1/approvals/nope/approve").send()).status,
       ).toBe(404);
     });
+
+    it("pages with limit and offset, newest first, without gaps or repeats", async () => {
+      for (let i = 0; i < 5; i += 1) {
+        expect((await flag(owner, 1, `flag ${i}`)).status).toBe(201);
+      }
+      const all = (await owner.agent.get("/api/v1/approvals"))
+        .body as Approval[];
+      expect(all).toHaveLength(5);
+      const page1 = await owner.agent
+        .get("/api/v1/approvals")
+        .query({ status: "pending", limit: 2 });
+      const page2 = await owner.agent
+        .get("/api/v1/approvals")
+        .query({ status: "pending", limit: 2, offset: 2 });
+      const page3 = await owner.agent
+        .get("/api/v1/approvals")
+        .query({ status: "pending", limit: 2, offset: 4 });
+      const ids = [page1, page2, page3].flatMap((res) =>
+        (res.body as Approval[]).map((approval) => approval.id),
+      );
+      expect(ids).toEqual(all.map((approval) => approval.id));
+      expect(page3.body).toHaveLength(1);
+    });
+
+    it("refuses a page size or offset out of range", async () => {
+      for (const [key, value] of [
+        ["limit", "0"],
+        ["limit", "201"],
+        ["offset", "-1"],
+      ] as const) {
+        const res = await owner.agent
+          .get("/api/v1/approvals")
+          .query({ [key]: value });
+        expect(res.status).toBe(400);
+        expect(res.body.field).toBe(key);
+      }
+    });
   });
 
   describe("my record", () => {
