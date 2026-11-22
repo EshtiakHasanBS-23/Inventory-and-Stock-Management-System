@@ -1,160 +1,161 @@
-# Idea: Mojud, Inventory and Stock Management System
+# Idea: Inventory and Stock Management System
 
 ## 1. Vision
 
-Mojud is a simple, reliable stock-keeping app for small distribution
-businesses. It replaces spreadsheets and paper notebooks with one place that
-shows what is in stock, what it is worth in taka, and who changed it, when and
-why.
+Build a simple, reliable stock-keeping system for small distribution
+businesses. It should replace notebooks and spreadsheets with one place where
+the owner and staff can see what is in stock, what it is worth, and who changed
+it, when and why.
 
-The first version focuses on **one business, one store**, and on getting the
-stock numbers right: every change is recorded permanently, stock never goes
-below zero, and losses need a second person to approve them.
+The first version should focus on getting the stock numbers right and making
+every change traceable, rather than covering every possible inventory feature.
 
 ## 2. The Problem
 
-Small distributors keep stock in notebooks or spreadsheets, and the numbers
-drift away from what is really on the shelf:
+Small distributors often keep stock in notebooks or spreadsheets, and the
+numbers slowly drift away from what is really on the shelf.
 
-- **Wrong stock levels:** the record does not match the shelf.
+Common problems include:
+
+- **Wrong stock levels:** the record does not match the physical stock.
 - **Late restocking:** products run out because nobody noticed they were low.
 - **Unexplained losses:** stock goes missing or is written off as damaged, and
   nobody can say who did it or why.
-- **No history:** it is hard to see when, why and by whom stock was added,
+- **No history:** it is hard to find out when, why and by whom stock was added,
   removed or corrected.
+- **Weak accountability:** one person can change the numbers with no check
+  from anyone else.
 - **Slow reporting:** working out stock value and monthly movement takes hours
   by hand.
-- **Weak accountability:** one person can change the numbers with no check.
 
-## 3. What We Built
+These problems lead to lost sales, hidden losses and arguments about whose
+numbers are right.
 
-A web app where the owner creates the business, adds staff with roles, and the
-team records every stock change. The app keeps a permanent, append-only record
-of stock movements and works out current stock, value and losses from it.
+## 3. Proposed Solution
 
-### 3.1 Sign-up, staff and roles
+A system that keeps a permanent record of every stock change and works out the
+current stock, its value and any losses from that record.
 
-- The owner creates the business and their own account with a phone number and
-  password.
-- The owner adds staff, gives each one a role, resets passwords, and can
-  deactivate or reactivate people.
-- Six roles: Owner, Manager, Supervisor, Warehouse worker, Sales rep and
-  Accountant.
-- Everyone can change their own password. Sessions end 12 hours after last use.
+Authorized users should be able to:
 
-### 3.2 Product catalog
-
-- Add, edit and search products by name or SKU.
-- Each product has an SKU, name, unit (for example pcs, ctn, bag), minimum
-  stock level and unit cost in taka.
-- The product list shows quantity in stock, value, low/out-of-stock status and
-  how much is held as damaged.
-- Import many products at once from an Excel sheet (saved as CSV), with a
-  preview, row-by-row error messages and opening stock.
-- Only the Owner and Manager can add, edit or import products.
-
-### 3.3 Stock in and stock out
-
-- Stock in for a purchase or a customer return.
-- Stock out for a sale, damage or an adjustment.
-- Every movement saves the product, quantity, reason, person, time, note and
-  the balance after it.
-- Stock can never go below zero, and two people saving at the same moment
-  cannot break the balance.
-- A direct damage write-off can only be made by the Owner or Manager.
-
-### 3.4 Stock counts
-
-- Count what is on the shelf and enter the number.
-- If it differs from the record, the difference is saved as a count movement
-  with the person's name and the value of anything missing.
-
-### 3.5 Damage flags and approvals
-
-- Anyone can flag damaged or expired stock. It leaves the sellable stock at
-  once and waits for a decision.
-- A Supervisor, Manager or Owner approves or rejects it. Rejected stock comes
-  back.
-- An Owner or Manager can ask to reverse a past movement. A second Owner or
-  Manager must approve it.
-- Nobody can decide their own request.
-
-### 3.6 History and accountability
-
-- Full movement history with filters by product, reason, person and date, kept
-  in the web address so a view can be shared or bookmarked.
-- History loads 50 rows at a time with "Load more", and downloads as CSV.
-- "My record" shows each person their own movements.
-- Movements are never edited or deleted; mistakes are fixed with a new
-  movement (a count, an adjustment or an approved reversal).
-
-### 3.7 Dashboard and report
-
-- Dashboard: number of products, units in stock, stock value, low-stock and
-  out-of-stock products that need restocking, recent movements, pending
-  approvals, stock held as damaged, and losses in the last 30 days (written
-  off, damage flags and missing in counts).
-- Monthly report per product: start, in, sold, damaged, count +/−, adjusted
-  and end, with totals for received, sold and lost, and CSV download.
-- Products and the report show 50 rows at a time with "Load more".
-
-### 3.8 Look and feel
-
-- Works on phone and desktop: bottom tabs on a phone, side menu on a desktop.
-- Light and dark themes, with colours that meet WCAG AA contrast.
-- Keyboard and screen-reader friendly (skip link, labelled fields, clear
-  error messages).
+1. Set up their business and add the people who work with them.
+2. Keep a list of products with a code, unit, cost and minimum stock level.
+3. Record stock coming in and going out, always with a reason.
+4. Count the physical stock and record any difference from the system.
+5. Report damaged or expired stock, with someone else deciding whether to
+   accept it.
+6. See the full history of stock changes and who made them.
+7. See at a glance what is low, what is out of stock, what the stock is worth
+   and what has been lost.
+8. Get a simple monthly report of stock received, sold and lost.
 
 ## 4. Target Users
 
-- **Owner:** sees stock value and losses, manages staff and products, decides
-  approvals.
-- **Manager:** manages products and stock, writes off damage, decides
-  approvals and reversals.
-- **Supervisor:** records stock and approves or rejects damage flags.
-- **Warehouse worker, Sales rep, Accountant:** record stock in and out, count,
-  flag damage, and view stock, history and reports.
+- **Business owners:** want to know what the stock is worth, what is being
+  lost, and who is doing what.
+- **Managers:** look after the product list and the stock, and check losses.
+- **Supervisors:** keep an eye on the floor and confirm damage reports.
+- **Warehouse workers:** receive, count and send out stock.
+- **Sales staff:** need to know what is available and record what goes out.
+- **Accountants:** need stock value and monthly movement figures.
 
-## 5. Not in This Version
+Each kind of user should only be able to do what their job needs.
 
-These were in the original idea and were left out to keep the first version
-small. They are candidates for later rounds:
+## 5. Core Capabilities
 
-- Suppliers, purchase orders and tracking deliveries.
-- Several warehouses or locations, and transfers between them.
-- Sales orders, reserving stock and dispatch.
-- Selling prices, product categories, variants, images and barcodes/QR codes.
-- Batches, serial numbers and expiry dates.
-- Notifications, alerts and automatic reorder suggestions.
-- Integrations with accounting, sales or point-of-sale systems.
-- Cloud hosting: this round runs only on the builder's machine.
+### 5.1 Business and People
+
+- An owner creates the business and their own account.
+- The owner adds staff and gives each one a role.
+- The owner can reset a staff member's password or stop them from signing in.
+- Everyone can change their own password.
+
+### 5.2 Products
+
+- Add, edit and search products.
+- Give each product a unique code (SKU), a name, a unit such as pieces, cartons
+  or bags, a cost and a minimum stock level.
+- Bring in an existing product list from a spreadsheet, including the stock
+  already on hand.
+
+### 5.3 Stock In and Out
+
+- Record stock coming in, for example from a purchase or a customer return.
+- Record stock going out, for example for a sale, damage or a correction.
+- Every change should say who made it, when, why, and what the stock was
+  afterwards.
+- Stock should never be allowed to go below zero.
+- Past records should never be edited or deleted; mistakes should be fixed by
+  recording a new change.
+
+### 5.4 Stock Counts
+
+- Let staff count what is on the shelf and enter the number.
+- If the count differs from the record, save the difference as its own change
+  so missing stock is visible.
+
+### 5.5 Damage and Corrections
+
+- Anyone should be able to report damaged or expired stock.
+- Someone in a senior role should approve or reject the report.
+- Undoing a past change should also need a second person's approval.
+- Nobody should be able to approve their own request.
+
+### 5.6 History and Accountability
+
+- Show the full history of stock changes, filterable by product, reason,
+  person and date.
+- Let each person see their own record of changes.
+- Allow the history to be downloaded.
+
+### 5.7 Dashboard and Report
+
+Dashboard information should include:
+
+- Number of products and total units in stock.
+- Total stock value.
+- Low-stock and out-of-stock products that need restocking.
+- Recent stock changes.
+- Requests waiting for approval.
+- Losses over the last month (damage and stock missing in counts).
+
+A monthly report should show, for each product, the stock at the start, what
+came in, what was sold, what was lost or corrected, and the stock at the end,
+with an option to download it.
 
 ## 6. Guiding Principles
 
-1. **Accuracy first:** the record must match the shelf and never go negative.
-2. **Nothing is silently changed:** every change is a new, permanent movement.
-3. **Two people for losses:** damage flags and reversals need a second person.
-4. **Simple workflows:** common tasks take as few steps as possible.
-5. **Clear visibility:** what is low, what is lost and what it is worth are
-   visible at a glance.
-6. **Controlled access:** each role can do only what it needs.
+1. **Accuracy first:** the record should match the shelf and never go
+   negative.
+2. **Nothing changes silently:** every change is kept as part of the history.
+3. **Two people for losses:** losses and corrections need a second person.
+4. **Simple workflows:** common tasks should take as few steps as possible.
+5. **Clear visibility:** what is low, lost and worth money should be obvious.
+6. **Controlled access:** each role can only do what it needs.
+7. **Easy to use:** people who are not technical should understand it quickly,
+   on a phone or a computer.
 
-## 7. How It Is Built
+## 7. Potential Business Value
 
-- React web app, Node (Express) API and PostgreSQL database, all in
-  TypeScript, sharing one set of data rules between the web app and API.
-- Runs locally with Docker Compose; nothing is deployed to the cloud.
-- Unit, integration (against a real database) and screen tests, with at least
-  80% line coverage, plus a browser smoke test.
+- Fewer unexplained stock losses.
+- Fewer products running out unnoticed.
+- Clear accountability for every stock change.
+- Less time spent on manual stock records and reports.
+- A clear picture of how much money is tied up in stock.
 
 ## 8. Success Criteria
 
-- Stock balances always match the movement history and never go below zero.
-- Every stock change has a person, time, reason and balance after it.
-- Every loss (damage, missing in a count) is visible on the dashboard with its
-  value in taka.
-- No damage flag or reversal is decided by the person who asked for it.
-- Owners can see stock value, low stock and losses without building a
+- Stock levels always match the history of changes and never go below zero.
+- Every stock change has a person, time and reason.
+- Every loss is visible with its value.
+- No damage report or correction is approved by the person who asked for it.
+- An owner can see stock value, low stock and losses without building a
   spreadsheet.
+
+### Desired Outcome
+
+Agree on a clear product direction, confirm the target customer and their
+needs, prioritise the most important capabilities, and record the assumptions
+and constraints that will shape the requirements.
 
 **End of idea document.**
